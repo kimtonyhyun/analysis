@@ -27,7 +27,7 @@ for k = 1:num_frames
     %display black or white rectangular box on the upper right corner of the
     % image when there is lick or no lick, respectively
     image(1:60,1:60) = 255*(lick_data(k)==1);
-    imshow(image);
+    imshow(image(:,:,1));
     pause(0.000001);
 end
 
