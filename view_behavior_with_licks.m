@@ -19,16 +19,16 @@ lick_data = fscanf(fileID,'%d');
 num_frames = length(lick_data);
 % Read video file 
 behavior_vid = VideoReader(video_source);
-figure,
+figure;
 %the shape to display to indicate lick/no lick
 for k = 1:num_frames
-    image = read(behavior_vid,k);
-    image = image(:,:,1);
+    frame = read(behavior_vid,k);
+    frame = frame(:,:,1);
     %display black or white rectangular box on the upper right corner of the
     % image when there is lick or no lick, respectively
-    image(1:60,1:60) = 255*(lick_data(k)==1);
-    imshow(image);
-    pause(0.000001);
+    frame(1:60,1:60) = 255*(lick_data(k)==1);
+    imshow(frame);
+    drawnow;
 end
 
 
