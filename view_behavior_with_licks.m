@@ -16,6 +16,7 @@ function view_behavior_with_licks(video_source,lick_source)
 %Read the lick file
 fileID = fopen(lick_source,'r');
 lick_data = fscanf(fileID,'%d');
+fclose(fileID);
 num_frames = length(lick_data);
 % Read video file 
 behavior_vid = VideoReader(video_source);
