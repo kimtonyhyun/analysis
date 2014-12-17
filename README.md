@@ -1,7 +1,7 @@
 analysis
 ========
 
-Repository for analysis code that is _specific_ to the strategy-shifting experiment at Herrin. (General data preprocessing code should go into the lab-wide repository!)
+Repository for code that is _specific_ to the strategy-shifting experiment at Herrin. (General data preprocessing code should go into the lab-wide repository!)
 
 We should strictly observe the lab-wide formatting for data objects:
 - Movies: `[height width time]`
