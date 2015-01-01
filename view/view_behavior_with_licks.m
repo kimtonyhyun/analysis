@@ -21,7 +21,8 @@ num_frames = length(lick_data);
 
 % Read video file
 behavior_vid = VideoReader(video_source);
-h = imshow(read(behavior_vid,1));
+frame = read(behavior_vid,1);
+h = imshow(frame(:,:,1));
 video_source_name = strrep(video_source, '_', '\_');
 
 % Display video with a block that indicates lick or no lick
