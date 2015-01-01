@@ -13,22 +13,35 @@ function view_behavior_with_licks(video_source,lick_source)
 %Hakan Inan(Dec 14)
 %
 
-%Read the lick file
+% Read the lick file
 fileID = fopen(lick_source,'r');
 lick_data = fscanf(fileID,'%d');
 fclose(fileID);
 num_frames = length(lick_data);
-% Read video file 
+
+% Read video file
 behavior_vid = VideoReader(video_source);
-figure;
-%the shape to display to indicate lick/no lick
+h = imshow(read(behavior_vid,1));
+video_source_name = strrep(video_source, '_', '\_');
+
+% Display video with a block that indicates lick or no lick
+block = [1 60 1 60]; % [x1 x2 y1 y2]
 for k = 1:num_frames
     frame = read(behavior_vid,k);
     frame = frame(:,:,1);
-    %display black or white rectangular box on the upper right corner of the
-    % image when there is lick or no lick, respectively
-    frame(1:60,1:60) = 255*(lick_data(k)==1);
-    imshow(frame);
+    
+    % Lick indicator
+    frame(block(1):block(2),...
+          block(3):block(4)) = 255; % Border
+    if (~lick_data(k)) % No lick
+        frame((block(1)+1):(block(2)-1),...
+              (block(3)+1):(block(4)-1)) = 0; % Block interior is dark
+    end
+    
+    % Update the figure
+    set(h, 'CData', frame);
+    title(sprintf('%s (Frame %d/%d)',...
+                  video_source_name, k, num_frames));
     drawnow;
 end
 
