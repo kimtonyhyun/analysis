@@ -4,7 +4,7 @@ function total_frames = count_frames_in_xml(path_to_xml)
 %   matched by a corresponding RAW or TIF file.
 % 
 % Example use: "count_frames_in_xml(pwd)"
-%   in a directory that contains (only) Miniscope XML files
+%   in a directory that contains Miniscope XML files
 %
 % 2015-01-01 Tony Hyun Kim
 
