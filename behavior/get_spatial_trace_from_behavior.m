@@ -29,8 +29,7 @@ function spatial_trace = get_spatial_trace_from_behavior(sample_image,video)
         maze_image = sample_image;
     end
     maze_image = medfilt2(maze_image,[20,20]); %get rid of details
-    maze_image = maze_image > thresh_whiteness; %apply threshold
-    maze_image = logical(maze_image); %binarize
+    maze_image = maze_image > thresh_whiteness; %binarize with threshold
     for frame_idx = 1:num_frames
         % Update original image CData
         frame = video(:,:,frame_idx);  
