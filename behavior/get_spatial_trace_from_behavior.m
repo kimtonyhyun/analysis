@@ -24,12 +24,12 @@ function spatial_trace = get_spatial_trace_from_behavior(sample_image,video)
     
     %extract roughly the maze from the sample image (based on whiteness)
     if size(sample_image,3)>1
-        maze_image = rgb2graysample_image; %convert to grayscale
+        maze_image = rgb2gray(sample_image); %convert to grayscale
     else
         maze_image = sample_image;
     end
-    maze_image = medfilt2(maze_image,[20,20]); %blur
-    maze_image(maze_image<thresh_whiteness) = 0; %apply threshold
+    maze_image = medfilt2(maze_image,[20,20]); %get rid of details
+    maze_image = maze_image > thresh_whiteness; %apply threshold
     maze_image = logical(maze_image); %binarize
     for frame_idx = 1:num_frames
         % Update original image CData
