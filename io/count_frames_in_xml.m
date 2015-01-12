@@ -25,6 +25,9 @@ for i = 1:num_files
     total_dropped_frames = total_dropped_frames + num_dropped_frames;
     total_frames = total_frames + num_frames + num_dropped_frames;
     
+    fprintf('  %d: "%s" has %d frames and %d dropped frames\n',...
+        i, xml_filename, num_frames, num_dropped_frames);
+    
     % Check if there is a corresponding RAW or TIF file
     [~, name, ~] = fileparts(xml_filename);
     raw = dir(fullfile(path_to_xml, strcat(name, '.raw')));
