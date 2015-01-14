@@ -13,7 +13,7 @@ fprintf('Found %d TIF files in "%s"\n', num_files, path_to_tif);
 
 total_frames = 0;
 for i = 1:num_files
-    tif_filename = tif_files(i).name;
+    tif_filename = fullfile(path_to_tif,tif_files(i).name);
     tif_info = imfinfo(tif_filename);
     
     num_frames = length(tif_info);
