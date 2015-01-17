@@ -1,4 +1,8 @@
 function compare_frames_in_xml_tif(path_to_xml)
+% For each XML file in the specified path, make sure that the
+% corresponding TIFF file has the same number of frames
+%
+% Tony Hyun Kim (2015 Jan 16)
 
 xml_files = dir(fullfile(path_to_xml,'*.xml'));
 num_files = length(xml_files);
@@ -6,7 +10,7 @@ fprintf('Found %d XML files in "%s"\n', num_files, path_to_xml);
 
 mismatch_detected = false;
 for i = 1:num_files
-    xml_filename = xml_files(i).name;
+    xml_filename = fullfile(path_to_xml, xml_files(i).name);
     xml_struct = parse_miniscope_xml(xml_filename);
 
     % Count frames in XML
@@ -21,7 +25,7 @@ for i = 1:num_files
         mismatch_detected = true;
         break;
     else
-        tif_filename = tif.name;
+        tif_filename = fullfile(path_to_xml, tif.name);
         tif_info = imfinfo(tif_filename);
         num_tif_frames = length(tif_info);
         if (num_frames ~= num_tif_frames)
