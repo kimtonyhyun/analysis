@@ -3,6 +3,11 @@ function concatenate_bigtiff(plusmaze_source, path_to_xml, trim)
 %   Compatible with the plus maze output as of Cohort 9 (where we
 %   explicitly turn off the scope during the inter-trial intervals).
 %
+% The concatenated movie file contains only valid trials, i.e. any 
+%   "rewinded" (aborted) trial recordings are omitted.
+%
+% See also 'compress_frame_indices'.
+%
 % Inputs:
 %   plusmaze_source: Text file output from the plus maze
 %   path_to_xml: Path to folder that contains Miniscope XML/TIF pairs
