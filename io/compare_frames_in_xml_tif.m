@@ -16,7 +16,7 @@ for i = 1:num_files
     [~, name, ~] = fileparts(xml_filename);
     tif = dir(fullfile(path_to_xml, strcat(name, '.tif')));
     if (isempty(tif))
-        fprintf('  Error! "%s" is missing its RAW or TIF counterpart!\n',...
+        fprintf('  Error! "%s" is missing its TIF counterpart!\n',...
             xml_filename);
         mismatch_detected = true;
         break;
