@@ -11,6 +11,8 @@ function concatenate_bigtiff(plusmaze_source, path_to_xml, trim)
 %
 % Example usage:
 %   concatenate_bigtiff('mouse7_day21_ego-left.txt', pwd, [10 5]);
+% in a directory that contains XML / TIF pairs corresponding to the
+% specified plus maze output file.
 %
 % Tony Hyun Kim (2015 Jan 17)
 
