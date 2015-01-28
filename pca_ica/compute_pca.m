@@ -7,11 +7,11 @@ function [pca_filters, pca_traces, S] = compute_pca(movie, num_PCs)
 num_pixels = height * width;
 
 % Reshape movie into [space x time] matrix
-M = reshape(movie, num_pixels, num_frames);
+movie = reshape(movie, num_pixels, num_frames);
 
 % Compute the covariance matrix [time x time]
 fprintf('%s: Computing covariance matrix...\n', datestr(now));
-C = cov(M, 1);    % Normalized by num_pixels
+C = cov(movie, 1);    % Normalized by num_pixels
 C = num_pixels*C; % Undo the normalization
 
 fprintf('%s: Computing temporal PCs...\n', datestr(now));
@@ -34,8 +34,8 @@ S = diag(cov_eigs.^(1/2));
 
 % Compute the corresponding spatial PCs
 fprintf('%s: Computing corresponding PC filters...\n', datestr(now));
-M = M - repmat(mean(M,1), num_pixels, 1); % Space normalized
-pca_filters = (M * pca_traces) / S;
+movie = movie - repmat(mean(movie,1), num_pixels, 1); % Space normalized
+pca_filters = (movie * pca_traces) / S;
 
 % Perform explicit normalization of the PCA filters
 for pc_idx = 1:num_PCs
