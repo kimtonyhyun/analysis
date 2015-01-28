@@ -1,4 +1,4 @@
-% function classify_ics(sources, ic_dir)
+function classify_ics(sources, ic_dir)
 
 % Usage:
 %   classify_ics(sources, 'ica001')
@@ -11,7 +11,7 @@ load(ica_source, 'ica_info', 'ica_filters', 'ica_traces');
 
 % Load data
 %------------------------------------------------------------
-% movie = load_tif_to_memory(sources.miniscope); % FIXME: Handle non-Tiff cases
+movie = load_tif_to_memory(sources.miniscope); % FIXME: Handle non-Tiff cases
 
 time = 1/sources.fps*((1:size(ica_traces,1))-1); %#ok<*NODEF>
 num_ics = ica_info.num_ICs;
