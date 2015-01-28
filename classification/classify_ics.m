@@ -16,7 +16,7 @@ movie = load_tif_to_memory(sources.miniscope); % FIXME: Handle non-Tiff cases
 time = 1/sources.fps*((1:size(ica_traces,1))-1); %#ok<*NODEF>
 num_ics = ica_info.num_ICs;
 
-% Get trial info from maze output
+% Get trial info from maze output (consistent as of Cohort 9)
 trial_frame_indices = get_trial_frame_indices(sources.maze);
 compressed_indices = compress_frame_indices(trial_frame_indices, sources.trim);
 compressed_indices = compressed_indices(:,[1 end]); % [Start end]
