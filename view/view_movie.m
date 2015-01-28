@@ -1,4 +1,6 @@
 function view_movie(M)
+% Displays the frames of a movie matrix M [height x row x num_frames]
+%   (Note: also works with a single image)
 
 num_frames = size(M,3);
 
