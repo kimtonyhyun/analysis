@@ -18,7 +18,7 @@ num_ics = ica_info.num_ICs;
 
 % Get trial info from maze output
 trial_frame_indices = get_trial_frame_indices(sources.maze);
-compressed_indices = compress_frame_indices(trial_frame_indices,[10 5]);
+compressed_indices = compress_frame_indices(trial_frame_indices, sources.trim);
 compressed_indices = compressed_indices(:,[1 end]); % [Start end]
 
 % Classify ICs
