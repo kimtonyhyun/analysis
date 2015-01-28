@@ -10,7 +10,9 @@ num_pixels = height * width;
 movie = reshape(movie, num_pixels, num_frames);
 
 % Compute the covariance matrix [time x time]
-fprintf('%s: Computing covariance matrix...\n', datestr(now));
+cov_mat_size = num_frames^2 * 4 / 1024^3; % Memory size in bytes
+fprintf('%s: Computing covariance matrix (%.1f GB)...\n',...
+    datestr(now), cov_mat_size);
 C = cov(movie, 1);    % Normalized by num_pixels
 C = num_pixels*C; % Undo the normalization
 
