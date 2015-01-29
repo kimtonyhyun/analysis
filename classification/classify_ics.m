@@ -11,7 +11,9 @@ load(ica_source, 'ica_info', 'ica_filters', 'ica_traces');
 
 % Load data
 %------------------------------------------------------------
+fprintf('  %s: Loading "%s" to memory...\n', datestr(now), sources.miniscope);
 movie = load_movie(sources.miniscope);
+fprintf('  %s: Done!\n', datestr(now));
 
 time = 1/sources.fps*((1:size(ica_traces,1))-1); %#ok<*NODEF>
 num_ics = ica_info.num_ICs;
