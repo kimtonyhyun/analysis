@@ -1,6 +1,6 @@
 function movie = load_movie_from_tif(source)
 
-% Usage: M = load_tif_to_memory('mouse1_day4_sp2_mc_cr.tif');
+% Usage: M = load_movie_from_tif('mouse1_day4_sp2_mc_cr.tif');
 
 info = imfinfo(source);
 num_frames = length(info);
