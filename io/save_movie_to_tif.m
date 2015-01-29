@@ -1,7 +1,8 @@
-function save_movie_to_tif(movie, outname, type)
+function save_movie_to_tif(movie, outname)
 % Save a movie as a BigTiff stack that is compatible with Mosaic
 
 [height, width, num_frames] = size(movie);
+type = class(movie);
 
 % Prepare Tiff tags
 tagstruct.ImageLength = height;
@@ -15,7 +16,7 @@ switch (lower(type))
     case 'single'
         tagstruct.SampleFormat = Tiff.SampleFormat.IEEEFP;
         tagstruct.BitsPerSample = 32;
-    case 'uint'
+    case 'uint16'
         tagstruct.SampleFormat = Tiff.SampleFormat.UInt;
         tagstruct.BitsPerSample = 16;
     otherwise
