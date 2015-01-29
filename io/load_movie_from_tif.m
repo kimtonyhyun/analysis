@@ -1,4 +1,4 @@
-function movie = load_tif_to_memory(source)
+function movie = load_movie_from_tif(source)
 
 % Usage: M = load_tif_to_memory('mouse1_day4_sp2_mc_cr.tif');
 
