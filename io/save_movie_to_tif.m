@@ -1,5 +1,7 @@
 function save_movie_to_tif(movie, outname)
-% Save a movie as a BigTiff stack that is compatible with Mosaic
+% Save a movie [height x width x num_frames] as a BigTiff stack that is compatible with Mosaic
+%
+% 2015 01 28 Tony Hyun Kim
 
 [height, width, num_frames] = size(movie);
 type = class(movie);
