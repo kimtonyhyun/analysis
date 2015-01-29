@@ -1,7 +1,13 @@
-function save_movie_to_hdf5(movie, outname, dataset_name)
+function save_movie_to_hdf5(movie, outname, varargin)
 % Save a movie matrix [height x width x num_frames] into a HDF5 file.
+%   Optional parameter to specify the dataset name.
 %
 % 2015 01 28 Tony Hyun Kim
+if isempty(varargin)
+    dataset_name = '/Data/Images';
+else
+    dataset_name = varargin{1};
+end
 
 [height, width, num_frames] = size(movie);
 data_type = class(movie);
