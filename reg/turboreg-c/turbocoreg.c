@@ -6,7 +6,10 @@
 #include "regFlt3d.h"
 #include "matrix.h"
 
-/* Compile me by running:
+/* turbocoreg.c
+ * 2015 01 30 Tony Hyun Kim
+ *
+ * Compile me by running:
  *  mex -compatibleArrayDims -v turbocoreg.c regFlt3d.c svdcmp.c reg3.c reg2.c reg1.c reg0.c quant.c pyrGetSz.c pyrFilt.c getPut.c convolve.c BsplnWgt.c BsplnTrf.c phil.c
  */
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
@@ -15,28 +18,21 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     float *imgRef, *imgRefMask, *imgReg, *imgCoReg; // Input images
     float *imgRegMask, *imgOutMask; // Scratch space
     float *imgOut; // Output image
-    int nx, ny, i;
-    
+    int nx, ny;
+    int i;
     mwSize *dims;
+    
     mxArray *field_value;
     double enableRotation, minGain, levels;
-    double *translation, *origin;
-    
-    const char *output_field_names[] = {"Translation", "Rotation", "Origin"};
     
     // Check input types
     if (nrhs != 5)
-        mexErrMsgTxt("Turboreg (MEX): Expected 5 inputs\n");
-    if (!mxIsClass(prhs[0], "single"))
-        mexErrMsgTxt("Input image should be single.\n");
-    if (!mxIsClass(prhs[1], "single"))
-        mexErrMsgTxt("Input image should be single.\n");
-    if (!mxIsClass(prhs[2], "single"))
-        mexErrMsgTxt("Input image should be single.\n");
-    if (!mxIsClass(prhs[3], "single"))
-        mexErrMsgTxt("Input image should be single.\n");
+        mexErrMsgTxt("Turboreg (MEX): Expected 5 inputs.\n");
+    for (i = 0; i <= 3; i++)
+        if (!mxIsClass(prhs[i], "single"))
+            mexErrMsgTxt("Turbocoreg (MEX): Input images should be single.\n");
     if (!mxIsStruct (prhs[4]))
-         mexErrMsgTxt("Expects options struct.\n");
+         mexErrMsgTxt("Turbocoreg (MEX): Expected options struct.\n");
     
     nx = mxGetM(prhs[0]);
     ny = mxGetN(prhs[0]);
@@ -47,13 +43,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     imgCoReg   = (float *)mxGetData(prhs[3]);
     
     // Parse options
-    field_value = mxGetField(prhs[4], 0, "EnableRotation");
+    field_value = mxGetField(prhs[4], 0, "rotation_enable");
     enableRotation = *mxGetPr(field_value);
     
-    field_value = mxGetField(prhs[4], 0, "MinGain");
+    field_value = mxGetField(prhs[4], 0, "mingain");
     minGain = *mxGetPr(field_value);
     
-    field_value = mxGetField(prhs[4], 0,"Levels");
+    field_value = mxGetField(prhs[4], 0,"levels");
     levels = *mxGetPr(field_value);
     
     // Prepare output array
@@ -62,6 +58,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     dims[1] = ny;
     plhs[0] = mxCreateNumericArray(2, dims, mxSINGLE_CLASS, mxREAL); 
     imgOut = (float *)mxGetData(plhs[0]);
+    mxFree(dims);
     
     // Scratch space
     imgRegMask = (float *)malloc(nx * ny * sizeof(float));
@@ -379,36 +376,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     regFloat3d(&reg);
 
     // Apply registration results to actual image
-    for (i=0; i < nx*ny; i++)
-        *(imgRegMask+i) = 1.0;
+    for (i=0; i < nx*ny; i++) { *(imgRegMask+i) = 1.0; }
     dirMskTransform(&reg.fit, imgCoReg, imgOut, imgRegMask, imgOutMask, nx, ny, 1,
             reg.directives.greyRendering, reg.directives.interpolation);
             
     // Free scratch space
     free(imgRegMask);
     free(imgOutMask);
-    
-    /* Fill in fit values to return to Matlab */
-    dims[0] = 1;
-    dims[1] = 1;
-    plhs[1] = mxCreateStructArray(2, dims, (sizeof(output_field_names)/sizeof(*output_field_names)), output_field_names);
-    mxFree(dims);
-            
-    field_value = mxCreateDoubleMatrix(2,1,mxREAL);
-    translation = mxGetPr(field_value);
-    *translation     = reg.fit.dx[0];
-    *(translation+1) = reg.fit.dx[1];
-    mxSetField(plhs[1], 0, "Translation", field_value);
-    
-    field_value = mxCreateDoubleMatrix(2,1,mxREAL);
-    origin = mxGetPr(field_value);
-    *origin     = reg.fit.origin[0];
-    *(origin+1) = reg.fit.origin[1];
-    mxSetField(plhs[1], 0, "Origin", field_value);
-    
-    field_value = mxCreateDoubleMatrix(1,1,mxREAL);
-    *mxGetPr(field_value) = reg.fit.psi;
-    mxSetField(plhs[1], 0, "Rotation", field_value);
-    
+     
     return;
 }
