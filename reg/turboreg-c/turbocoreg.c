@@ -7,92 +7,65 @@
 #include "matrix.h"
 
 /* Compile me by running:
- *  mex -compatibleArrayDims -v turboreg.c regFlt3d.c svdcmp.c reg3.c reg2.c reg1.c reg0.c quant.c pyrGetSz.c pyrFilt.c getPut.c convolve.c BsplnWgt.c BsplnTrf.c phil.c
+ *  mex -compatibleArrayDims -v turbocoreg.c regFlt3d.c svdcmp.c reg3.c reg2.c reg1.c reg0.c quant.c pyrGetSz.c pyrFilt.c getPut.c convolve.c BsplnWgt.c BsplnTrf.c phil.c
  */
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {    
-    struct	rParam		reg;
-    float	*imgRef, *imgReg, *imgOut, *imgRefMask, *imgOutMask, *imgRegMask;
-    mxArray *field_value;
-    int nx, ny;
-    double registration_Type, SmoothX, SmoothY, minGain, Levels, Lastlevels, Epsilon, zapMean;
-    double *skew, *translation, *origin;
+    struct rParam reg;
+    float *imgRef, *imgRefMask, *imgReg, *imgCoReg; // Input images
+    float *imgRegMask, *imgOutMask; // Scratch space
+    float *imgOut; // Output image
+    int nx, ny, i;
+    
     mwSize *dims;
-    mwSize *dimsOut;
+    mxArray *field_value;
+    double enableRotation, minGain, levels;
+    double *translation, *origin;
     
-    const char *output_field_names[] = {"Translation", "Rotation", "Origin", "Skew"};
+    const char *output_field_names[] = {"Translation", "Rotation", "Origin"};
     
-    /* We only handle singles */
+    // Check input types
+    if (nrhs != 5)
+        mexErrMsgTxt("Turboreg (MEX): Expected 5 inputs\n");
     if (!mxIsClass(prhs[0], "single"))
-    {
         mexErrMsgTxt("Input image should be single.\n");
-    }
     if (!mxIsClass(prhs[1], "single"))
-    {
         mexErrMsgTxt("Input image should be single.\n");
-    }
-    
     if (!mxIsClass(prhs[2], "single"))
-    {
         mexErrMsgTxt("Input image should be single.\n");
-    }
     if (!mxIsClass(prhs[3], "single"))
-    {
         mexErrMsgTxt("Input image should be single.\n");
-    }
-    
     if (!mxIsStruct (prhs[4]))
-    {
          mexErrMsgTxt("Expects options struct.\n");
-    }
     
     nx = mxGetM(prhs[0]);
     ny = mxGetN(prhs[0]);
     
-    imgRef	= (float *)mxGetData(prhs[0]);
-    imgReg	= (float *)mxGetData(prhs[1]);
-    imgRefMask	= (float *)mxGetData(prhs[2]);
-    imgRegMask	= (float *)mxGetData(prhs[3]);
+    imgRef     = (float *)mxGetData(prhs[0]);
+    imgRefMask = (float *)mxGetData(prhs[1]);
+    imgReg     = (float *)mxGetData(prhs[2]);
+    imgCoReg   = (float *)mxGetData(prhs[3]);
     
-    dims = (mwSize *) mxMalloc (2 * sizeof(mwSize));
+    // Parse options
+    field_value = mxGetField(prhs[4], 0, "EnableRotation");
+    enableRotation = *mxGetPr(field_value);
+    
+    field_value = mxGetField(prhs[4], 0, "MinGain");
+    minGain = *mxGetPr(field_value);
+    
+    field_value = mxGetField(prhs[4], 0,"Levels");
+    levels = *mxGetPr(field_value);
+    
+    // Prepare output array
+    dims = (mwSize *)mxMalloc(2*sizeof(mwSize));
     dims[0] = nx;
     dims[1] = ny;
-    
-    // We get the variables options from the provided structure
-    field_value=mxGetField(prhs[4], 0,"RegisType");
-    registration_Type=*mxGetPr(field_value);
-    
-    field_value=mxGetField(prhs[4], 0,"SmoothX");
-    SmoothX=*mxGetPr(field_value);
-    
-    field_value=mxGetField(prhs[4], 0,"SmoothY");
-    SmoothY=*mxGetPr(field_value);
-    
-    field_value=mxGetField(prhs[4], 0,"zapMean");
-    zapMean=*mxGetPr(field_value);
-    
-    field_value=mxGetField(prhs[4], 0,"Epsilon");
-    Epsilon=*mxGetPr(field_value);
-    
-    field_value=mxGetField(prhs[4], 0,"minGain");
-    minGain=*mxGetPr(field_value);
-    
-    field_value=mxGetField(prhs[4], 0,"Levels");
-    Levels=*mxGetPr(field_value);
-    
-    field_value=mxGetField(prhs[4], 0,"Lastlevels");
-    Lastlevels=*mxGetPr(field_value);
-    
-    plhs[0]=mxCreateNumericArray (2, dims, mxSINGLE_CLASS, mxREAL); 
+    plhs[0] = mxCreateNumericArray(2, dims, mxSINGLE_CLASS, mxREAL); 
     imgOut = (float *)mxGetData(plhs[0]);
     
-    imgOutMask = (float *)mxGetData(mxCreateNumericArray (2, dims, mxSINGLE_CLASS, mxREAL));
-    
-    dimsOut = (mwSize *) mxMalloc (2 * sizeof(mwSize));
-    dimsOut[0] = 1;
-    dimsOut[1] = 1;
-    plhs[1] = mxCreateStructArray(2, dimsOut, (sizeof(output_field_names)/sizeof(*output_field_names)), output_field_names);
-  
+    // Scratch space
+    imgRegMask = (float *)malloc(nx * ny * sizeof(float));
+    imgOutMask = (float *)malloc(nx * ny * sizeof(float));
     
     /* directives.maskCombine
      * During alignment, the masks are geometrically transformed in the same way as the data.
@@ -100,12 +73,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      * reference data are to be combined with one another. The registration criterion is
      * computed on the resulting pattern.
      */
-// 		reg.directives.maskCombine = or;
-// 		reg.directives.maskCombine = nor;
+// 	reg.directives.maskCombine = or;
+// 	reg.directives.maskCombine = nor;
     reg.directives.maskCombine = and; /* Strongly recommended choice */
-// 		reg.directives.maskCombine = nand;
-// 		reg.directives.maskCombine = xor;
-// 		reg.directives.maskCombine = nxor;
+// 	reg.directives.maskCombine = nand;
+// 	reg.directives.maskCombine = xor;
+// 	reg.directives.maskCombine = nxor;
     
     /* directives.referenceMask
      * The initial mask for the reference data can be specified in three different ways.
@@ -119,17 +92,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      * variables 'sx', 'sy' and 'sz'. The result is quantized to two levels (black and white),
      * and the black part is masked out (set to '0.0', irrelevant).
      */
-//    reg.directives.referenceMask = blank; /* Recommended choice */
- 		reg.directives.referenceMask = provided;
-// 		reg.directives.referenceMask = computed;
+//  reg.directives.referenceMask = blank; /* Recommended choice */
+ 	reg.directives.referenceMask = provided;
+// 	reg.directives.referenceMask = computed;
     
     /* directives.testMask
      * The initial mask for the test data is specified in the same way as the mask for the
      * reference data. The same values of the variables 'sx', 'sy' and 'sz' do apply.
      */
-//    reg.directives.testMask = blank; /* Recommended choice */
- 		reg.directives.testMask = provided;
-// 		reg.directives.testMask = computed;
+    reg.directives.testMask = blank; /* Recommended choice */
+// 	reg.directives.testMask = provided;
+// 	reg.directives.testMask = computed;
     
     /* directives.interpolation
      * The interpolation 'zero' means nearest neighbors. Can be used only when registering
@@ -153,7 +126,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      * 'Marquardt' is the true registration algorithm. It is incompatible with nearest-
      * neighbor interpolation.
      */
-// 		reg.directives.convergence = gravity;
+// 	reg.directives.convergence = gravity;
     reg.directives.convergence = Marquardt; /* Recommended choice */
     
     /* directives.clipping
@@ -165,8 +138,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      * 'FALSE' (or '0'), these irrelevant voxels are computed from the data using nearest-
      * neighbor interpolation, irrespective of 'directives.interpolation'.
      */
-//    reg.directives.clipping = FALSE; /* Recommended choice */
- 		reg.directives.clipping = TRUE;
+//  reg.directives.clipping = FALSE; /* Recommended choice */
+    reg.directives.clipping = TRUE;
     
     /* directives.importFit
      * There are three possibilities for specifying the initial guess of the iterative
@@ -176,9 +149,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      * transformation, irrespective of the content of the file. If 'importFit' is set to '1',
      * the file yields the initial guess, without inversion.
      */
-// 		reg.directives.importFit = -1;
+// 	reg.directives.importFit = -1;
     reg.directives.importFit = 0; /* Recommended choice */
-// 		reg.directives.importFit = 1;
+// 	reg.directives.importFit = 1;
     
     /* directives.exportFit
      * After the registration has converged, the resulting transformation can be saved in a
@@ -187,7 +160,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      * (over)written.
      */
     reg.directives.exportFit = FALSE;
-// 		reg.directives.exportFit = TRUE; /* Recommended choice */
+// 	reg.directives.exportFit = TRUE; /* Recommended choice */
     
     /* directives.xTrans, directives.yTrans, directives.zTrans
      * If 'xTrans' is set to 'FALSE', no optimization of the translational parameter along
@@ -212,7 +185,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      */
     reg.directives.xRot = FALSE; /* Recommended choice */
     reg.directives.yRot = FALSE; /* Recommended choice */
-    if (registration_Type==1)
+    if (enableRotation > 0.5)
         reg.directives.zRot = TRUE;
     else
         reg.directives.zRot = FALSE;
@@ -236,9 +209,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      * The recommendation below corresponds to a 3D rigid-body registration task with
      * isotropic voxels.
      */
-    reg.directives.xSkew = FALSE; /* Recommended choice */
+    reg.directives.xSkew = FALSE;
     reg.directives.ySkew = FALSE;
-    reg.directives.zSkew = FALSE; /* Recommended choice */
+    reg.directives.zSkew = FALSE;
     
     /* directives.matchGrey
      * If 'matchGrey' is set to 'FALSE', no optimization of the gray-level scaling factor
@@ -264,10 +237,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      * to 'TRUE', the test data is modified by removing its average value, and the reference
      * data is also modified by removing its average value prior to optimization.
      */
-    if (zapMean==1)
-        reg.directives.zapMean = TRUE;
-    else
-        reg.directives.zapMean = FALSE;
+    reg.directives.zapMean = FALSE;
     
     /* directives.zSqueeze
      * If 'zSqueeze' is set to 'FALSE', the multi-resolution pyramid is computed by performing
@@ -307,11 +277,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      */
     reg.inPtr2 = imgRef;
     
-    /* outPtr
-     * This pointer should provide the space for returning the transformed test data.
-     */
-    reg.outPtr = imgOut;
-    
     /* inMsk1
      * This pointer should hold the test mask if 'testMask == provided', or a mask workspace
      * else. In this latter case, the created mask will be returned.
@@ -324,6 +289,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      */
     reg.inMsk2 = imgRefMask;
     
+    /* outPtr
+     * This pointer should provide the space for returning the transformed test data.
+     */
+    reg.outPtr = imgOut;
     
     /* mskPtr
      * This pointer should provide the space for returning the transformed test mask. Note
@@ -332,6 +301,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      */
     reg.mskPtr = imgOutMask;
     
+    /* inFit
+     * Should point to a C-string giving the name of the file from which the initial condition
+     * has to be imported, according to the variable 'directives.importFit'.
+     */
+	reg.inFit = "import.txt";
     
     /* outFit
      * Should point to a C-string giving the name of the file to which the optimal
@@ -343,9 +317,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      * These variables determine the amount of smoothing along the x, y, and z axis,
      * respectively. They give the half-width of a recursive Gaussian smoothing window.
      */
-    reg.sx = SmoothX; /* No recommended choice */
-    reg.sy = SmoothY; /* No recommended choice */
-    reg.sz = 2.0; /* No recommended choice */
+    reg.sx = 4.0; /* No recommended choice */
+    reg.sy = 4.0; /* No recommended choice */
+    reg.sz = 4.0; /* No recommended choice */
     
     /* firstLambda
      * Marquardt-Levenberg is an adaptative optimizer. The variable 'firstLambda' gives the
@@ -372,7 +346,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      * The specification of machine-accuracy is normally machine-dependent. The proposed
      * value has shown good results on a variety of systems; it is the C-constant FLT_EPSILON.
      */
-    reg.epsilon = Epsilon; /*1.192092896E-07; /* Strongly recommended choice */
+    reg.epsilon = 1.192092896E-07; /* Strongly recommended choice */
     
     /* backgrnd
      * The variable 'backgrnd' holds the arbitrary intensity value to which the masked-out
@@ -389,7 +363,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      * cube between 30 and 60 pixels on each side. To that end, 'directives.zSqueeze' must be
      * judiciously selected.
      */
-    reg.levels = (int) Levels; /* No recommended choice */
+    reg.levels = (int) levels; /* No recommended choice */
     
     /* lastLevel
      * It is possible to short-cut the optimization before reaching the finest stages, which
@@ -399,46 +373,42 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      * 'lastLevel' is set to '1', the optimization will take advantage of the whole multi-
      * resolution pyramid.
      */
-    reg.lastLevel = (int) Lastlevels; /*1; /* Strongly recommended choice */
+    reg.lastLevel = 1; /* Strongly recommended choice */
     
     /* Actual call to the procedure */
     regFloat3d(&reg);
+
+    // Apply registration results to actual image
+    for (i=0; i < nx*ny; i++)
+        *(imgRegMask+i) = 1.0;
+    dirMskTransform(&reg.fit, imgCoReg, imgOut, imgRegMask, imgOutMask, nx, ny, 1,
+            reg.directives.greyRendering, reg.directives.interpolation);
+            
+    // Free scratch space
+    free(imgRegMask);
+    free(imgOutMask);
     
     /* Fill in fit values to return to Matlab */
+    dims[0] = 1;
+    dims[1] = 1;
+    plhs[1] = mxCreateStructArray(2, dims, (sizeof(output_field_names)/sizeof(*output_field_names)), output_field_names);
+    mxFree(dims);
+            
     field_value = mxCreateDoubleMatrix(2,1,mxREAL);
-    translation=mxGetPr(field_value);
-    *translation = reg.fit.dx[0];
+    translation = mxGetPr(field_value);
+    *translation     = reg.fit.dx[0];
     *(translation+1) = reg.fit.dx[1];
-    
-    mxSetField(plhs[1], 0, "Translation",field_value);
+    mxSetField(plhs[1], 0, "Translation", field_value);
     
     field_value = mxCreateDoubleMatrix(2,1,mxREAL);
-    
-    origin=mxGetPr(field_value);
-    *origin = reg.fit.origin[0];
+    origin = mxGetPr(field_value);
+    *origin     = reg.fit.origin[0];
     *(origin+1) = reg.fit.origin[1];
-    
-    mxSetField(plhs[1], 0, "Origin",field_value);
+    mxSetField(plhs[1], 0, "Origin", field_value);
     
     field_value = mxCreateDoubleMatrix(1,1,mxREAL);
-    
     *mxGetPr(field_value) = reg.fit.psi;
     mxSetField(plhs[1], 0, "Rotation", field_value);
-    
-    field_value = mxCreateDoubleMatrix(3,3,mxREAL);
-    
-    skew = mxGetPr(field_value);
-    *(skew)= reg.fit.skew[0][0];
-    *(skew+1)= reg.fit.skew[0][1];
-    *(skew+2)= reg.fit.skew[0][2];
-    *(skew+3)= reg.fit.skew[1][0];
-    *(skew+4)= reg.fit.skew[1][1];
-    *(skew+5)= reg.fit.skew[1][2];
-    *(skew+6)= reg.fit.skew[2][0];
-    *(skew+7)= reg.fit.skew[2][1];
-    *(skew+8)= reg.fit.skew[2][2];
-    
-    mxSetField(plhs[1], 0, "Skew", field_value);
     
     return;
 }
