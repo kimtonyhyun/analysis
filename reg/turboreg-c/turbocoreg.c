@@ -23,7 +23,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     mwSize *dims;
     
     mxArray *field_value;
-    double enableRotation, minGain, levels;
+    bool rotation_enable;
+    double minGain, levels;
     
     // Check input types
     if (nrhs != 5)
@@ -44,7 +45,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     // Parse options
     field_value = mxGetField(prhs[4], 0, "rotation_enable");
-    enableRotation = *mxGetPr(field_value);
+    rotation_enable = *mxGetLogicals(field_value);
     
     field_value = mxGetField(prhs[4], 0, "mingain");
     minGain = *mxGetPr(field_value);
@@ -54,8 +55,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     // Prepare output array
     dims = (mwSize *)mxMalloc(2*sizeof(mwSize));
-    dims[0] = nx;
-    dims[1] = ny;
+    dims[0] = nx; dims[1] = ny;
     plhs[0] = mxCreateNumericArray(2, dims, mxSINGLE_CLASS, mxREAL); 
     imgOut = (float *)mxGetData(plhs[0]);
     mxFree(dims);
@@ -182,7 +182,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
      */
     reg.directives.xRot = FALSE; /* Recommended choice */
     reg.directives.yRot = FALSE; /* Recommended choice */
-    if (enableRotation > 0.5)
+    if (rotation_enable)
         reg.directives.zRot = TRUE;
     else
         reg.directives.zRot = FALSE;
