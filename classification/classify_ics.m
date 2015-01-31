@@ -1,7 +1,15 @@
 function classify_ics(sources, ic_dir)
-
+% Perform manual classification of ICA results
+%
 % Usage:
 %   classify_ics(sources, 'ica001')
+% where sources is a struct with the following parameters:
+%   sources.miniscope: Miniscope recording (TIF or HDF5)
+%   sources.fps:  Frame rate of the recording
+%   sources.trim: Trim parameters of the recording concatenation [1 x 2]
+%   sources.maze: Output from the plus maze (TXT)
+%
+% 2015 01 31 Tony Hyun Kim
 
 % Specify ICA
 %------------------------------------------------------------

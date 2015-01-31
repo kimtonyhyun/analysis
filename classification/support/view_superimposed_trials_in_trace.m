@@ -1,11 +1,13 @@
 function view_superimposed_trials_in_trace(time, trace, frame_indices)
+% Displays the ICA trace as a superposition of trials
+% 2015 01 31 Tony Hyun Kim
 
 num_trials = size(frame_indices,1);
 
 colors = 'kbr';
 for trial_idx = 1:num_trials
     trial_frames = frame_indices(trial_idx,1):...
-                   frame_indices(trial_idx,2);
+                   frame_indices(trial_idx,end);
     ti = time(trial_frames);
     tr = trace(trial_frames);
     

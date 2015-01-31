@@ -1,8 +1,12 @@
 function resp = view_ic_over_movie_interactively(ic_filter, time, trace, movie, padding)
+% Visually inspect the active portions of an IC trace side-by-side with
+%   the provided miniscope movie
+%
+% 2015 01 31 Tony Hyun Kim
 
 % Some parameters
-ic_filter_threshold = 0.3;
-mad_scale = 8;
+ic_filter_threshold = 0.3; % For generating the IC filter outline
+mad_scale = 8; % Used for coarse detection of activity in the IC trace
 active_frame_padding = padding; % Use 100 for 20 Hz movie
 time_window = 10; % Width of running window
 
@@ -100,8 +104,6 @@ end
             frames = active_periods(selected_idx,1):...
                      active_periods(selected_idx,2);
             for k = frames
-%                 movie.setDirectory(k);
-%                 A = movie.read();
                 A = movie(:,:,k);
 
                 % Draw IC edges as black
@@ -122,3 +124,43 @@ end
     end % display_active_period
 
 end % main function
+
+function active_frames = parse_active_frames(binary_trace, half_width)
+% Segment the active portions of a binary trace into intervals
+% 2015 01 31 Tony Hyun Kim
+
+    if (half_width > 0)
+        trace = single(binary_trace);
+        trace = conv(trace, ones(1, 2*half_width + 1), 'same');
+        trace = logical(trace);
+    else
+        trace = binary_trace;
+    end
+    trace_comp = ~trace; % Complement of the trace
+
+    active_frames = [];
+
+    % Loop to find all activity transitions in the trace
+    curr = 1;
+    while (1)
+        next = find(trace(curr:end), 1, 'first');
+        if (isempty(next))
+            break;
+        end
+        active_frames = [active_frames curr+(next-1)]; %#ok<*AGROW>
+        curr = curr + next;
+
+        next = find(trace_comp(curr:end), 1, 'first');
+        if (isempty(next))
+            break;
+        end
+        active_frames = [active_frames curr+(next-2)];
+        curr = curr + next;
+    end
+
+    if (mod(length(active_frames),2) == 1) % Ended with active frame
+        active_frames = [active_frames length(binary_trace)];
+    end
+
+    active_frames = reshape(active_frames, 2, length(active_frames)/2)';
+end
