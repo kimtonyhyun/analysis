@@ -43,7 +43,10 @@ fprintf('%s: Began TurboReg registration with %d pyramid levels...\n',...
     datestr(now), options.levels);
 M_reg = zeros(size(M), class(M));
 tic;
-parfor i = 1:num_frames
+for i = 1:num_frames
+    if (mod(i,100)==0)
+        fprintf('%s: Frames %d / %d done\n', datestr(now), i, num_frames);
+    end
     im_reg = transform(M(:,:,i));
     im_coreg = M(:,:,i);
     M_reg(:,:,i) = turbocoreg(im_ref, mask_ref, im_reg, im_coreg, options);
