@@ -1,19 +1,15 @@
-function [pca_filters, pca_traces, S] = compute_pca(movie, num_PCs)
+function [pca_filters, pca_traces, S] = compute_pca(M, num_PCs)
 
 % For understanding the logic behind these operations, the Wikipedia
 %   article on Singular Value Decomposition is recommended
 
-[height, width, num_frames] = size(movie);
-num_pixels = height * width;
-
-% Reshape movie into [space x time] matrix
-movie = reshape(movie, num_pixels, num_frames);
+[num_pixels, num_frames] = size(M);
 
 % Compute the covariance matrix [time x time]
-cov_mat_size = num_frames^2 * 4 / 1024^3; % Memory size in bytes
+cov_mat_size = num_frames^2 * 4 / 1024^3; % Memory size in GB
 fprintf('%s: Computing covariance matrix (%.1f GB)...\n',...
     datestr(now), cov_mat_size);
-C = cov(movie, 1);    % Normalized by num_pixels
+C = cov(M, 1);    % Normalized by num_pixels
 C = num_pixels*C; % Undo the normalization
 
 fprintf('%s: Computing temporal PCs...\n', datestr(now));
@@ -36,12 +32,12 @@ S = diag(cov_eigs.^(1/2));
 
 % Compute the corresponding spatial PCs
 fprintf('%s: Computing corresponding PC filters...\n', datestr(now));
-movie = movie - repmat(mean(movie,1), num_pixels, 1); % Space normalized
-pca_filters = (movie * pca_traces) / S;
+% M = M - repmat(mean(M,1), num_pixels, 1); % Space normalized
+pca_filters = (M * pca_traces) / S;
 
 % Perform explicit normalization of the PCA filters
 for pc_idx = 1:num_PCs
-    pca_filter = pca_filters(:, pc_idx);
+    pca_filter = pca_filters(:,pc_idx);
     pca_filters(:,pc_idx) = pca_filter / norm(pca_filter);
 end
 
