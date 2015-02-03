@@ -1,7 +1,11 @@
 function [pca_filters, pca_traces, S] = compute_pca(M, num_PCs)
-
+% Computes the PCA factorization of the provided movie. Note that the
+%   movie is expected to be a 2-D matrix ([num_pixels x num_frames])!
+%
 % For understanding the logic behind these operations, the Wikipedia
 %   article on Singular Value Decomposition is recommended
+%
+% 2015 02 03 Tony Hyun Kim
 
 [num_pixels, num_frames] = size(M);
 
