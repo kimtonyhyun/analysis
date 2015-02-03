@@ -1,11 +1,18 @@
 function run_pca(movie_source, num_PCs)
 
+fprintf('%s: Loading %s...\n', datestr(now), movie_source);
 M = load_movie(movie_source);
 [height, width, num_frames] = size(M);
 
 % Reshape movie into [space x time] matrix
 num_pixels = height * width;
 M = reshape(M, num_pixels, num_frames);
+
+% Make each frame zero-mean in place
+fprintf('%s: Frame-by-frame normalization of movie...\n', datestr(now));
+for i = 1:num_frames
+    M(:,i) = M(:,i) - mean(M(:,i));
+end
 
 % PCA
 %------------------------------------------------------------
