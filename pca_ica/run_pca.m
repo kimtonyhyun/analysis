@@ -25,3 +25,5 @@ pca_info.movie_width  = width;
 pca_info.movie_frames = num_frames;
 pca_info.num_PCs = num_PCs; %#ok<STRNU>
 save(savename, 'pca_info', 'pca_filters', 'pca_traces', 'S');
+
+fprintf('%s: All done!\n', datestr(now));
