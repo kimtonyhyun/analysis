@@ -17,6 +17,6 @@ for k = 1:numFrames
     Frame = reshape(movie(:,:,k),height*width,1);
     thresh = quantile(Frame,0.7);
     Z = mean(Frame(Frame<thresh));
-    M_norm(:,:,k) = M_norm(:,:,k)/Z; %normalize by Z
+    M_norm(:,:,k) = movie(:,:,k)/Z; %normalize by Z
 end
 
