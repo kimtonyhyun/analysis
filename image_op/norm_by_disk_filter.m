@@ -1,15 +1,24 @@
-function M_norm = norm_by_disk_filter(movie)
+function M_norm = norm_by_disk_filter(movie,varargin)
 %Normalize every frame in the movie by a disk filtered version of itself
 %
-%   movie: movie matrix , [h x w x num_frames]
+%   movie: movie matrix(must be single) , [h x w x num_frames]
+%   disk_radius may be passed as an input argument. Default for disk_radius
+%   is 15.
+% 2015 01 31 Tony Hyun Kim (Latest Revision: Hakan Inan, 15-Jan-5)
 %
-% 2015 01 31 Tony Hyun Kim (Revised: Hakan Inan, 15-Jan-4)
-%
+
+if isempty(varargin)
+    disk_radius = 15;
+elseif length(varargin) == 1
+    disk_radius = varargin{1};
+else
+    error('Only 1 variable input argument is allowed');
+end
 
 M_norm = zeros(size(movie), 'single');
 num_frames = size(movie,3);
 % Apply spatial normalization
-hDisk = fspecial('disk', 15);
+hDisk = fspecial('disk', disk_radius);
 m_f = imfilter(movie(:,:,1), hDisk, 'replicate');
 m0 = mean(m_f(:));
 
