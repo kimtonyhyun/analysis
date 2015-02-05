@@ -10,6 +10,16 @@ mad_scale = 8; % Used for coarse detection of activity in the IC trace
 active_frame_padding = padding; % Use 100 for 20 Hz movie
 time_window = 10; % Width of running window
 
+% Calculate constant to devide each frame with while displaying
+maxVec = reshape(max(movie,[],3),height*width,1);
+threshUp = quantile(maxVec,0.99);
+threshDown = quantile(maxVec,0.85);
+Z = mean(maxVec(maxVec>threshDown & maxVec<threshUp));
+
+%lower and upper limits for pixel intensity to be used in imagesc()
+clim_lower = -1;
+clim_upper = 1;
+
 % Generate the outline of the IC filter
 %------------------------------------------------------------
 B = threshold_ic_filter(ic_filter, ic_filter_threshold);
@@ -18,7 +28,7 @@ B = ~logical(B);
 
 subplot(3,3,[4 5 7 8]);
 % set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]); % Maximize figure
-h = imagesc(ic_filter);
+h = image(ic_filter,[clim_lower,clim_upper]);
 colormap gray;
 axis image;
 xlabel('x [px]');
@@ -109,7 +119,7 @@ end
                 % Draw IC edges as black
                 A = A - min(A(:));
                 A = B.*A;
-                set(h, 'CData', A);
+                set(h, 'CData', A/Z);
 
                 % Update time indicators and dot
                 set(t1, 'XData', time(k)*[1 1]);
