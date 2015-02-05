@@ -10,25 +10,32 @@ mad_scale = 8; % Used for coarse detection of activity in the IC trace
 active_frame_padding = padding; % Use 100 for 20 Hz movie
 time_window = 10; % Width of running window
 
-% Calculate constant to devide each frame with while displaying
-maxVec = reshape(max(movie,[],3),height*width,1);
-threshUp = quantile(maxVec,0.99);
-threshDown = quantile(maxVec,0.85);
-Z = mean(maxVec(maxVec>threshDown & maxVec<threshUp));
+
+%the upper and lower quantiles of the maxMovie matrix to be used in
+%the calculation of the movie normalizer Z
+quant_upper = 0.99;
+quant_lower = 0.85;
 
 %lower and upper limits for pixel intensity to be used in imagesc()
-clim_lower = -1;
-clim_upper = 1;
+clim_lower = -1.5;
+clim_upper = 1.5;
+
+% Calculate constant to devide each frame with while displaying
+[height,width,~] = size(movie);
+maxVec = reshape(max(movie,[],3),height*width,1);
+threshUp = quantile(maxVec,quant_upper);
+threshDown = quantile(maxVec,quant_lower);
+Z = mean(maxVec(maxVec>threshDown & maxVec<threshUp));
+
 
 % Generate the outline of the IC filter
 %------------------------------------------------------------
 B = threshold_ic_filter(ic_filter, ic_filter_threshold);
 B = edge(B, 'canny');
 B = ~logical(B);
-
 subplot(3,3,[4 5 7 8]);
 % set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]); % Maximize figure
-h = image(ic_filter,[clim_lower,clim_upper]);
+h = imagesc(ic_filter,[clim_lower,clim_upper]);
 colormap gray;
 axis image;
 xlabel('x [px]');
@@ -115,7 +122,6 @@ end
                      active_periods(selected_idx,2);
             for k = frames
                 A = movie(:,:,k);
-
                 % Draw IC edges as black
                 A = A - min(A(:));
                 A = B.*A;
