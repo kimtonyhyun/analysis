@@ -7,7 +7,7 @@ function M_norm = norm_by_disk_filter(movie)
 %
 
 M_norm = zeros(size(movie), 'single');
-
+num_frames = size(movie,3);
 % Apply spatial normalization
 hDisk = fspecial('disk', 15);
 m_f = imfilter(movie(:,:,1), hDisk, 'replicate');
