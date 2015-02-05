@@ -10,23 +10,33 @@ mad_scale = 8; % Used for coarse detection of activity in the IC trace
 active_frame_padding = padding; % Use 100 for 20 Hz movie
 time_window = 10; % Width of running window
 
+%Custom Scaling for movie display
+%-----------------------------------------------------------
+%CLim parameters for imagesc(). The movie is scaled to [0,1], so the most
+%natural choice for [clim_lower,clim_upper] = [0,1]. However, it might be
+%set to values in the neighborhood to have darker or higher-contrast image.
+clim_lower = 0;
+clim_upper = 1.4;
 
-%the upper and lower quantiles of the maxMovie matrix to be used in
-%the calculation of the movie normalizer Z
+%the upper and lower quantiles to be used in the calculation of the
+%brigthest and the darkest pixel values in the movie. The aim is to 
+%mitigate the effects of possible outlier pixels.
 quant_upper = 0.99;
 quant_lower = 0.85;
 
-%lower and upper limits for pixel intensity to be used in imagesc()
-clim_lower = -1.5;
-clim_upper = 1.5;
-
-% Calculate constant to devide each frame with while displaying
+% Calculate the 'darkest' pixel(ZLow) and the 'brightest' pixel(ZHigh)
 [height,width,~] = size(movie);
 maxVec = reshape(max(movie,[],3),height*width,1);
-threshUp = quantile(maxVec,quant_upper);
-threshDown = quantile(maxVec,quant_lower);
-Z = mean(maxVec(maxVec>threshDown & maxVec<threshUp));
+minVec = reshape(min(movie,[],3),height*width,1);
 
+threshUpBright = quantile(maxVec,quant_upper);
+threshDownBright = quantile(maxVec,quant_lower);
+
+threshUpDark = quantile(minVec,quant_upper);
+threshDownDark = quantile(minVec,quant_lower);
+
+ZHigh = mean(maxVec(maxVec>threshDownBright & maxVec<threshUpBright));
+ZLow = mean(minVec(minVec>threshDownDark & minVec<threshUpDark));
 
 % Generate the outline of the IC filter
 %------------------------------------------------------------
@@ -35,7 +45,9 @@ B = edge(B, 'canny');
 B = ~logical(B);
 subplot(3,3,[4 5 7 8]);
 % set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]); % Maximize figure
-h = imagesc(ic_filter,[clim_lower,clim_upper]);
+scale = 1 / (max(ic_filter(:))-min(ic_filter(:)));
+shift =  - min(ic_filter(:)) /(max(ic_filter(:))-min(ic_filter(:)));
+h = imagesc(ic_filter*scale+shift,[clim_lower,clim_upper]);
 colormap gray;
 axis image;
 xlabel('x [px]');
@@ -125,7 +137,9 @@ end
                 % Draw IC edges as black
                 A = A - min(A(:));
                 A = B.*A;
-                set(h, 'CData', A/Z);
+                scale = 1/(ZHigh-ZLow);
+                shift = -ZLow/(ZHigh-ZLow);
+                set(h, 'CData', A*scale+shift);
 
                 % Update time indicators and dot
                 set(t1, 'XData', time(k)*[1 1]);
