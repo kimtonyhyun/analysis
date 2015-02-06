@@ -10,15 +10,44 @@ mad_scale = 8; % Used for coarse detection of activity in the IC trace
 active_frame_padding = padding; % Use 100 for 20 Hz movie
 time_window = 10; % Width of running window
 
+%Custom Scaling for movie display
+%-----------------------------------------------------------
+%CLim parameters for imagesc(). The movie is scaled to [0,1], so the most
+%natural choice for [clim_lower,clim_upper] = [0,1]. However, it might be
+%set to values in the neighborhood to have darker or higher-contrast image.
+clim_lower = 0;
+clim_upper = 1.4;
+
+%the upper and lower quantiles to be used in the calculation of the
+%brigthest and the darkest pixel values in the movie. The aim is to 
+%mitigate the effects of possible outlier pixels.
+quant_upper = 0.99;
+quant_lower = 0.85;
+
+% Calculate the 'darkest' pixel(ZLow) and the 'brightest' pixel(ZHigh)
+[height,width,~] = size(movie);
+maxVec = reshape(max(movie,[],3),height*width,1);
+minVec = reshape(min(movie,[],3),height*width,1);
+
+threshUpBright = quantile(maxVec,quant_upper);
+threshDownBright = quantile(maxVec,quant_lower);
+
+threshUpDark = quantile(minVec,quant_upper);
+threshDownDark = quantile(minVec,quant_lower);
+
+ZHigh = mean(maxVec(maxVec>threshDownBright & maxVec<threshUpBright));
+ZLow = mean(minVec(minVec>threshDownDark & minVec<threshUpDark));
+
 % Generate the outline of the IC filter
 %------------------------------------------------------------
 B = threshold_ic_filter(ic_filter, ic_filter_threshold);
 B = edge(B, 'canny');
 B = ~logical(B);
-
 subplot(3,3,[4 5 7 8]);
 % set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]); % Maximize figure
-h = imagesc(ic_filter);
+scale = 1 / (max(ic_filter(:))-min(ic_filter(:)));
+shift =  - min(ic_filter(:)) /(max(ic_filter(:))-min(ic_filter(:)));
+h = imagesc(ic_filter*scale+shift,[clim_lower,clim_upper]);
 colormap gray;
 axis image;
 xlabel('x [px]');
@@ -105,11 +134,12 @@ end
                      active_periods(selected_idx,2);
             for k = frames
                 A = movie(:,:,k);
-
                 % Draw IC edges as black
                 A = A - min(A(:));
                 A = B.*A;
-                set(h, 'CData', A);
+                scale = 1/(ZHigh-ZLow);
+                shift = -ZLow/(ZHigh-ZLow);
+                set(h, 'CData', A*scale+shift);
 
                 % Update time indicators and dot
                 set(t1, 'XData', time(k)*[1 1]);
