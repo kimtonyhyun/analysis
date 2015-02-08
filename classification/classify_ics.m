@@ -14,22 +14,39 @@ function classify_ics(sources, ic_dir)
 % Specify ICA
 %------------------------------------------------------------
 ica_source = get_most_recent_file(ic_dir, 'ica_*.mat');
-
 load(ica_source, 'ica_info', 'ica_filters', 'ica_traces');
 
 % Load data
 %------------------------------------------------------------
 fprintf('  %s: Loading "%s" to memory...\n', datestr(now), sources.miniscope);
-movie = load_movie(sources.miniscope);
+M = load_movie(sources.miniscope);
+[height, width, num_frames] = size(M);
 fprintf('  %s: Done!\n', datestr(now));
 
-time = 1/sources.fps*((1:size(ica_traces,1))-1); %#ok<*NODEF>
+fps = sources.fps;
+time = 1/fps*((1:size(ica_traces,1))-1); %#ok<*NODEF>
 num_ics = ica_info.num_ICs;
+
+% Compute a common scaling for the movie
+maxVec = reshape(max(M,[],3), height*width, 1);
+minVec = reshape(min(M,[],3), height*width, 1);
+rangeVec = maxVec - minVec;
+movie_clim = median(rangeVec)*[-0.1 0.25];
+clear maxVec minVec rangeVec;
+fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
+    datestr(now), movie_clim(1), movie_clim(2));
 
 % Get trial info from maze output (consistent as of Cohort 9)
 trial_frame_indices = get_trial_frame_indices(sources.maze);
 compressed_indices = compress_frame_indices(trial_frame_indices, sources.trim);
 compressed_indices = compressed_indices(:,[1 end]); % [Start end]
+
+% Check for movie frame and index mismatch
+movie_compind_match = (num_frames == compressed_indices(end,2));
+if (~movie_compind_match)
+    fprintf('  %s: Number of movie frames and compressed indices do not match!\n',...
+        datestr(now));
+end
 
 % Classify ICs
 %------------------------------------------------------------
@@ -42,11 +59,16 @@ while (ic_idx <= num_ics)
     ic_filter = ica_filters(:, :, ic_idx);
     trace = ica_traces(:, ic_idx);
     
-    % First, show the trace
-    view_trace(time, trace, compressed_indices);
-    title(sprintf('Trace %d of %d', ic_idx, num_ics));
+    % If frame indices are consistent with the movie, then show phase-
+    %   based analysis. Otherwise, just show the IC pair.
+    if (movie_compind_match)
+        view_trace(time, trace, compressed_indices);
+    else
+        view_ic_pair(time, trace, ic_filter);
+    end
+    title(sprintf('IC %d of %d', ic_idx, num_ics));
     
-    % Ask the user to classify the trace
+    % Ask the user to classify the IC
     prompt = sprintf('Classifier (IC %d/%d) >> ', ...
                         ic_idx, num_ics);
     resp = strtrim(input(prompt, 's'));
@@ -64,7 +86,7 @@ while (ic_idx <= num_ics)
             % Classication options
             %------------------------------------------------------------
             case {'p', 'c'} % Cell
-                view_ic_over_movie_interactively(ic_filter, time, trace, movie, 100);
+                view_ic_over_movie_interactively(ic_filter, time, trace, M, fps, movie_clim);
                 resp2 = input(sprintf('  Confirm classification ("%s") >> ', resp), 's');
                 resp2 = lower(strtrim(resp2));
                 if (strcmp(resp, resp2))
