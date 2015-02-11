@@ -111,7 +111,7 @@ end
                      active_periods(selected_idx,2);
             for k = frames
                 A = movie(:,:,k);
-                A = A - mean(A(:));
+               % A = A - mean(A(:));
                 set(h, 'CData', A);
 
                 % Update time indicators and dot

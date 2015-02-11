@@ -30,8 +30,9 @@ num_ics = ica_info.num_ICs;
 % Compute a common scaling for the movie
 maxVec = reshape(max(M,[],3), height*width, 1);
 minVec = reshape(min(M,[],3), height*width, 1);
-rangeVec = maxVec - minVec;
-movie_clim = median(rangeVec)*[-0.1 0.25];
+quantsMax = quantile(maxVec,[0.85,0.87,0.9,0.93,0.95]);
+quantsMin = quantile(minVec,[0.85,0.87,0.9,0.93,0.95]);
+movie_clim = [mean(quantsMin),mean(quantsMax)]*1.1;
 clear maxVec minVec rangeVec;
 fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
     datestr(now), movie_clim(1), movie_clim(2));
