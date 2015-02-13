@@ -10,7 +10,7 @@ function M_b = bin_movie_in_time(M, bin_factor)
 num_downsampled_frames = floor(num_frames/bin_factor); % Note truncation
 fprintf('Actual bin factor: %.3f\n', num_frames/num_downsampled_frames);
 
-M_b = zeros(height, width, num_downsampled_frames, class(M));
+M_b = zeros(height, width, num_downsampled_frames, 'single');
 for k = 1:num_downsampled_frames
     if (mod(k, 1000)==0)
         fprintf('  Frames %d / %d downsampled\n', k, num_downsampled_frames);
