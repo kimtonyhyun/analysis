@@ -18,6 +18,7 @@ daspect([1 1 z_range/max(h,w)]);
 xlabel('x [px]');
 ylabel('y [px]');
 set(gca, 'YDir', 'Reverse');
+view([0 90]);
 zlabel('IC filter [a.u.]');
 
 subplot(3,1,1);
