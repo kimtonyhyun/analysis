@@ -17,9 +17,11 @@ while k<length(data_binary)
         end_seq = k-1;
         %after the end of sequence calculate max and add it to localmax
         seq = data(begin_seq:end_seq); %magnitudes of the events in the sequence
-        [~,dum] = max(seq);
+        [maxval,dum] = max(seq);
         idx_max = dum+begin_seq-1;
-        localmax = [localmax,idx_max]; 
+        if maxval>threshold*1.1
+            localmax = [localmax,idx_max]; %#ok
+        end        
     else %skip through 0's
         k = k+1;
     end
