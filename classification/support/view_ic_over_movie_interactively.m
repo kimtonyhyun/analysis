@@ -89,16 +89,28 @@ hold off;
 prompt = 'IC viewer >> ';
 resp = strtrim(input(prompt, 's'));
 val = str2double(resp);
-while (~isnan(val) || strcmp(resp, 'a')) % Is a number
-    if (strcmp(resp, 'a')) % Display all
-        display_active_period(1:num_active_periods)
-    else
+while (1)
+    if (~isnan(val)) % Is a number
         if ((1 <= val) && (val <= num_active_periods))
             display_active_period(val);
         else
-            fprintf('  Sorry, %d is not a valid period index for this IC \n', val);
+            fprintf('  Sorry, %d is not a valid period index for this IC\n', val);
+        end
+    else % Not a number
+        switch (lower(resp))
+            case {'', 'q'} % "quit"
+                break;
+            case 'a' % "all"
+                display_active_period(1:num_active_periods);
+            case 'h' % "higher contrast"
+                
+            case 'l' % "lower contrast"
+                
+            otherwise
+                fprintf('  Sorry, could not parse "%s"\n', resp);
         end
     end
+
     resp = strtrim(input(prompt, 's'));
     val = str2double(resp);
 end
