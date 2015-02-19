@@ -28,6 +28,11 @@ for i = 1:length(boundaries)
 end
 hold off;
 
+% Compute the center of mass of the filter
+[height, width] = size(B);
+COM = [(1:width)*sum(B,1)' (1:height)*sum(B,2)]/sum(B(:)); % [x y]
+zoom_half_width = min([width, height])/20;
+
 % Compute the active portions of the trace
 %------------------------------------------------------------
 x_range = [time(1) time(end)];
@@ -89,10 +94,15 @@ hold off;
 prompt = 'IC viewer >> ';
 resp = lower(strtrim(input(prompt, 's')));
 val = str2double(resp);
+
+% State of interaction loop
+state.last_val = [];
+state.zoomed = false;
 while (1)
     if (~isnan(val)) % Is a number
         if ((1 <= val) && (val <= num_active_periods))
             display_active_period(val);
+            state.last_val = val;
         else
             fprintf('  Sorry, %d is not a valid period index for this IC\n', val);
         end
@@ -100,10 +110,29 @@ while (1)
         switch (resp)
             case {'', 'q'} % "quit"
                 break;
+                
             case 'a' % "all"
                 display_active_period(1:num_active_periods);
+                
+            case 'r' % "replay"
+                if ~isempty(state.last_val)
+                    display_active_period(state.last_val);
+                end
+                
+            case 'z' % "zoom"
+                subplot(3,3,[4 5 7 8]); % Focus on the movie subplot
+                if (state.zoomed) % Return to original view
+                    xlim([1 width]);
+                    ylim([1 height]);
+                    state.zoomed = false;
+                else
+                    xlim(COM(1)+zoom_half_width*[-1 1]);
+                    ylim(COM(2)+zoom_half_width*[-1 1]);
+                    state.zoomed = true;
+                end
+                    
             case {'h', 'l'} % "higher/lower contrast"
-                subplot(3,3,[4 5 7 8]); % Focus on the movie axis
+                subplot(3,3,[4 5 7 8]); % Focus on the movie subplot
                 c_range = diff(movie_clim);
                 if (strcmp(resp, 'h'))
                     movie_clim = movie_clim + c_range*[0.1 -0.1];
@@ -115,6 +144,7 @@ while (1)
                         movie_clim(1), movie_clim(2));
                 end
                 set(gca, 'CLim', movie_clim);
+
             otherwise
                 fprintf('  Sorry, could not parse "%s"\n', resp);
         end
