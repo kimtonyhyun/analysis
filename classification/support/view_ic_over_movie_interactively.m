@@ -1,4 +1,4 @@
-function resp = view_ic_over_movie_interactively(ic_filter, time, trace, movie, fps, movie_clim)
+function [resp, movie_clim] = view_ic_over_movie_interactively(ic_filter, time, trace, movie, fps, movie_clim)
 % Visually inspect the active portions of an IC trace side-by-side with
 %   the provided miniscope movie
 %
@@ -87,7 +87,7 @@ hold off;
 %   Display the user-specified active period
 %------------------------------------------------------------
 prompt = 'IC viewer >> ';
-resp = strtrim(input(prompt, 's'));
+resp = lower(strtrim(input(prompt, 's')));
 val = str2double(resp);
 while (1)
     if (~isnan(val)) % Is a number
@@ -97,21 +97,30 @@ while (1)
             fprintf('  Sorry, %d is not a valid period index for this IC\n', val);
         end
     else % Not a number
-        switch (lower(resp))
+        switch (resp)
             case {'', 'q'} % "quit"
                 break;
             case 'a' % "all"
                 display_active_period(1:num_active_periods);
-            case 'h' % "higher contrast"
-                
-            case 'l' % "lower contrast"
-                
+            case {'h', 'l'} % "higher/lower contrast"
+                subplot(3,3,[4 5 7 8]); % Focus on the movie axis
+                c_range = diff(movie_clim);
+                if (strcmp(resp, 'h'))
+                    movie_clim = movie_clim + c_range*[0.1 -0.1];
+                    fprintf('  Increased contrast (new CLim=[%.3f %.3f])\n',...
+                        movie_clim(1), movie_clim(2));
+                else
+                    movie_clim = movie_clim + c_range*[-0.1 0.1];
+                    fprintf('  Decreased contrast (new CLim=[%.3f %.3f])\n',...
+                        movie_clim(1), movie_clim(2));
+                end
+                set(gca, 'CLim', movie_clim);
             otherwise
                 fprintf('  Sorry, could not parse "%s"\n', resp);
         end
     end
 
-    resp = strtrim(input(prompt, 's'));
+    resp = lower(strtrim(input(prompt, 's')));
     val = str2double(resp);
 end
 

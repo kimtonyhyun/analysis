@@ -87,7 +87,7 @@ while (ic_idx <= num_ics)
             % Classication options
             %------------------------------------------------------------
             case {'p', 'c'} % Cell
-                view_ic_over_movie_interactively(ic_filter, time, trace, M, fps, movie_clim);
+                [~, movie_clim] = view_ic_over_movie_interactively(ic_filter, time, trace, M, fps, movie_clim);
                 resp2 = input(sprintf('  Confirm classification ("%s") >> ', resp), 's');
                 resp2 = lower(strtrim(resp2));
                 if (strcmp(resp, resp2))
