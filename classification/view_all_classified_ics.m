@@ -14,9 +14,7 @@ figure;
 load(ica_mat);
 
 % Pull out classification data
-fid = fopen(class_file);
-results = textscan(fid,'%s %s %s %s');
-are_cells = results{1,2};
+class = load_classification(class_file);
 
 % Draw background image (sum of all IC filters)
 h = imagesc(sum(ica_filters,3));
@@ -24,13 +22,15 @@ colormap gray;
 axis image;
 xlabel('x [px]');
 ylabel('y [px]');
-title(['Classified ICs for ',pwd, ' from ',class_file])
+title_pwd = strrep(pwd, '_','\_');
+title_class_file = strrep(class_file, '_','\_');
+title(['Classified ICs for ',title_pwd, ' from ',title_class_file])
 
 hold on;
 colors = ['g'; 'r'];
 
 % Draw all filter outlines (green = cell; red = not cell)
-for ic_idx = 1:length(are_cells)
+for ic_idx = 1:length(class)
     % Generate the outline of the IC filter
     ic_filter_threshold = 0.3;
     ic_filter = ica_filters(:,:,ic_idx);
@@ -38,7 +38,7 @@ for ic_idx = 1:length(are_cells)
     boundaries = bwboundaries(B, 'noholes');
 
     % Setup colors
-    if strcmp(are_cells(ic_idx),'cell')
+    if strcmp(class(ic_idx),'cell')
         line_color = colors(1);
     else
         line_color = colors(2);
