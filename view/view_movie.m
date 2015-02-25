@@ -10,7 +10,8 @@ end
 
 num_frames = size(M,3);
 
-h = imagesc(M(:,:,1));
+movie_clim = compute_movie_scale(M);
+h = imagesc(M(:,:,1), movie_clim);
 axis image;
 colormap gray;
 xlabel('x [px]');

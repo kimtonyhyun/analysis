@@ -20,7 +20,7 @@ load(ica_source, 'ica_info', 'ica_filters', 'ica_traces');
 %------------------------------------------------------------
 fprintf('  %s: Loading "%s" to memory...\n', datestr(now), sources.miniscope);
 M = load_movie(sources.miniscope);
-[height, width, num_frames] = size(M);
+num_frames = size(M,3);
 fprintf('  %s: Done!\n', datestr(now));
 
 fps = sources.fps;
@@ -28,12 +28,7 @@ time = 1/fps*((1:size(ica_traces,1))-1); %#ok<*NODEF>
 num_ics = ica_info.num_ICs;
 
 % Compute a common scaling for the movie
-maxVec = reshape(max(M,[],3), height*width, 1);
-minVec = reshape(min(M,[],3), height*width, 1);
-quantsMax = quantile(maxVec,[0.85,0.87,0.9,0.93,0.95]);
-quantsMin = quantile(minVec,[0.85,0.87,0.9,0.93,0.95]);
-movie_clim = [mean(quantsMin),mean(quantsMax)]*1.1;
-clear maxVec minVec rangeVec;
+movie_clim = compute_movie_scale(M);
 fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
     datestr(now), movie_clim(1), movie_clim(2));
 
