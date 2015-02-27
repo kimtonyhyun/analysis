@@ -1,4 +1,4 @@
-function resp = view_ic_over_movie_interactively(ic_filter, time, trace, movie, padding)
+function [resp, movie_clim] = view_ic_over_movie_interactively(ic_filter, time, trace, movie, fps, movie_clim)
 % Visually inspect the active portions of an IC trace side-by-side with
 %   the provided miniscope movie
 %
@@ -7,22 +7,26 @@ function resp = view_ic_over_movie_interactively(ic_filter, time, trace, movie, 
 % Some parameters
 ic_filter_threshold = 0.3; % For generating the IC filter outline
 mad_scale = 8; % Used for coarse detection of activity in the IC trace
-active_frame_padding = padding; % Use 100 for 20 Hz movie
+active_frame_padding = 5*fps; % Use 100 for 20 Hz movie
 time_window = 10; % Width of running window
 
 % Generate the outline of the IC filter
 %------------------------------------------------------------
 B = threshold_ic_filter(ic_filter, ic_filter_threshold);
-B = edge(B, 'canny');
-B = ~logical(B);
+boundaries = bwboundaries(B, 'noholes');
 
 subplot(3,3,[4 5 7 8]);
-% set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]); % Maximize figure
-h = imagesc(ic_filter);
+h = imagesc(ic_filter, movie_clim);
 colormap gray;
 axis image;
 xlabel('x [px]');
 ylabel('y [px]');
+hold on;
+for i = 1:length(boundaries)
+    boundary = boundaries{i};
+    plot(boundary(:,2), boundary(:,1), 'r', 'LineWidth', 2);
+end
+hold off;
 
 % Compute the active portions of the trace
 %------------------------------------------------------------
@@ -58,6 +62,7 @@ ylim(y_range);
 t1 = plot(time(1)*[1 1], y_range, 'k'); % Time indicator
 xlabel('Time [s]');
 ylabel('Signal [a.u.]');
+hold off;
 
 % Prepare running trace
 a = subplot(3,3,[6 9]);
@@ -76,28 +81,50 @@ d = plot(time(1), trace(1), 'or',...
             'MarkerSize', 12); % Dot
 xlabel('Time [s]');
 ylabel('Signal [a.u.]');
+hold off;
 
 % Interaction loop:
 %   Display the user-specified active period
 %------------------------------------------------------------
 prompt = 'IC viewer >> ';
-resp = strtrim(input(prompt, 's'));
+resp = lower(strtrim(input(prompt, 's')));
 val = str2double(resp);
-while (~isnan(val) || strcmp(resp, 'a')) % Is a number
-    if (strcmp(resp, 'a')) % Display all
-        display_active_period(1:num_active_periods)
-    else
+while (1)
+    if (~isnan(val)) % Is a number
         if ((1 <= val) && (val <= num_active_periods))
             display_active_period(val);
         else
-            fprintf('  Sorry, %d is not a valid period index for this IC \n', val);
+            fprintf('  Sorry, %d is not a valid period index for this IC\n', val);
+        end
+    else % Not a number
+        switch (resp)
+            case {'', 'q'} % "quit"
+                break;
+            case 'a' % "all"
+                display_active_period(1:num_active_periods);
+            case {'h', 'l'} % "higher/lower contrast"
+                subplot(3,3,[4 5 7 8]); % Focus on the movie axis
+                c_range = diff(movie_clim);
+                if (strcmp(resp, 'h'))
+                    movie_clim = movie_clim + c_range*[0.1 -0.1];
+                    fprintf('  Increased contrast (new CLim=[%.3f %.3f])\n',...
+                        movie_clim(1), movie_clim(2));
+                else
+                    movie_clim = movie_clim + c_range*[-0.1 0.1];
+                    fprintf('  Decreased contrast (new CLim=[%.3f %.3f])\n',...
+                        movie_clim(1), movie_clim(2));
+                end
+                set(gca, 'CLim', movie_clim);
+            otherwise
+                fprintf('  Sorry, could not parse "%s"\n', resp);
         end
     end
-    resp = strtrim(input(prompt, 's'));
+
+    resp = lower(strtrim(input(prompt, 's')));
     val = str2double(resp);
 end
 
-    % Display subroutine
+    % Display subroutine. Note that frames are mean subtracted!
     %------------------------------------------------------------
     function display_active_period(selected_indices)
         for selected_idx = selected_indices
@@ -105,10 +132,7 @@ end
                      active_periods(selected_idx,2);
             for k = frames
                 A = movie(:,:,k);
-
-                % Draw IC edges as black
-                A = A - min(A(:));
-                A = B.*A;
+               % A = A - mean(A(:));
                 set(h, 'CData', A);
 
                 % Update time indicators and dot

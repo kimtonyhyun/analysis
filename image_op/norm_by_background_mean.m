@@ -31,10 +31,13 @@ for k = 1:numFrames
     if (mod(k,1000)==0)
         fprintf('  Frames %d of %d done\n', k, numFrames);
     end
-    Frame = reshape(movie(:,:,k),height*width,1);
-    thresh_lower = quantile(Frame,quant_lower);
-    thresh_upper = quantile(Frame,quant_upper);
-    Z = mean(Frame(Frame>thresh_lower & Frame<thresh_upper));
-    M_norm(:,:,k) = movie(:,:,k)/Z; %normalize by Z
+    frame = reshape(movie(:,:,k),height*width,1);
+    if ((quant_lower==0) && (quant_upper==1)) % Use simple mean
+        Z = mean(frame(:));
+    else
+        thresh = quantile(frame, [quant_lower quant_upper]);
+        Z = mean(frame(frame>thresh(1) & frame<thresh(2)));
+    end
+    M_norm(:,:,k) = movie(:,:,k)/Z;
 end
 
