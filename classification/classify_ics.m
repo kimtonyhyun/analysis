@@ -5,11 +5,11 @@ function classify_ics(sources, ic_dir)
 %   classify_ics(sources, 'ica001')
 % where sources is a struct with the following parameters:
 %   sources.miniscope: Miniscope recording (TIF or HDF5)
+%   sources.time_bin: (optional) Indicate if the recording has been time binned
 %   sources.fps:  Frame rate of the recording
 %   sources.trim: Trim parameters of the recording concatenation [1 x 2]
 %   sources.maze: Output from the plus maze (TXT)
 %
-% 2015 01 31 Tony Hyun Kim
 
 % Specify ICA
 %------------------------------------------------------------
@@ -36,6 +36,11 @@ fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
 trial_frame_indices = get_trial_frame_indices(sources.maze);
 compressed_indices = compress_frame_indices(trial_frame_indices, sources.trim);
 compressed_indices = compressed_indices(:,[1 end]); % [Start end]
+
+% Check if temporal binning has been applied
+if isfield(sources, 'time_bin')
+    compressed_indices = bin_frame_indices(compressed_indices, sources.time_bin);
+end
 
 % Check for movie frame and index mismatch
 movie_compind_match = (num_frames == compressed_indices(end,2));
