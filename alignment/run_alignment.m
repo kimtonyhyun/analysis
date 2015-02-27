@@ -21,7 +21,7 @@ function [match_1to2, match_2to1, info] = run_alignment(ic_source_dir1, ic_sourc
 %------------------------------------------------------------
 fprintf('run_alignment: Beginning alignment of %s and %s\n',...
     ic_source_dir1, ic_source_dir2);
-[affine_info, masks1, masks2] = compute_affine_transform(ic_source_dir1, ic_source_dir2);
+[affine_info, masks1, masks2_tform] = compute_affine_transform(ic_source_dir1, ic_source_dir2);
 
 % Compute matrix of mask overlaps
 %   Note that the overlap matrix is non-symmetric!
@@ -34,7 +34,7 @@ for i = 1:affine_info.num_ics1
             datestr(now), 100*i/affine_info.num_ics1);
     end
     for j = 1:affine_info.num_ics2
-        M(i,j) = compute_mask_overlap(masks1{i}, masks2{j});
+        M(i,j) = compute_mask_overlap(masks1{i}, masks2_tform{j});
     end
 end
 fprintf('  %s: Overlap matrix completed!\n', datestr(now));
@@ -76,6 +76,6 @@ info.ic_source1 = ic_source_dir1;
 info.ic_source2 = ic_source_dir2;
 info.affine = affine_info;
 info.masks1 = masks1;
-info.masks2 = masks2;
+info.masks2 = masks2_tform;
 info.overlap_threshold = overlap_threshold;
 info.overlap_matrix = M;
