@@ -58,7 +58,7 @@ while (~all(sel_ics_idx == num_ics_for_alignment))
     end
     
     ic_idx = get_selected_ic_idx(bounds{source_idx}, click_xy);
-    if ~isempty(ic_idx)
+    if ~isempty(ic_idx) % Hit
         sel_idx = sel_ics_idx(source_idx) + 1;
         if (sel_idx <= num_ics_for_alignment)
             fill(bounds{source_idx}{ic_idx}(:,1),...
@@ -77,7 +77,7 @@ while (~all(sel_ics_idx == num_ics_for_alignment))
             fprintf('  No more ICs needed from %s!\n',...
                 sources{source_idx});
         end
-    else
+    else % No hit
         fprintf('  No IC detected at cursor (%s)!\n',...
             sources{source_idx});
     end
@@ -123,6 +123,8 @@ masks2 = masks{2};
 
 info.source1 = source_dir1;
 info.source2 = source_dir2;
+info.num_ics1 = s1.ica_info.num_ICs;
+info.num_ics2 = s2.ica_info.num_ICs;
 info.num_ics_for_alignment = num_ics_for_alignment;
 info.sel_ics = sel_ics;
 info.sel_ics_centers  = sel_ics_centers;
