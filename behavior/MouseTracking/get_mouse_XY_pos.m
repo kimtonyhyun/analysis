@@ -37,7 +37,7 @@ function [ centroids ] = get_mouse_XY_pos( movie )
 %                       frame_indices(idx,1), frame_indices(idx,2)));
 %         axis image; 
 %         hold on
-%         c_old = [0 0];
+        c_old = [0 0];
 
 %         % plot initial centroids on Original Video
 %         k = plot(0,0,'k*');
