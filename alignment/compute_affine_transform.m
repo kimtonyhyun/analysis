@@ -1,4 +1,4 @@
-function [masks1, masks2, info] = compute_affine_transform(source_dir1, source_dir2)
+function [info, masks1, masks2] = compute_affine_transform(source_dir1, source_dir2)
 % IC map alignment based on user-defined control points.
 %
 % Inputs:
@@ -6,12 +6,12 @@ function [masks1, masks2, info] = compute_affine_transform(source_dir1, source_d
 %       classification (class_*.txt) outputs
 %
 % Outputs:
+%   info: Struct containing results of the affine transformation fit
 %   masks1: Cell array containing thresholded IC masks for source 1
 %   masks2: Cell array containing _transformed_ thresholded IC masks
 %           for source 2. (Note that the image dimensions match the
 %           dimensions of source 1 masks!)
 %
-% Tony Hyun Kim (2015 Feb 26)
 
 num_ics_for_alignment = 3;
 ic_filter_threshold = 0.3;
@@ -41,7 +41,7 @@ title(strrep(sources{2},'_','\_'));
 % Allow the user to select the ICs used in matching
 %------------------------------------------------------------
 sel_colors = 'ybk';
-fprintf('Please select %d ICs from each dataset (in order)\n',...
+fprintf('compute_affine_transform: Please select %d ICs from each dataset (in order)\n',...
     num_ics_for_alignment);
 
 sel_ics = zeros(num_ics_for_alignment,2); % List of selected ICs
@@ -66,7 +66,7 @@ while (~all(sel_ics_idx == num_ics_for_alignment))
                  sel_colors(mod(sel_idx,length(sel_colors))+1));
 
             props = regionprops(masks{source_idx}{ic_idx},'centroid');
-            fprintf('%s: IC %d selected (at [%.1f %.1f])!\n',...
+            fprintf('  %s: IC %d selected (at [%.1f %.1f])!\n',...
                 sources{source_idx}, ic_idx,...
                 props.Centroid(1), props.Centroid(2));
             
@@ -74,11 +74,11 @@ while (~all(sel_ics_idx == num_ics_for_alignment))
             sel_ics_idx(source_idx) = sel_idx;
             sel_ics_centers(sel_idx,:,source_idx) = props.Centroid;
         else
-            fprintf('  No more ICs needed from %s!\n',...
+            fprintf('  %s: No more ICs needed!\n',...
                 sources{source_idx});
         end
     else % No hit
-        fprintf('  No IC detected at cursor (%s)!\n',...
+        fprintf('  %s: No IC detected at cursor!\n',...
             sources{source_idx});
     end
 end
@@ -126,6 +126,7 @@ info.source2 = source_dir2;
 info.num_ics1 = s1.ica_info.num_ICs;
 info.num_ics2 = s2.ica_info.num_ICs;
 info.num_ics_for_alignment = num_ics_for_alignment;
+info.ic_filter_threshold = ic_filter_threshold;
 info.sel_ics = sel_ics;
 info.sel_ics_centers  = sel_ics_centers;
 info.tform = tform;
