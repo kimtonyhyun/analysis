@@ -20,11 +20,13 @@ function trim_behavior_video(plusmaze_source, behavior_source, trim)
 % Get the trial frames (beginning and end) according to plusmaze output and
 % trim the beginning and end
 frame_indices = get_trial_frame_indices(plusmaze_source);
-trial_frame_indices = [frame_indices(:,1)+trim(1) frame_indices(:,4)-trim(2)];
-num_trials = size(trial_frame_indices,1);
-num_trial_frames = trial_frame_indices(num_trials,2); % Very last frame
+num_trials = size(frame_indices,1);
+num_trial_frames = frame_indices(num_trials,4); % Very last frame
 fprintf('  PlusMaze output (%s) has %d frames\n',...
     plusmaze_source, num_trial_frames);
+
+% Frames to keep
+trial_frame_indices = [frame_indices(:,1)+trim(1) frame_indices(:,4)-trim(2)];
 
 % Expected number of trimmed frames
 num_trimmed_frames = sum(diff(trial_frame_indices,1,2)+1);
