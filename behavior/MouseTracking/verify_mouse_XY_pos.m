@@ -13,6 +13,7 @@ function verify_mouse_XY_pos( movie, centroids )
     num_frames = behavior_vid.NumberofFrames;
 
     % plot initial image
+    figure(1);
     image = read(behavior_vid,1);
     h = imagesc(image);
     title('MouseTracker');
@@ -23,11 +24,16 @@ function verify_mouse_XY_pos( movie, centroids )
     j = plot(0,0,'g*');
         
     for frame_idx = 1:num_frames
+        
+        fprintf('  Processing frame %d of %d (%s)\n',...
+                frame_idx,num_frames,datestr(clock));
+                
         image = read(behavior_vid,frame_idx);
         set(h,'CData',image);
-        
+                
         this_centroid = centroids{frame_idx};        
         set(j,'XData',this_centroid(1),'YData',this_centroid(2)); 
+        pause(0.0001);
     end
 end
 

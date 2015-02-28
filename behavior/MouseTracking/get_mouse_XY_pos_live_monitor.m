@@ -7,6 +7,7 @@ function [ centroids ] = get_mouse_XY_pos_live_monitor( movie )
 %
 % Returns cell (centroids) where each row is an (x,y) coordinate of the
 %   mouse. Length of cell = number of frames in moive
+% Plots Original Movie and Tracker Movie with centroids
 %
 % Notes: Analyzes movie in chunks of 500 frames (smaller memory load)
 %
