@@ -3,8 +3,11 @@ function binned_frame_indices = bin_frame_indices(frame_indices, bin_factor)
 %   `bin_movie_in_time`.
 % 
 % Inputs:
-%   frame_indices: [num_trials x 4] matrix where the i-th row indicates the
-%       [start open-gate close-gate end] frame indices of trial i.
+%   frame_indices: [num_trials x k] matrix where the i-th row indicates the
+%       frame indices of trial i, where k could be:
+%           k = 4: [start open-gate close-gate end]
+%           k = 2: [start end]
+%
 %   bin_factor: Integer indicating the binning factor
 %
 % Output:
