@@ -3,12 +3,16 @@ function [ centroids ] = get_mouse_XY_pos( movie )
 %   video ( movie )
 %   
 % Input:
-%   movie: Behavior video (m4v)
+%   movie: Behavior video (m4v); movie should be cropped (wavy curtain
+%   leads to fall centroids (haven't found another way to fix this)
 %
 % Returns cell (centroids) where each row is an (x,y) coordinate of the
-%   mouse. Length of cell = number of frames in moive
+%   mouse. Length of cell = number of frames in movie
 %
 % Notes: Analyzes movie in chunks of 500 frames (smaller memory load)
+%   *** read function does not work properly on Linux, so unfortunately
+%   have to run this on a Windows machine ***
+%   *** Not very fast, but only have to run once; ~54K frames = ~40 min
 %
 % 2015-02-26 Fori Wang
 

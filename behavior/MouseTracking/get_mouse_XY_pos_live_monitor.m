@@ -2,14 +2,18 @@ function [ centroids ] = get_mouse_XY_pos_live_monitor( movie )
 % Extract the X,Y positions ( centroids ) of the mouse from the behavior
 %   video ( movie )
 %   
+% live_monitor Plots Original Movie and Tracker Movie with centroids
+%
 % Input:
 %   movie: Behavior video (m4v)
 %
 % Returns cell (centroids) where each row is an (x,y) coordinate of the
 %   mouse. Length of cell = number of frames in moive
-% Plots Original Movie and Tracker Movie with centroids
 %
 % Notes: Analyzes movie in chunks of 500 frames (smaller memory load)
+%   *** read function does not work properly on Linux, so unfortunately
+%   have to run this on a Windows machine ***
+%   *** Runs slow on Windows ***
 %
 % 2015-02-26 Fori Wang
 
