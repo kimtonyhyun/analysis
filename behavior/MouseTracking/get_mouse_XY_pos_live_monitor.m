@@ -63,10 +63,7 @@ function [ centroids ] = get_mouse_XY_pos_live_monitor( movie )
 
         for frame_idx = frame_indices(idx,1)-(frame_indices(idx,1)-1):...
                         frame_indices(idx,2)-(frame_indices(idx,1)-1)
-           fprintf('  Processing frame %d until %d (%s)\n',...
-                frame_indices(idx,1)+frame_idx-1,...
-                frame_indices(idx,2), datestr(clock));
-
+           
            % Update original image CData
             image = video(:,:,:,frame_idx);
             set(h,'CData',image); 
