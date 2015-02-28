@@ -1,6 +1,15 @@
 function binned_frame_indices = bin_frame_indices(frame_indices, bin_factor)
 % Bin the frame indices temporally by `bin_factor`. See also
 %   `bin_movie_in_time`.
+% 
+% Inputs:
+%   frame_indices: [num_trials x 4] matrix where the i-th row indicates the
+%       [start open-gate close-gate end] frame indices of trial i.
+%   bin_factor: Integer indicating the binning factor
+%
+% Output:
+%   binned_frame_indices: Same dimensions as frame_indices, but where the
+%       indices have been converted to account for temporal binning
 
 % Number of frames in the pre-binned movie
 num_frames = frame_indices(end,end);
