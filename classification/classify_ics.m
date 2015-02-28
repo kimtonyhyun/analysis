@@ -120,6 +120,11 @@ while (ic_idx <= num_ics)
                     class = load_classification(full_file);
                     fprintf('  Loaded classification from "%s"\n', file);
                 end
+            case 't' % "Take" screenshot
+                screenshot_name = sprintf('ic%03d.png', ic_idx);
+                screenshot_name = fullfile(ic_dir, screenshot_name);
+                print('-dpng', screenshot_name);
+                fprintf('  Plot saved to %s\n', screenshot_name);
             otherwise
                 fprintf('  Could not parse "%s"\n', resp);
         end
