@@ -14,7 +14,7 @@ function centroid_plotter( movie, centroids_mat )
     behavior_vid = VideoReader(movie);
     image = read(behavior_vid,1); %grab first frame
     imagesc(image)
-    title('Centroit Plotter')
+    title('Centroid Plotter')
     axis image
     hold on
 
