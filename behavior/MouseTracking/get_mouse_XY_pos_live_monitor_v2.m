@@ -1,4 +1,4 @@
-function [ centroids ] = get_mouse_XY_pos( movie )
+function [ centroids ] = get_mouse_XY_pos_live_monitor_v2( movie )
 % Extract the X,Y positions ( centroids ) of the mouse from the behavior
 %   video ( movie )
 %   
@@ -10,7 +10,7 @@ function [ centroids ] = get_mouse_XY_pos( movie )
 %   mouse. 1st column = X, 2nd column = Y. Length of matrix =
 %   number of frames in movie
 %
-% Notes: Analyzes movie in chunks of 500 frames (smaller memory load)
+% Notes: Analyzes movie in chunks of 1000 frames (smaller memory load)
 %   *** read function does not work properly on Linux, so unfortunately
 %   have to run this on a Windows machine ***
 %   *** Not very fast, but only have to run once; ~54K frames = ~40 min
@@ -28,7 +28,6 @@ function [ centroids ] = get_mouse_XY_pos( movie )
     
     % setup background image: average of 5000 frames
     bg_vid = read(behavior_vid,[1 5000]);
-    bg_vid = squeeze(bg_vid(:,:,1,:));
     bg_image = mean(bg_vid,3);
     
     for idx = 1:length(frame_indices)
@@ -38,17 +37,15 @@ function [ centroids ] = get_mouse_XY_pos( movie )
 
         % read in all of the frames for the trial at the beginning
         frame_range = [frame_indices(idx,1) frame_indices(idx,2)];
-        video = read(behavior_vid,frame_range);
-        video = squeeze(video(:,:,1,:));
-        
+        video = read(behavior_vid,frame_range);        
               
         % plot original image (original movie on the left)
         subplot(121);
-        image = video(:,:,1);
+        image = video(:,:,:,1);
         h = imagesc(image);
         title(sprintf('Original: Frames %d - %d',...
                       frame_indices(idx,1), frame_indices(idx,2)));
-        axis image; 
+        axis image; colormap gray;
         hold on
         c_old = [0 0];
 
@@ -61,7 +58,7 @@ function [ centroids ] = get_mouse_XY_pos( movie )
         title(sprintf('Tracker: Frames %d - %d',...
                       frame_indices(idx,1),frame_indices(idx,2)));
         hold on
-        axis image;
+        axis image; colormap gray;
 
         % plot centroids on Tracker subplot
         l = plot(0,0,'k*');
@@ -71,8 +68,7 @@ function [ centroids ] = get_mouse_XY_pos( movie )
                         frame_indices(idx,2)-(frame_indices(idx,1)-1)
            
            % Update original image CData
-            image = video(:,:,frame_idx);
-            image = im2double(image);
+            image = video(:,:,:,frame_idx);
             set(h,'CData',image); 
            
             % Find the mouse blob using findMouse helper function
