@@ -2,18 +2,18 @@ function [ centroids ] = get_mouse_XY_pos_live_monitor( movie )
 % Extract the X,Y positions ( centroids ) of the mouse from the behavior
 %   video ( movie )
 %   
-% live_monitor Plots Original Movie and Tracker Movie with centroids
-%
 % Input:
-%   movie: Behavior video (m4v)
+%   movie: Behavior video (m4v); movie should be cropped (wavy curtain
+%   leads to fall centroids (haven't found another way to fix this)
 %
-% Returns cell (centroids) where each row is an (x,y) coordinate of the
-%   mouse. Length of cell = number of frames in moive
+% Returns matrix centroids where each row is an (x,y) coordinate of the
+%   mouse. 1st column = X, 2nd column = Y. Length of matrix =
+%   number of frames in movie
 %
 % Notes: Analyzes movie in chunks of 500 frames (smaller memory load)
 %   *** read function does not work properly on Linux, so unfortunately
 %   have to run this on a Windows machine ***
-%   *** Runs slow on Windows ***
+%   *** Not very fast, but only have to run once; ~54K frames = ~40 min
 %
 % 2015-02-26 Fori Wang
 
@@ -22,9 +22,15 @@ function [ centroids ] = get_mouse_XY_pos_live_monitor( movie )
 
     % initialize centroids
     centroids = cell(num_frames,1);
-
-    frame_indices = make_frame_indices(num_frames);
-
+    
+    % setup chunks of frames to read in movie
+    frame_indices = make_frame_indices(num_frames,1000);
+    
+    % setup background image: average of 5000 frames
+    bg_vid = read(behavior_vid,[1 5000]);
+    bg_vid = squeeze(bg_vid(:,:,1,:));
+    bg_image = mean(bg_vid,3);
+    
     for idx = 1:length(frame_indices)
 
         fprintf('  Processing frames %d to %d (%s)\n',...
@@ -32,11 +38,13 @@ function [ centroids ] = get_mouse_XY_pos_live_monitor( movie )
 
         % read in all of the frames for the trial at the beginning
         frame_range = [frame_indices(idx,1) frame_indices(idx,2)];
-        video = read(behavior_vid,frame_range);       
+        video = read(behavior_vid,frame_range);
+        video = squeeze(video(:,:,1,:));
         
+              
         % plot original image (original movie on the left)
         subplot(121);
-        image = video(:,:,:,1);
+        image = video(:,:,1);
         h = imagesc(image);
         title(sprintf('Original: Frames %d - %d',...
                       frame_indices(idx,1), frame_indices(idx,2)));
@@ -57,27 +65,24 @@ function [ centroids ] = get_mouse_XY_pos_live_monitor( movie )
 
         % plot centroids on Tracker subplot
         l = plot(0,0,'k*');
-
-        % set background subtraction image to be first frame
-        bg_image = video(:,:,:,frame_indices(idx,2)-(frame_indices(idx,1)-1));
+        
 
         for frame_idx = frame_indices(idx,1)-(frame_indices(idx,1)-1):...
                         frame_indices(idx,2)-(frame_indices(idx,1)-1)
            
            % Update original image CData
-            image = video(:,:,:,frame_idx);
+            image = video(:,:,frame_idx);
+            image = im2double(image);
             set(h,'CData',image); 
-            pause(0.001);
-
+           
             % Find the mouse blob using findMouse helper function
             thresh = 20; % assumes that black mouse has RGB values <20
             [final_image,s] = findMouse(bg_image,image,thresh);
             area_vector = [s.Area];
             length_vector = [s.MinorAxisLength];
-
+            
             % Update binarized image
             set(j,'CData',final_image);
-            pause(0.001);
 
             % Save centroids data and update plot
             if isempty(area_vector) %sometimes blob disappears, go to previous centroid
@@ -86,8 +91,7 @@ function [ centroids ] = get_mouse_XY_pos_live_monitor( movie )
                 % Update subplots
                 set(k,'XData',c_old(1),'YData',c_old(2),'color','r');
                 set(l,'XData',c_old(1),'YData',c_old(2),'color','r');
-                pause(0.001);
-
+                
             else % new centroid
                 [~, id] = max(length_vector); %assume mouse is the fattest blob
                 c_new = s(id(1)).Centroid(1:2);
@@ -97,10 +101,12 @@ function [ centroids ] = get_mouse_XY_pos_live_monitor( movie )
                 % Update subplots
                 set(k,'XData',c_new(1),'YData',c_new(2),'color','b');
                 set(l,'XData',c_new(1),'YData',c_new(2),'color','b');
-                pause(0.001);
+                
             end
         end    
     end
+    
+    centroids=cell2mat(centroids); %convert to matrix
 
 end
 

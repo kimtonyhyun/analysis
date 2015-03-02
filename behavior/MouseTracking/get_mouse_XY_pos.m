@@ -71,6 +71,7 @@ function [ centroids ] = get_mouse_XY_pos( movie )
     end
     
     centroids=cell2mat(centroids); %convert to matrix
+    centroids(1,:)=centroids(2,:); %get rid of c_old [0 0] start
 
 end
 

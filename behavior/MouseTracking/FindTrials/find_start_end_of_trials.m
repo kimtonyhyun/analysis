@@ -29,7 +29,7 @@ function [ trial_frames, tracking_error_frames] = find_start_end_of_trials( cent
         y_old = previous_centroid(2);
         
         % find jumps in position (potential start/end points)
-        distance_thresh = 300;
+        distance_thresh = 50;
         distance = sqrt((x-x_old)^2+(y-y_old)^2);
         
         if distance > distance_thresh
@@ -48,7 +48,9 @@ function [ trial_frames, tracking_error_frames] = find_start_end_of_trials( cent
             % WEST start
             if x < west_x_thresh && y < west_y_thresh
                 if x_old < south_x_thresh && y_old > south_y_thresh || ...% SOUTH end
-                        x_old > north_x_thresh && y_old < north_y_thresh % NORTH end
+                        x_old > north_x_thresh && y_old < north_y_thresh ||...% NORTH end
+                        x_old < west_x_thresh && y_old < west_y_thresh ||...% WEST end
+                        x_old > east_x_thresh && y_old > east_y_thresh % EAST end
                     trial_frames(trial_counter,2)=frame_idx-1; % end
                     trial_frames(trial_counter+1,1)=frame_idx; % next start
 %                     trial_frames(trial_counter+1,3)=4; % mark start arm
@@ -58,7 +60,9 @@ function [ trial_frames, tracking_error_frames] = find_start_end_of_trials( cent
             % EAST start
             elseif x > east_x_thresh && y > east_y_thresh
                 if x_old < south_x_thresh && y_old > south_y_thresh || ...% SOUTH end
-                        x_old > north_x_thresh && y_old < north_y_thresh % NORTH end
+                        x_old > north_x_thresh && y_old < north_y_thresh ||...% NORTH end
+                        x_old < west_x_thresh && y_old < west_y_thresh ||...% WEST end
+                        x_old > east_x_thresh && y_old > east_y_thresh % EAST end
                     trial_frames(trial_counter,2)=frame_idx-1; % end
                     trial_frames(trial_counter+1,1)=frame_idx; % next start
 %                     trial_frames(trial_counter+1,3)=2; % mark start arm
@@ -67,7 +71,9 @@ function [ trial_frames, tracking_error_frames] = find_start_end_of_trials( cent
                 
             % SOUTH start
             elseif x < south_x_thresh && y > south_y_thresh
-                if x_old < west_x_thresh && y_old < west_y_thresh ||...% WEST end
+                if x_old < south_x_thresh && y_old > south_y_thresh || ...% SOUTH end
+                        x_old > north_x_thresh && y_old < north_y_thresh ||...% NORTH end
+                        x_old < west_x_thresh && y_old < west_y_thresh ||...% WEST end
                         x_old > east_x_thresh && y_old > east_y_thresh % EAST end
                     trial_frames(trial_counter,2)=frame_idx-1; % end
                     trial_frames(trial_counter+1,1)=frame_idx; % next start
@@ -77,7 +83,9 @@ function [ trial_frames, tracking_error_frames] = find_start_end_of_trials( cent
                 
             % NORTH start
             elseif x > north_x_thresh && y < north_y_thresh
-                if x_old < west_x_thresh && y_old < west_y_thresh ||...% WEST end
+                if x_old < south_x_thresh && y_old > south_y_thresh || ...% SOUTH end
+                        x_old > north_x_thresh && y_old < north_y_thresh ||...% NORTH end
+                        x_old < west_x_thresh && y_old < west_y_thresh ||...% WEST end
                         x_old > east_x_thresh && y_old > east_y_thresh % EAST end
                     trial_frames(trial_counter,2)=frame_idx-1; % end
                     trial_frames(trial_counter+1,1)=frame_idx; % next start
