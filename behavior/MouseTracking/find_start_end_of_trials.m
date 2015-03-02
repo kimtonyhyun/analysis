@@ -12,7 +12,7 @@ function [ trial_frames, tracking_error_frames] = find_start_end_of_trials( cent
 % 
 % 2015-02-28 Fori Wang
 
-    load(centroids_mat);    
+    load(centroids_mat); % FIX: assumes matrix saved as 'centroids'
     num_frames = length(centroids);
     trial_counter = 1;
     tracking_error_frames = [];
