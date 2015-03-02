@@ -1,4 +1,15 @@
 function overwrite_frame_indices(plusmaze_source, new_frame_indices)
+% Generate a new PlusMaze text file (appends "_new" to the filename)
+%   with a new set of frame indices
+%
+% Inputs:
+%   plusmaze_source: Name of the original text file (trial information
+%       other that frame indices will be taken from this file)
+%   new_frame_indices: [num_trials x 4] matrix where the i-th row indicates
+%       the [start open-gate close-gate end] frames of trial i.
+%
+% Example usage:
+%   overwrite_frame_indices('mouse7_day10_allo-south.txt', frame_indices);
 
 % Read in information from the original PlusMaze source
 [~, location_info, time] = parse_plusmaze(plusmaze_source);
