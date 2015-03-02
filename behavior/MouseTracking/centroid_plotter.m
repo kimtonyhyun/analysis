@@ -9,7 +9,7 @@ function centroid_plotter( movie, centroids_mat )
 % via for loop
 %     
 % 2015-02-27 Fori Wang
-    load(centroids_mat)
+    load(centroids_mat)% FIX: assumes matrix saved as 'centroids'
     figure;
     behavior_vid = VideoReader(movie);
     image = read(behavior_vid,1); %grab first frame
@@ -17,10 +17,6 @@ function centroid_plotter( movie, centroids_mat )
     title('Centroid Plotter')
     axis image
     hold on
-
-    for idx = 1:length(centroids)
-        this_centroid = centroids(idx,:);
-        plot(this_centroid(1),this_centroid(2),'g*')
-        hold on
-    end
+    
+    plot(centroids(:,1),centroids(:,2),'g*');
 end
