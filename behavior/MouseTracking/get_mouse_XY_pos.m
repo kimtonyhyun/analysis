@@ -40,9 +40,9 @@ function [ centroids ] = get_mouse_XY_pos( movie )
         % great solution, but can't think of anything better
         bg_offset = 240; % ~12 seconds; for 5/5 sessions, 140 prob better
         if idx+240 > frame_indices(idx,2)
-            bg_image = video(:,:,:,frame_indices(idx,2)-bg_offset);
+            bg_image = video(:,:,:,frame_indices(idx,1)-bg_offset);
         else
-            bg_image = video(:,:,:,frame_indices(idx,2)+bg_offset);
+            bg_image = video(:,:,:,frame_indices(idx,1)+bg_offset);
 %         bg_image = video(:,:,:,frame_indices(idx,2)-(frame_indices(idx,1)-1));
 
         for frame_idx = frame_indices(idx,1)-(frame_indices(idx,1)-1):...
