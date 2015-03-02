@@ -24,7 +24,7 @@ function [ centroids ] = get_mouse_XY_pos( movie )
     centroids = cell(num_frames,1);
 
     frame_indices = make_frame_indices(num_frames);
-
+    
     for idx = 1:length(frame_indices)
 
         fprintf('  Processing frames %d to %d (%s)\n',...
@@ -36,21 +36,21 @@ function [ centroids ] = get_mouse_XY_pos( movie )
         
         c_old = [0 0];
 
-        % set background subtraction image to be later time point % not a
-        % great solution, but can't think of anything better
-        bg_offset = 240; % ~12 seconds; for 5/5 sessions, 140 prob better
-        if idx+240 > frame_indices(idx,2)
-            bg_image = video(:,:,:,frame_indices(idx,1)-bg_offset);
-        else
-            bg_image = video(:,:,:,frame_indices(idx,1)+bg_offset);
-%         bg_image = video(:,:,:,frame_indices(idx,2)-(frame_indices(idx,1)-1));
-
         for frame_idx = frame_indices(idx,1)-(frame_indices(idx,1)-1):...
                         frame_indices(idx,2)-(frame_indices(idx,1)-1)
            
            % Update original image CData
             image = video(:,:,:,frame_idx);
 
+           % Update background subtraction image to be later time point % not a
+           % great solution, but can't think of anything better
+            bg_offset = 240; % ~12 seconds; for 5/5 sessions, 140 prob better
+            if frame_idx + bg_offset > 1000
+                bg_image = video(:,:,:,frame_idx-bg_offset);
+            else
+                bg_image = video(:,:,:,frame_idx+bg_offset);
+%         bg_image = video(:,:,:,frame_indices(idx,2)-(frame_indices(idx,1)-1));           
+            
             % Find the mouse blob using findMouse helper function
             thresh = 20; % assumes that black mouse has RGB values <20
             [~,s] = findMouse(bg_image,image,thresh);
