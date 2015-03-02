@@ -28,8 +28,8 @@ function [ centroids ] = get_mouse_XY_pos( movie )
     
     % setup background image: average of 5000 frames
     bg_vid = read(behavior_vid,[1 5000]);
-    bg_vid = squeeze(bg_vid(:,:,1,:));
-    bg_image = mean(bg_vid,3);
+    bg_image = mean(bg_vid,4);
+    bg_image = uint8(bg_image);
     
     for idx = 1:length(frame_indices)
 
@@ -39,7 +39,6 @@ function [ centroids ] = get_mouse_XY_pos( movie )
         % read in all of the frames for the trial at the beginning
         frame_range = [frame_indices(idx,1) frame_indices(idx,2)];
         video = read(behavior_vid,frame_range);
-        video = squeeze(video(:,:,1,:));
         
         c_old = [0 0];
 
@@ -47,8 +46,7 @@ function [ centroids ] = get_mouse_XY_pos( movie )
                         frame_indices(idx,2)-(frame_indices(idx,1)-1)
            
            % Update original image CData
-            image = video(:,:,frame_idx);
-            image = im2double(image);
+            image = video(:,:,:,frame_idx);
            
             % Find the mouse blob using findMouse helper function
             thresh = 20; % assumes that black mouse has RGB values <20
