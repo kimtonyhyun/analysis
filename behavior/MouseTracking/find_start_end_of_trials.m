@@ -4,7 +4,7 @@ function [ trial_frames, tracking_error_frames] = find_start_end_of_trials( cent
 % will jump from e.g., south arm to east arm)
 %
 % Input:
-%     centroids.mat file from get_XY_pos
+%     centroids.mat file from get_mouse_XY_pos
 % 
 % Returns
 %     trial_frames: Array of start and end frames [start end; start end; ...]
