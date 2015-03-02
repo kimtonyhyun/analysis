@@ -23,7 +23,7 @@ function [ centroids ] = get_mouse_XY_pos( movie )
     % initialize centroids
     centroids = cell(num_frames,1);
 
-    frame_indices = make_frame_indices(num_frames);
+    frame_indices = make_frame_indices(num_frames,1000);
     
     for idx = 1:length(frame_indices)
 
@@ -50,6 +50,7 @@ function [ centroids ] = get_mouse_XY_pos( movie )
             else
                 bg_image = video(:,:,:,frame_idx+bg_offset);
 %         bg_image = video(:,:,:,frame_indices(idx,2)-(frame_indices(idx,1)-1));           
+            end
             
             % Find the mouse blob using findMouse helper function
             thresh = 20; % assumes that black mouse has RGB values <20
@@ -71,7 +72,7 @@ function [ centroids ] = get_mouse_XY_pos( movie )
         end    
     end
     
-    centroids=cell2mat(centroids) %convert to matrix
+    centroids=cell2mat(centroids); %convert to matrix
 
 end
 
