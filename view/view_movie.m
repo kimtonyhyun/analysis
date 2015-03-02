@@ -10,8 +10,12 @@ end
 
 num_frames = size(M,3);
 
-movie_clim = compute_movie_scale(M);
-h = imagesc(M(:,:,1), movie_clim);
+if isa(M, 'uint16') % Raw movie
+    h = imagesc(M(:,:,1));
+else
+    movie_clim = compute_movie_scale(M);
+    h = imagesc(M(:,:,1), movie_clim);
+end
 axis image;
 truesize;
 colormap gray;
