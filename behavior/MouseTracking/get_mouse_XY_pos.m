@@ -6,8 +6,9 @@ function [ centroids ] = get_mouse_XY_pos( movie )
 %   movie: Behavior video (m4v); movie should be cropped (wavy curtain
 %   leads to fall centroids (haven't found another way to fix this)
 %
-% Returns cell (centroids) where each row is an (x,y) coordinate of the
-%   mouse. Length of cell = number of frames in movie
+% Returns matrix centroids where each row is an (x,y) coordinate of the
+%   mouse. 1st column = X, 2nd column = Y. Length of matrix =
+%   number of frames in movie
 %
 % Notes: Analyzes movie in chunks of 500 frames (smaller memory load)
 %   *** read function does not work properly on Linux, so unfortunately
@@ -35,8 +36,14 @@ function [ centroids ] = get_mouse_XY_pos( movie )
         
         c_old = [0 0];
 
-        % set background subtraction image to be first frame
-        bg_image = video(:,:,:,frame_indices(idx,2)-(frame_indices(idx,1)-1));
+        % set background subtraction image to be later time point % not a
+        % great solution, but can't think of anything better
+        bg_offset = 240; % ~12 seconds; for 5/5 sessions, 140 prob better
+        if idx+240 > frame_indices(idx,2)
+            bg_image = video(:,:,:,frame_indices(idx,2)-bg_offset);
+        else
+            bg_image = video(:,:,:,frame_indices(idx,2)+bg_offset);
+%         bg_image = video(:,:,:,frame_indices(idx,2)-(frame_indices(idx,1)-1));
 
         for frame_idx = frame_indices(idx,1)-(frame_indices(idx,1)-1):...
                         frame_indices(idx,2)-(frame_indices(idx,1)-1)
@@ -63,6 +70,8 @@ function [ centroids ] = get_mouse_XY_pos( movie )
             end
         end    
     end
+    
+    centroids=cell2mat(centroids) %convert to matrix
 
 end
 

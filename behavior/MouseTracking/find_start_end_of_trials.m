@@ -21,8 +21,8 @@ function [ trial_frames, tracking_error_frames] = find_start_end_of_trials( cent
     for frame_idx = 2:num_frames
         
         % grab the current and previous centroid
-        this_centroid = centroids{frame_idx};
-        previous_centroid = centroids{frame_idx-1};
+        this_centroid = centroids(frame_idx,:);
+        previous_centroid = centroids(frame_idx-1,:);
         x = this_centroid(1);
         y = this_centroid(2);
         x_old = previous_centroid(1);
@@ -90,5 +90,6 @@ function [ trial_frames, tracking_error_frames] = find_start_end_of_trials( cent
             end
         end
     end
+    trial_frames(trial_counter,2)=num_frames; % last frame = end of last trial
 end
 
