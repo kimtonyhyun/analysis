@@ -67,7 +67,7 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
             
             % plot original image on the left
             subplot(121);
-            image = video(:,:,:,1);
+            image = video(:,:,1);
             h = imagesc(image);
             title(sprintf('Original: Frames %d - %d',...
                           frame_indices(idx,1), frame_indices(idx,2)));
