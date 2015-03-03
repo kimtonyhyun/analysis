@@ -3,6 +3,8 @@ function [ trial_frames, tracking_error_frames] = find_start_end_of_trials( cent
 % frames where trial ends and next trial starts (based on fact that mouse
 % will jump from e.g., south arm to east arm)
 %
+%   Note: this function is used by mouse_path_plotter
+% 
 % Input:
 %     centroids.mat file from get_mouse_XY_pos
 % 
