@@ -1,5 +1,5 @@
-function [ frame_indices ] = make_frame_indices( num_frames , chunk_size)
-% Creates frame indices so that get_mouse_XY_pos can go
+function [ frame_chunks ] = make_frame_chunks( num_frames , chunk_size)
+% Creates frame chunks so that get_mouse_XY_pos can go
 %   through the behavior video in chunks (not enough memory to
 %   load the whole video)
 %
@@ -11,12 +11,12 @@ function [ frame_indices ] = make_frame_indices( num_frames , chunk_size)
 %
 % 2015-02-26 Fori Wang
 
-    frame_indices = [];
+    frame_chunks = [];
     for chunk_idx = 1:chunk_size:num_frames
         if chunk_idx+chunk_size-1 < num_frames
-            frame_indices = [frame_indices; chunk_idx chunk_idx+chunk_size-1];
+            frame_chunks = [frame_chunks; chunk_idx chunk_idx+chunk_size-1];
         else % for the last chunk        
-            frame_indices = [frame_indices; chunk_idx num_frames];
+            frame_chunks = [frame_chunks; chunk_idx num_frames];
         end
     end
 
