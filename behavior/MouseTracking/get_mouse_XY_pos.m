@@ -24,12 +24,12 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
     display_tracking = 0;
     % check if live monitor option requested
     if ~isempty(varargin)
-        options = varargin{1};
+        options = varargin{1}
         
         if isfield(options,'displayTracking')
             display_tracking=1;
         else
-            fprintf('Cannot recognize this option. Did you mean displayTracking?')
+            fprintf('Did not recognize option.')
         end
     end
         
