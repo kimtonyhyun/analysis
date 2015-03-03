@@ -91,12 +91,12 @@ for i=1:length(list)
         imageStack = zeros(downsmpRows,downsmpCols,oriFrames,'uint16');
         if(downsmpFactor == 1)
             for j=1:oriFrames
-                tifFile.setDirectory(j+trim(1));
+                tifFile.setDirectory(j);
                 imageStack(:,:,j) = uint16(tifFile.read());
             end
         else
             for j=1:oriFrames
-                tifFile.setDirectory(j+trim(1));
+                tifFile.setDirectory(j);
                 imageStack(:,:,j) = uint16(imresize(tifFile.read(),downsmpFactor,'bilinear'));
             end
         end
