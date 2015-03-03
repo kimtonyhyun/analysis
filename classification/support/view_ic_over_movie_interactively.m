@@ -12,9 +12,6 @@ time_window = 10; % Width of running window
 
 % Generate the outline of the IC filter
 %------------------------------------------------------------
-B = threshold_ic_filter(ic_filter, ic_filter_threshold);
-boundaries = bwboundaries(B, 'noholes');
-
 subplot(3,3,[4 5 7 8]);
 h = imagesc(ic_filter, movie_clim);
 colormap gray;
@@ -22,15 +19,14 @@ axis image;
 xlabel('x [px]');
 ylabel('y [px]');
 hold on;
-for i = 1:length(boundaries)
-    boundary = boundaries{i};
-    plot(boundary(:,2), boundary(:,1), 'r', 'LineWidth', 2);
-end
+[ic_boundary, ic_mask] = compute_ic_boundary(ic_filter, ic_filter_threshold);
+plot(ic_boundary(:,1), ic_boundary(:,2), 'r', 'LineWidth', 2);
 hold off;
 
 % Compute the center of mass of the filter
-[height, width] = size(B);
-COM = [(1:width)*sum(B,1)' (1:height)*sum(B,2)]/sum(B(:)); % [x y]
+[height, width] = size(ic_mask);
+props = regionprops(ic_mask, 'Centroid');
+COM = props.Centroid;
 zoom_half_width = min([width, height])/20;
 
 % Compute the active portions of the trace
