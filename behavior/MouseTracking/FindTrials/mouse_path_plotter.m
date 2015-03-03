@@ -1,19 +1,27 @@
-function mouse_path_plotter( movie, centroids_mat)
+function mouse_path_plotter( movie, centroids_mat, varargin)
 % Plots the path of the mouse during each trial based on position data and
-% trial frames extracted from behavior movie
+% trial frames (either specified by plusmaze txt or extracted from movie
+% using find_start_end_of_trials)
 % 
 % Input:
 %     movie: Behavior video
 %     centroids_mat: position data from get_mouse_XY_pos
-%
+%     varargin: plusmaze txt file, e.g. 'mouse7_day09_allo-south.txt'
 % 
 % 2015-03-01 Fori Wang
 
-    % find trial start and ends
-    [trial_frames,~]=find_start_end_of_trials(centroids_mat);
+    % read in plusmaze source if available
+    if ~isempty(varargin)
+        maze_data = varargin{1};
+        [frame_indices,~,~]=parse_plusmaze(maze_data);
+        trial_frames = [frame_indices(:,1) frame_indices(:,4)];
+    else
+        % if no plusmaze source, find trial start and ends from movie
+        [trial_frames,~]=find_start_end_of_trials(centroids_mat);
+    end
     
     % load centroids
-    load(centroids_mat)% FIX: assumes matrix saved as 'centroids'
+    load(centroids_mat)% assumes matrix saved as 'centroids'
     
     % read in behavior movie
     fprintf('Reading in Behavior Movie...');

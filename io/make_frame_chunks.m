@@ -11,14 +11,9 @@ function [ frame_chunks ] = make_frame_chunks( num_frames , chunk_size)
 %
 % 2015-02-26 Fori Wang
 
-    frame_chunks = [];
-    for chunk_idx = 1:chunk_size:num_frames
-        if chunk_idx+chunk_size-1 < num_frames
-            frame_chunks = [frame_chunks; chunk_idx chunk_idx+chunk_size-1];
-        else % for the last chunk        
-            frame_chunks = [frame_chunks; chunk_idx num_frames];
-        end
-    end
+    x = (1:chunk_size:num_frames)';
+    y = [x(2:end)-1; num_frames];
+    frame_chunks = [x y];
 
 end
 

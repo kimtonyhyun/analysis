@@ -33,8 +33,8 @@ function [ final_image, blobs  ] = findMouse( bg_image, actual_image, black_thre
        se = strel('disk',5);
        final_image = imdilate(final_image,se);
             
-        % get centroid, area, and length of blobs
-        blobs = regionprops(final_image(:,:,1), 'area','centroid','minoraxislength');
+       % get centroid, area, and length of blobs
+       blobs = regionprops(final_image(:,:,1), 'area','centroid','minoraxislength');
 
 end
 

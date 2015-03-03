@@ -2,15 +2,17 @@ function [ trial_frames, tracking_error_frames] = find_start_end_of_trials( cent
 % Using position data from get_mouse_XY_pos (using behavior vid), find
 % frames where trial ends and next trial starts (based on fact that mouse
 % will jump from e.g., south arm to east arm)
-%
-%   Note: this function is used by mouse_path_plotter
+% 
+%   ** Note: These trial boundaries must be confirmed by the user; in
+%   egocentric sessions, probe trials will often be merged with trials
+%   before or after (because there is no visible jump in position)
 % 
 % Input:
 %     centroids.mat file from get_mouse_XY_pos
 % 
 % Returns
 %     trial_frames: Array of start and end frames [start end; start end; ...]
-%     tracking_error_frames: Frames that are not start/end put show a jump
+%     tracking_error_frames: Frames that are not start/end but show a jump
 % 
 % 2015-02-28 Fori Wang
 
