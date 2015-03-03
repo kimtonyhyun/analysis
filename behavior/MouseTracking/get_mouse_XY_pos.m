@@ -70,7 +70,7 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
             image = video(:,:,1);
             h = imagesc(image);
             title(sprintf('Original: Frames %d - %d',...
-                          frame_indices(idx,1), frame_indices(idx,2)));
+                          frame_chunks(idx,1), frame_chunks(idx,2)));
             axis image; 
             hold on
             
@@ -81,7 +81,7 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
             subplot(122);
             j = imagesc(image);
             title(sprintf('Tracker: Frames %d - %d',...
-                          frame_indices(idx,1),frame_indices(idx,2)));
+                          frame_chunks(idx,1),frame_chunks(idx,2)));
             hold on
             axis image;
 
