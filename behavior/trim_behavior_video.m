@@ -22,11 +22,10 @@ function trim_behavior_video(plusmaze_source, behavior_source, trim, varargin)
 %       frames; Trial 42 has 6 dropped frames.
 %
 % Example usage:
-%   trim_behavior_video('mouse7_d07_ego-left.txt', 'mouse7_day07_ego-left.m4v', [15 5])
+%   dropped_table = load('mouse7_day07_ego-left_dropped_behavior_frames.txt');
+%   trim_behavior_video('mouse7_d07_ego-left.txt', 'mouse7_day07_ego-left.m4v', [15 5], dropped_table)
 %
-% Note: When the behavior video has fewer frames than the PlusMaze text
-%   file, the behavior video will be uniformly "expanded" to match the
-%   number of frames as indicated by the PlusMaze output.
+
 
 
 % Get the trial frames (beginning and end) according to PlusMaze output.
