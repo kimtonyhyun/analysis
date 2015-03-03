@@ -101,6 +101,7 @@ for i=1:length(list)
         
         %%% Replace any dropped frames with the frame immediately
         %%% preceeding it
+        cropDroppedFrames = 0;
         if(droppedFrames ~= 0)
             for j=1:length(droppedFrames)
                 disp('DroppedFrame');
@@ -113,6 +114,8 @@ for i=1:length(list)
                     newImageStack = cat(3,frontStack,backStack);
                     clear imageStack
                     imageStack = newImageStack;
+                else
+                    cropDroppedFrames = cropDroppedFrames+1;
                 end
             end
         end
@@ -146,7 +149,7 @@ for i=1:length(list)
         totalFrames = totalFrames+numFrames;
         
         %%% Total frame count corresponding to behavior text file
-        testFrames = testFrames+oriFrames;
+        testFrames = testFrames+oriFrames+cropDroppedFrames;
         
         clear imageStack tifName tifInfo tifFile droppedFrames newImageStack
     end
