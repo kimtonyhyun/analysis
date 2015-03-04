@@ -31,7 +31,7 @@ function trim_behavior_video(plusmaze_source, behavior_source, trim, varargin)
 % Get the trial frames (beginning and end) according to PlusMaze output.
 %   We regard the PlusMaze trial indices as ground truth!
 %----------------------------------------------------------------------
-orig_frame_indices = double(get_trial_frame_indices(plusmaze_source));
+orig_frame_indices = get_trial_frame_indices(plusmaze_source);
 orig_frame_indices = orig_frame_indices(:,[1 4]); % Keep [Start End]
 
 num_trials = size(orig_frame_indices,1);
