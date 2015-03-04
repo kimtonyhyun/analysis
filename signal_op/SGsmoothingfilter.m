@@ -23,7 +23,8 @@ dimnull = 2*N-L;
 
 vec=1; Nullmat = zeros(2*N+1,2*N);
 Nullmat(N,1)=1/2;Nullmat(N+2,1)=-1/2;
-for dum=2:2:2*N,
+
+for dum=2:2:2*N
    vec = conv([1 -2 1],vec); 
    coln = Nullmat(:,dum);
    coln(N+1-dum/2:N+1+dum/2) = vec;
@@ -38,15 +39,16 @@ end;
 Nullmat = Nullmat(:,(L+1):end);
 Nullmat = sym(Nullmat);
 
-if length(Nullmat)>0,    
-    coefs = inv(Nullmat'*Nullmat)*Nullmat'*p;
+if ~isempty(Nullmat)    
+    coefs = (Nullmat'*Nullmat)\Nullmat'*p;
     %SGfilter = 1 - (D*ones(1,dimnull)).^[(L+1):(2*N)]*coefs;
     h = p - Nullmat*coefs; h= h';
 else
     h = 1; 
 end;
 h = double(h);
-if nargout==0, 
+
+if nargout==0
     disp('SG Filter impulse response (to be used with conv(x,h) command):');
     fliplr(h),
     disp('SG Filter expansion:');

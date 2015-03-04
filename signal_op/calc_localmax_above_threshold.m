@@ -19,7 +19,7 @@ while k<length(data_binary)
         seq = data(begin_seq:end_seq); %magnitudes of the events in the sequence
         [maxval,dum] = max(seq);
         idx_max = dum+begin_seq-1;
-        if maxval>threshold*1.1
+        if maxval>threshold*1.1 % reject very small peaks
             localmax = [localmax,idx_max]; %#ok
         end        
     else %skip through 0's

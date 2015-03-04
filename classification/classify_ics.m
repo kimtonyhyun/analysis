@@ -5,11 +5,11 @@ function classify_ics(sources, ic_dir)
 %   classify_ics(sources, 'ica001')
 % where sources is a struct with the following parameters:
 %   sources.miniscope: Miniscope recording (TIF or HDF5)
+%   sources.time_bin: (optional) Indicate if the recording has been time binned
 %   sources.fps:  Frame rate of the recording
 %   sources.trim: Trim parameters of the recording concatenation [1 x 2]
 %   sources.maze: Output from the plus maze (TXT)
 %
-% 2015 01 31 Tony Hyun Kim
 
 % Specify ICA
 %------------------------------------------------------------
@@ -20,7 +20,7 @@ load(ica_source, 'ica_info', 'ica_filters', 'ica_traces');
 %------------------------------------------------------------
 fprintf('  %s: Loading "%s" to memory...\n', datestr(now), sources.miniscope);
 M = load_movie(sources.miniscope);
-[height, width, num_frames] = size(M);
+num_frames = size(M,3);
 fprintf('  %s: Done!\n', datestr(now));
 
 fps = sources.fps;
@@ -28,12 +28,7 @@ time = 1/fps*((1:size(ica_traces,1))-1); %#ok<*NODEF>
 num_ics = ica_info.num_ICs;
 
 % Compute a common scaling for the movie
-maxVec = reshape(max(M,[],3), height*width, 1);
-minVec = reshape(min(M,[],3), height*width, 1);
-quantsMax = quantile(maxVec,[0.85,0.87,0.9,0.93,0.95]);
-quantsMin = quantile(minVec,[0.85,0.87,0.9,0.93,0.95]);
-movie_clim = [mean(quantsMin),mean(quantsMax)]*1.1;
-clear maxVec minVec rangeVec;
+movie_clim = compute_movie_scale(M);
 fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
     datestr(now), movie_clim(1), movie_clim(2));
 
@@ -41,6 +36,11 @@ fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
 trial_frame_indices = get_trial_frame_indices(sources.maze);
 compressed_indices = compress_frame_indices(trial_frame_indices, sources.trim);
 compressed_indices = compressed_indices(:,[1 end]); % [Start end]
+
+% Check if temporal binning has been applied
+if isfield(sources, 'time_bin')
+    compressed_indices = bin_frame_indices(compressed_indices, sources.time_bin);
+end
 
 % Check for movie frame and index mismatch
 movie_compind_match = (num_frames == compressed_indices(end,2));
@@ -87,7 +87,7 @@ while (ic_idx <= num_ics)
             % Classication options
             %------------------------------------------------------------
             case {'p', 'c'} % Cell
-                view_ic_over_movie_interactively(ic_filter, time, trace, M, fps, movie_clim);
+                [~, movie_clim] = view_ic_over_movie_interactively(ic_filter, time, trace, M, fps, movie_clim);
                 resp2 = input(sprintf('  Confirm classification ("%s") >> ', resp), 's');
                 resp2 = lower(strtrim(resp2));
                 if (strcmp(resp, resp2))
@@ -120,6 +120,11 @@ while (ic_idx <= num_ics)
                     class = load_classification(full_file);
                     fprintf('  Loaded classification from "%s"\n', file);
                 end
+            case 't' % "Take" screenshot
+                screenshot_name = sprintf('ic%03d.png', ic_idx);
+                screenshot_name = fullfile(ic_dir, screenshot_name);
+                print('-dpng', screenshot_name);
+                fprintf('  Plot saved to %s\n', screenshot_name);
             otherwise
                 fprintf('  Could not parse "%s"\n', resp);
         end
