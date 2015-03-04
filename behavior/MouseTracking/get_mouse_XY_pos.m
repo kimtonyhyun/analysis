@@ -24,14 +24,15 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
     display_tracking = 0;
     % check if live monitor option requested
     if ~isempty(varargin)
-%         options = varargin{1};
-        display_tracking = 1;     
-        
-%         if isfield(options,'displayTracking')
-%             display_tracking=1;
-%         else
-%             fprintf('Did not recognize option.')
-%         end
+        option = varargin{1};
+        if strcmp(option,'displayTracking')
+            display_tracking = 1;
+            figure;
+            fprintf('Displaying live tracking...');
+        else
+            fprintf('Did not recognize %s.',option);
+            return
+        end
     end
         
     behavior_vid = VideoReader(movie);
@@ -39,7 +40,6 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
 
     % initialize centroids
     centroids = zeros(num_frames,2);
-%     centroids = cell(num_frames,1);
     
     % setup chunks of frames to read in movie
     chunk_size = 1000;
@@ -47,9 +47,9 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
     
     % setup background image: average of 5000 frames
     bg_vid = read(behavior_vid,[1 5000]);
-    bg_vid = squeeze(bg_vid(:,:,1,:)); % 3D movie stack
-    bg_image = mean(bg_vid,3);
-%     bg_image = uint8(bg_image);
+%     bg_vid = squeeze(bg_vid(:,:,1,:)); % 3D movie stack
+    bg_image = mean(bg_vid,4);
+    bg_image = uint8(bg_image);
     
     c_old = [0 0];
     
@@ -61,17 +61,17 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
         % read in all of the frames for the trial at the beginning
         frame_range = frame_chunks(idx,:);
         video = read(behavior_vid,frame_range);
-        video = squeeze(video(:,:,1,:)); % 3D movie stack
+%         video = squeeze(video(:,:,1,:)); % 3D movie stack
         
         if display_tracking
             
             % plot original image on the left
             subplot(121);
-            image = video(:,:,1);
+            image = video(:,:,:,1);
             h = imagesc(image);
             title(sprintf('Original: Frames %d - %d',...
                           frame_chunks(idx,1), frame_chunks(idx,2)));
-            axis image; 
+            axis image; colormap gray;
             hold on
             
             % plot initial centroids on original video
@@ -79,7 +79,7 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
 
             % plot initial tracking image on the right
             subplot(122);
-            j = imagesc(image);
+            j = imagesc(image); colormap gray;
             title(sprintf('Tracker: Frames %d - %d',...
                           frame_chunks(idx,1),frame_chunks(idx,2)));
             hold on
@@ -89,13 +89,14 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
             l = plot(0,0,'k*');
         end
 
-        for frame_idx = 1:size(video,3)
+        for frame_idx = 1:size(video,4)
            
            % Update original image CData
-            image = video(:,:,frame_idx);
-            image = im2double(image,'indexed');
+            image = video(:,:,:,frame_idx);
+%             image = im2double(image,'indexed');
             if display_tracking
-                set(h,'CData',image); 
+                set(h,'CData',image);
+                pause(0.00001);
             end
            
             % Find the mouse blob using findMouse helper function
@@ -107,6 +108,7 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
             if display_tracking
                 % Update tracking
                 set(j,'CData',final_image);
+                pause(0.00001);
             end
 
             % Save centroids data and update plot
@@ -117,6 +119,7 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
                     % Update subplots
                     set(k,'XData',c_old(1),'YData',c_old(2),'color','r');
                     set(l,'XData',c_old(1),'YData',c_old(2),'color','r');
+                    pause(0.00001);
                 end
                 
             else % new centroid
@@ -129,6 +132,7 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
                     % Update subplots
                     set(k,'XData',c_new(1),'YData',c_new(2),'color','b');
                     set(l,'XData',c_new(1),'YData',c_new(2),'color','b');
+                    pause(0.00001);
                 end
             end
         end    
