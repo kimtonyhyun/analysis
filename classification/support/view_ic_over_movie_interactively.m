@@ -19,8 +19,11 @@ axis image;
 xlabel('x [px]');
 ylabel('y [px]');
 hold on;
-[ic_boundary, ic_mask] = compute_ic_boundary(ic_filter, ic_filter_threshold);
-plot(ic_boundary(:,1), ic_boundary(:,2), 'r', 'LineWidth', 2);
+[ic_boundaries, ic_mask] = compute_ic_boundary(ic_filter, ic_filter_threshold);
+for i = 1:length(ic_boundaries)
+    ic_boundary = ic_boundaries{i};
+    plot(ic_boundary(:,1), ic_boundary(:,2), 'r', 'LineWidth', 2);
+end
 hold off;
 
 % Compute the center of mass of the filter

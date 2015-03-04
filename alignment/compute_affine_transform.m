@@ -147,7 +147,8 @@ function [boundaries, masks, ic_map] = plot_ic_filters(ica_filters, cl, ic_filte
     
     for ic_idx = 1:num_ics
         ic_filter = ica_filters(:,:,ic_idx);
-        [boundary, mask] = compute_ic_boundary(ic_filter, ic_filter_threshold);
+        [boundaries, mask] = compute_ic_boundary(ic_filter, ic_filter_threshold);
+        boundary = boundaries{1}; % Longest boundary
         if strcmp(cl{ic_idx}, 'not a cell')
             color = 'r';
         else
