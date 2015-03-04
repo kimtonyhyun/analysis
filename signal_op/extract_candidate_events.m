@@ -1,11 +1,10 @@
-function idx_event_frames = extract_candidate_events(trace,varargin)
+function idx_event_frames = extract_candidate_events(trace,mad_scale,varargin)
 % Extract maximum points in the trace as candidate events
 % varargin : 1 optional argument. Set it to 1 if you want to plot the
 % output
 
 num_frames = length(trace);
-mad_scale = 9;
-h = SGsmoothingfilter(20,6);
+h = SGsmoothingfilter(15,6);
 smooth_trace = conv(trace,h,'same');
 mad = compute_mad(smooth_trace);
 thresh = mad_scale * mad;

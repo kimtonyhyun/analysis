@@ -37,7 +37,7 @@ for dum=2:2:2*N
 end;
 
 Nullmat = Nullmat(:,(L+1):end);
-Nullmat = sym(Nullmat);
+%Nullmat = sym(Nullmat);
 
 if ~isempty(Nullmat)    
     coefs = (Nullmat'*Nullmat)\Nullmat'*p;
