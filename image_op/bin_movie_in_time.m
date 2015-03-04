@@ -52,11 +52,6 @@ function binned_indices = bin_frame_indices(orig_indices, bin_factor)
 frames_per_trial = orig_indices(:,end) - orig_indices(:,1) + 1;
 binned_frames_per_trial = floor(frames_per_trial/bin_factor);
 
-num_frames = orig_indices(num_trials, end);
-num_binned_frames = sum(binned_frames_per_trial);
-fprintf('Note: Omitted %d frames from the original movie by binning',...
-        num_frames - bin_factor*num_binned_frames);
-
 % Explicitly remove dangling frames from the original frame indices
 for trial_idx = 1:num_trials
     max_index = orig_indices(trial_idx,1) + ...
@@ -65,10 +60,14 @@ for trial_idx = 1:num_trials
                                     max_index*ones(1,K)); % Apply clamp
 end
 
+offsets = diff(orig_indices,1,2);
+offsets = cumsum(offsets,2);
+
 % Generate the binned indices
 binned_start_indices = cumsum([1; binned_frames_per_trial(1:end-1)]);
-binned_offsets = floor(diff(orig_indices,1,2)/bin_factor); % Offsets in each trial
+binned_remaining_indices = repmat(binned_start_indices, 1, K-1) +...
+                           floor(offsets/bin_factor);
 
-binned_indices = cumsum([binned_start_indices binned_offsets],2);
+binned_indices = [binned_start_indices binned_remaining_indices];
 
 end
