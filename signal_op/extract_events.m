@@ -1,15 +1,14 @@
 function event_times = extract_events(trace,varargin)
-% function event_times = extract_events_2step(cell_of_interest)
+% event_times = extract_events(trace,varargin)
 %
 % Extract event times from the ICA trace of a cell doing 2 iterations
 %
-%   cell_of_interest : Nx1 cell array where each entry contains the ICA trace for
-%   one trial, with total of N trials
+%   trace : ica trace of a single cell 
+%   An additional inout argument set to 1 will generate plots 
 % 
-%   event_times : Nx1 cell where each entry is a vector whose elements are
-%   the frame indices where an event occurs
+%   event_times : [# of events] x 1 array 
 %
-% Hakan Inan (Nov 2014)
+% Hakan Inan (Mar 15)
 %
 
 %%%%
