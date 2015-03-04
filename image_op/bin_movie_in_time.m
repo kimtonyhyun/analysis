@@ -1,10 +1,14 @@
-function M_b = bin_movie_in_time(M, bin_factor)
-% Temporally bin the provided movie M by bin_factor.
-%   M: Movie to be temporally binned [height x width x num_frames]
-%   bin_factor: Number of frames in the original movie that will 
-%       correspond to one frame in the binned movie.
+function M_b = bin_movie_in_time(M, bin_factor, trial_indices)
+% Temporally bin the provided movie M by bin_factor, but do not bin frames
+% across trial boundaries.
 %
-% 2015 02 03 Tony Hyun Kim
+% Inputs:
+%   - M: Movie to be temporally binned [height x width x num_frames]
+%   - bin_factor: Number of frames in the original movie that will 
+%       correspond to one frame in the binned movie.
+%   - trial_indices: [num_trials x 2] matrix indicating the start and end
+%       frames of each trial
+%
 
 [height, width, num_frames] = size(M);
 num_downsampled_frames = floor(num_frames/bin_factor); % Note truncation
