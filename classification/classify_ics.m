@@ -3,13 +3,11 @@ function classify_ics(sources, ic_dir)
 %
 % Usage:
 %   classify_ics(sources, 'ica001')
-% where sources is a struct with the following parameters:
-%   sources.miniscope: Miniscope recording (TIF or HDF5)
-%   sources.time_bin: (optional) Indicate if the recording has been time binned
-%   sources.fps:  Frame rate of the recording
-%   sources.trim: Trim parameters of the recording concatenation [1 x 2]
+% where sources is a struct with the following fields:
 %   sources.maze: Output from the plus maze (TXT)
-%
+%   sources.miniscope: Miniscope recording (TIF or HDF5)
+%   sources.fps:  Frame rate of the recording
+%   
 
 % Specify ICA
 %------------------------------------------------------------
@@ -20,7 +18,6 @@ load(ica_source, 'ica_info', 'ica_filters', 'ica_traces');
 %------------------------------------------------------------
 fprintf('  %s: Loading "%s" to memory...\n', datestr(now), sources.miniscope);
 M = load_movie(sources.miniscope);
-num_frames = size(M,3);
 fprintf('  %s: Done!\n', datestr(now));
 
 fps = sources.fps;
@@ -33,21 +30,8 @@ fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
     datestr(now), movie_clim(1), movie_clim(2));
 
 % Get trial info from maze output (consistent as of Cohort 9)
-trial_frame_indices = get_trial_frame_indices(sources.maze);
-compressed_indices = compress_frame_indices(trial_frame_indices, sources.trim);
-compressed_indices = compressed_indices(:,[1 end]); % [Start end]
-
-% Check if temporal binning has been applied
-if isfield(sources, 'time_bin')
-    compressed_indices = bin_frame_indices(compressed_indices, sources.time_bin);
-end
-
-% Check for movie frame and index mismatch
-movie_compind_match = (num_frames == compressed_indices(end,2));
-if (~movie_compind_match)
-    fprintf('  %s: Number of movie frames and compressed indices do not match!\n',...
-        datestr(now));
-end
+trial_indices = get_trial_frame_indices(sources.maze);
+trial_indices = trial_indices(:,[1 end]); % [Start end]
 
 % Classify ICs
 %------------------------------------------------------------
@@ -60,13 +44,7 @@ while (ic_idx <= num_ics)
     ic_filter = ica_filters(:, :, ic_idx);
     trace = ica_traces(:, ic_idx);
     
-    % If frame indices are consistent with the movie, then show phase-
-    %   based analysis. Otherwise, just show the IC pair.
-    if (movie_compind_match)
-        view_trace(time, trace, compressed_indices);
-    else
-        view_ic_pair(time, trace, ic_filter);
-    end
+    view_trace(time, trace, trial_indices);
     title(sprintf('IC %d of %d', ic_idx, num_ics));
     
     % Ask the user to classify the IC
