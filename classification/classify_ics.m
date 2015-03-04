@@ -98,6 +98,7 @@ while (ic_idx <= num_ics)
                     class = load_classification(full_file);
                     fprintf('  Loaded classification from "%s"\n', file);
                 end
+                ic_idx = find(strcmp(class,''),1); % Go to first unlabeled IC
             case 't' % "Take" screenshot
                 screenshot_name = sprintf('ic%03d.png', ic_idx);
                 screenshot_name = fullfile(ic_dir, screenshot_name);
