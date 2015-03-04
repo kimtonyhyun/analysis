@@ -1,6 +1,7 @@
 function M_b = bin_movie_in_time(M, bin_factor, trial_indices)
 % Temporally bin the provided movie M by bin_factor, but do not bin frames
-% across trial boundaries.
+% across trial boundaries. Non-trial frames, if they exist in the original
+% movie, will be excised.
 %
 % Inputs:
 %   - M: Movie to be temporally binned [height x width x num_frames]
