@@ -33,7 +33,7 @@ function [trial_frames] = mouse_path_plotter( movie, centroids_mat, varargin)
     
     figure;
     
-    for trial_idx = 1:length(trial_frames)
+    for trial_idx = 1:size(trial_frames,1)
         trial_start = trial_frames(trial_idx,1);
         trial_end = trial_frames(trial_idx,2);
         scrollsubplot(5,6,trial_idx)
