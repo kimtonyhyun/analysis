@@ -115,12 +115,6 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
             if isempty(area_vector) %sometimes blob disappears, go to previous centroid
                 centroids(frame_chunks(idx,1)+frame_idx-1,:) = c_old;
                 centroid_color = 'r';
-%                 if display_tracking
-%                     % Update subplots
-%                     set(k,'XData',c_old(1),'YData',c_old(2),'color','r');
-%                     set(l,'XData',c_old(1),'YData',c_old(2),'color','r');
-%                     pause(0.00001);
-%                 end
                 
             else % new centroid
                 [~, id] = max(length_vector); %assume mouse is the fattest blob
@@ -128,13 +122,6 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
                 centroids(frame_chunks(idx,1)+frame_idx-1,:) = c_new;
                 c_old = c_new;
                 centroid_color = 'b';
-                
-%                 if display_tracking
-%                     % Update subplots
-%                     set(k,'XData',c_new(1),'YData',c_new(2),'color','b');
-%                     set(l,'XData',c_new(1),'YData',c_new(2),'color','b');
-%                     pause(0.00001);
-%                 end
             end
             
             if display_tracking
@@ -143,8 +130,6 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
                 set(l,'XData',c_old(1),'YData',c_old(2),'color',centroid_color);
                 pause(0.00001);
             end
-            
-            
         end    
     end
     
