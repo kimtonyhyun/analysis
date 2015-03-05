@@ -60,13 +60,13 @@ for trial_idx = 1:num_trials
                                     max_index*ones(1,K)); % Apply clamp
 end
 
-offsets = diff(orig_indices,1,2);
-offsets = cumsum(offsets,2);
+in_trial_offsets = diff(orig_indices,1,2);
+in_trial_offsets = cumsum(in_trial_offsets,2);
 
 % Generate the binned indices
 binned_start_indices = cumsum([1; binned_frames_per_trial(1:end-1)]);
 binned_remaining_indices = repmat(binned_start_indices, 1, K-1) +...
-                           floor(offsets/bin_factor);
+                           floor(in_trial_offsets/bin_factor);
 
 binned_indices = [binned_start_indices binned_remaining_indices];
 
