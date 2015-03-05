@@ -114,7 +114,7 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
             % Save centroids data and update plot
             if isempty(area_vector) %sometimes blob disappears, go to previous centroid
                 centroids(frame_chunks(idx,1)+frame_idx-1,:) = c_old;
-                
+                centroid_color = 'r';
 %                 if display_tracking
 %                     % Update subplots
 %                     set(k,'XData',c_old(1),'YData',c_old(2),'color','r');
@@ -127,6 +127,7 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
                 c_new = s(id(1)).Centroid(1:2);
                 centroids(frame_chunks(idx,1)+frame_idx-1,:) = c_new;
                 c_old = c_new;
+                centroid_color = 'b';
                 
 %                 if display_tracking
 %                     % Update subplots
@@ -138,8 +139,8 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
             
             if display_tracking
                 % Update subplots
-                set(k,'XData',c_old(1),'YData',c_old(2),'color','r');
-                set(l,'XData',c_old(1),'YData',c_old(2),'color','r');
+                set(k,'XData',c_old(1),'YData',c_old(2),'color',centroid_color);
+                set(l,'XData',c_old(1),'YData',c_old(2),'color',centroid_color);
                 pause(0.00001);
             end
             
