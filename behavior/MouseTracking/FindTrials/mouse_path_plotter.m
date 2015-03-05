@@ -1,7 +1,8 @@
 function [trial_frames] = mouse_path_plotter( movie, centroids_mat, varargin)
 % Plots the path of the mouse during each trial based on position data and
 % trial frames (either specified by plusmaze txt or extracted from movie
-% using find_start_end_of_trials)
+% using find_start_end_of_trials). Colormap = Jet --> Blue-ish = start of
+% trial, Red-ish = end of trial
 % 
 % Input:
 %     movie: Behavior video
@@ -28,7 +29,7 @@ function [trial_frames] = mouse_path_plotter( movie, centroids_mat, varargin)
     load(centroids_mat)% assumes matrix saved as 'centroids'
     
     % read in behavior movie
-    fprintf('Reading in Behavior Movie...');
+    fprintf('Reading in Behavior Movie...\n');
     behavior_vid = VideoReader(movie);
     
     figure;
@@ -46,9 +47,12 @@ function [trial_frames] = mouse_path_plotter( movie, centroids_mat, varargin)
         set(gca,'XTick',[],'YTick',[]);
         colormap gray;
         hold on
-        plot(centroids(trial_start:trial_end,1),...
-             centroids(trial_start:trial_end,2),...
-             'g-');
+        
+        % plot centroids in color
+        for i = trial_start:trial_end
+            color_options = jet(size(centroids(trial_start:trial_end,1),1));
+            plot(centroids(i,1),centroids(i,2),'*','Color',color_options(i-trial_start+1,:))
+        end
     end
 
 end
