@@ -1,6 +1,18 @@
 function binned_indices = bin_frame_indices2(orig_indices, bin_factor)
-% TODO: Replace the globally visible 'io/bin_frame_indices.m' with this
-%   implementation.
+% Bin the frame indices temporally by 'bin_factor', but do not bin frames
+% across trial boundaries. See also `bin_movie_in_time`.
+%
+% TODO: Replace 'bin_frame_indices' with this implementation.
+% 
+% Inputs:
+%   frame_indices: [num_trials x 4] matrix where the i-th row indicates the
+%       frame indices of trial i as [start open-gate close-gate end]
+%
+%   bin_factor: Integer indicating the binning factor
+%
+% Output:
+%   binned_frame_indices: Same dimensions as frame_indices, but where the
+%       indices have been converted to account for temporal binning
 
 [num_trials, K] = size(orig_indices);
 
