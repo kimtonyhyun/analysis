@@ -28,7 +28,7 @@ num_trials = size(binned_frames_per_trial,1);
 % Generate the binned movie
 M_b = zeros(height, width, num_binned_frames, 'single');
 
-write_idx = 1;
+write_idx = 0;
 for trial_idx = 1:num_trials
     for k = 1:binned_frames_per_trial(trial_idx)
         % Indices into the original movie
@@ -38,13 +38,12 @@ for trial_idx = 1:num_trials
         
         % Compute the mean
         M_b(:,:,write_idx) = mean(M(:,:,frames),3);
+        write_idx = write_idx + 1;
         
         % Report progress
         if (mod(write_idx,1000)==0)
             fprintf('  %s: Binned %d of %d frames...\n',...
                 datestr(now), write_idx, num_binned_frames);
         end
-        
-        write_idx = write_idx + 1;
     end
 end
