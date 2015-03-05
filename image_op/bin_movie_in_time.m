@@ -48,5 +48,3 @@ for trial_idx = 1:num_trials
         write_idx = write_idx + 1;
     end
 end
-
-end % bin_movie_in_time
