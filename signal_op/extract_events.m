@@ -25,55 +25,77 @@ offset = 0;
 num_frames_before_max = 20;
 num_frames_after_max = 100;
 
-
 idx_event_frames = extract_candidate_events(trace,coarse_thresh_multiplier,0);
 out = iterate_event_indices(idx_event_frames);
-idx_event_frames_v2 = out{1};h_1stround = out{2};
-out = iterate_event_indices(idx_event_frames_v2);
-idx_event_frames_v3 = out{1};h_2ndround = out{2};g_2ndround = out{3};
-event_times = idx_event_frames_v3;
-
+idx_event_frames_v2 = out{1};h_1stround = out{2};g_1ststep = out{3};
+if length(idx_event_frames_v2) < length(idx_event_frames)/3
+    event_times = idx_event_frames;
+    g_final = 1;
+    terminated = 0;
+else
+    out = iterate_event_indices(idx_event_frames_v2);
+    idx_event_frames_v3 = out{1};h_2ndround = out{2};g_2ndstep = out{3};
+    if length(idx_event_frames_v3) < length(idx_event_frames_v2)*2/3
+        event_times = idx_event_frames;
+        g_final = g_1ststep;
+        terminated = 1;
+    else
+        event_times = idx_event_frames_v3;
+        g_final = g_2ndstep;
+        terminated = 2;
+    end
+end
 
 %%%%%%%%%%%%%%
 %visualization
 %%%%%%%%%%%%%%
+fprintf('the algorithm terminated in %d iteration \n',terminated)
 if ~isempty(varargin)
     if varargin{1}==1
-        figure,
-        plot(h_1stround,'k');
-        hold on
-        plot(h_2ndround,'r');
-        hold off
-        legend('the characteristic event, 1st iteration','the characteristic event, 2nd iteration');
-        xlabel('frame')
+        if terminated ~=0
+            figure,
+            plot(h_1stround,'k');
+            legend('the characteristic event');
+            if terminated ==2
+                hold on
+                plot(h_2ndround,'r');
+                hold off
+                legend('the characteristic event, 1st iteration','the characteristic event, 2nd iteration');
+                xlabel('frame')
+            end
+        end
 
         trace = trace / max(trace);
         mad_scale_coarse = compute_mad(trace);
         threshold_coarse = coarse_thresh_multiplier*mad_scale_coarse;
-
-        filtered =  conv(trace,g_2ndround,'same');
+        spikes_vec_coarse = zeros(1,length(trace));
+        spikes_vec_coarse(idx_event_frames) = 1;
+        
+        filtered =  conv(trace,g_final,'same');
         filtered = filtered / max(filtered);
         mad_scale_fine = compute_mad(filtered);
         threshold_fine = fine_thresh_multiplier*mad_scale_fine;
-
         spikes_vec_fine = zeros(1,length(trace));
-        spikes_vec_fine(idx_event_frames_v3) = 1;
-        spikes_vec_coarse = zeros(1,length(trace));
-        spikes_vec_coarse(idx_event_frames) = 1;
+        spikes_vec_fine(event_times) = 1;
+        
 
         figure,
         plot(trace,'k');
         hold on
         plot(filtered,'m');
         plot(1:length(trace),repmat(threshold_coarse,1,length(trace)),'--b');%coarse threshold
-        plot(1:length(trace),repmat(threshold_fine,1,length(trace)),'--r');%fine threshold
-        stem(spikes_vec_fine*threshold_fine);
         stem(spikes_vec_coarse*threshold_coarse);
+        legend('raw trace','coarse threshold')
+        if terminated ~=0
+            plot(1:length(trace),repmat(threshold_fine,1,length(trace)),'--r');%fine threshold
+            stem(spikes_vec_fine*threshold_fine);
+            legend('raw trace','coarse threshold','deconvolved trace','deconv threshold')
+        end            
         hold off
         xlabel('frame')
         ylabel('a.u.')
         title('raw and deconvolved ica traces together with the thresholds and the detected events')
-        legend('raw trace','deconvolved trace','coarse threshold','deconv threshold')
+        
     end
 end
 
@@ -83,7 +105,6 @@ end
 function out = iterate_event_indices(idx_event_frames_in)
 
     h_len = num_frames_before_max+num_frames_after_max+1;
-    %surrogate waveform
     event_mat = construct_events(idx_event_frames_in);
     %calculate the mean of all the trials in the event_mat discarding zeros
     h = zeros(h_len,1);
@@ -158,15 +179,15 @@ function g = invert_h(h,g_len)
     A = [Mconv;noise];
     y = [y;zeros(noise_length,1)];
     
-    % Below commented out portion does a better job at filter inversion,
-    % however runs slower and requires CVX package
-    % A_not = A([1:(t_desired-1),(t_desired+1):end],:);
-    % cvx_begin quiet
-    %     variable g(g_len,1)
-    %     minimize(norm(A_not*g,1))
-    %     subject to
-    %         A(t_desired,:)*g == 1;
-    % cvx_end
+%     Below commented out portion does a better job at filter inversion,
+%     however runs slower and requires CVX package
+%     A_not = A([1:(t_desired-1),(t_desired+1):end],:);
+%     cvx_begin
+%         variable g(g_len,1)
+%         minimize(norm(A_not*g,1))
+%         subject to
+%             A(t_desired,:)*g == 1;
+%     cvx_end
 
     g = pinv(A)*y;
 end
