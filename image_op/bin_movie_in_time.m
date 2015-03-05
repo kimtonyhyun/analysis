@@ -23,6 +23,7 @@ function [M_b, binned_indices] = bin_movie_in_time(M, bin_factor, trial_indices)
 binned_indices = bin_frame_indices(trial_indices, bin_factor);
 binned_frames_per_trial = binned_indices(:,end) - binned_indices(:,1) + 1;
 num_binned_frames = sum(binned_frames_per_trial);
+num_trials = size(binned_frames_per_trial,1);
 
 % Generate the binned movie
 M_b = zeros(height, width, num_binned_frames, 'single');
@@ -37,6 +38,13 @@ for trial_idx = 1:num_trials
         
         % Compute the mean
         M_b(:,:,write_idx) = mean(M(:,:,frames),3);
+        
+        % Report progress
+        if (mod(write_idx,1000)==0)
+            fprintf('  %s: Binned %d of %d frames...\n',...
+                datestr(now), write_idx, num_binned_frames);
+        end
+        
         write_idx = write_idx + 1;
     end
 end
