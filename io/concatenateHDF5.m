@@ -165,20 +165,14 @@ for i=1:length(list)
     end
 end
 
-[path,name,ext] = fileparts(list(1).name);
+[~,name,~] = fileparts(list(1).name);
 xmlName = [fullfile(tifDir,name),'.xml'];
 xmlData = parse_miniscope_xml(xmlName);
-frameRate = str2num(xmlData.fps);
+frameRate = str2double(xmlData.fps);
 
 %%% Remove the extra frame count needed to index the hdf5 file
 totalFrames = totalFrames-1;
 
-h5create(fullfile(outputDir,hdf5Name),'/Params/NumFrames',1);
-h5write(fullfile(outputDir,hdf5Name),'/Params/NumFrames',totalFrames);
-h5create(fullfile(outputDir,hdf5Name),'/Params/NumRows',1,'Datatype','uint16');
-h5write(fullfile(outputDir,hdf5Name),'/Params/NumRows',uint16(dRows));
-h5create(fullfile(outputDir,hdf5Name),'/Params/NumCols',1,'Datatype','uint16');
-h5write(fullfile(outputDir,hdf5Name),'/Params/NumCols',uint16(dCols));
 h5create(fullfile(outputDir,hdf5Name),'/Params/TrimVals',[1 2],'Datatype','uint16');
 h5write(fullfile(outputDir,hdf5Name),'/Params/TrimVals',uint16(trim));
 h5create(fullfile(outputDir,hdf5Name),'/Params/DownsmpFactor',1,'Datatype','double');
