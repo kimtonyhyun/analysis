@@ -5,6 +5,9 @@ function crop_movie(movie_in, movie_out)
 % If 'movie_out' is left as an empty string, then default name will be
 % provided.
 %
+% The cropping parameters will also be saved in the output HDF5 file under
+% the '/Crop' directory
+%
 % Inputs:
 %   movie_in:  Name of incoming HDF5 movie
 %   movie_out: Name of outgoing HDF5 movie
