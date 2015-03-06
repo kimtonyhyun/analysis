@@ -3,15 +3,24 @@ function view_movie(M, varargin)
 %   (Note: also works with a single image)
 % Optional input will repeat the movie.
 
-if isempty(varargin)
-    num_repeats = 1;
-else
-    num_repeats = varargin{1};
+num_repeats = 1;
+rescale_each_frame = false;
+if ~isempty(varargin)
+    len = length(varargin);
+    for k = 1:len
+        switch lower(varargin{k})
+            case 'repeats'
+                num_repeats = varargin{k+1};
+            case 'rescale'
+                rescale_each_frame = true;
+        end
+    end
 end
 
 num_frames = size(M,3);
 
-if isa(M, 'uint16') % Every frame is rescaled for the raw movie
+if (rescale_each_frame || isa(M, 'uint16'))
+    % Every frame is rescaled for the raw movie
     h = imagesc(M(:,:,1));
 else % Otherwise, use common CLim scaling
     movie_clim = compute_movie_scale(M);
