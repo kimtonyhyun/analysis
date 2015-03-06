@@ -13,7 +13,8 @@ function reconst_traces = reconstruct_traces(movie_source,ica_filters,varargin)
 %           is negative, then the lower threshold is calculated as 
 %           |threshMov|*min(movie_matrix). If it is positive, then the lower 
 %           threshold is calculated as threshMov * max(movie_matrix).
-%           Default for threshMov is 0.
+%           Default for threshMov is 0. Setting it to -1 retains all movie
+%           pixels.
 %   threshIC : Scale for the threshold for the ICA filter weights. (any
 %           value in an ica filter lower than the threshold will be set to 
 %           0.) The threshold for an IC is calculated as 
