@@ -12,6 +12,9 @@ function crop_movie(movie_in, movie_out)
 %   movie_in:  Name of incoming HDF5 movie
 %   movie_out: Name of outgoing HDF5 movie
 %
+% Example usage:
+%   crop_movie('c9m7d12.hdf5','');
+%
 
 if isempty(movie_out)
     [~, name] = fileparts(movie_in);
