@@ -50,7 +50,8 @@ function watch_trial_with_centroids( movie, centroids_mat, trial, varargin )
         
         % update trial indices
         title(sprintf('Trial %d',trial(i)));
-        this_trial_indices = trial_indices(i,:);
+        this_trial = trial(i);
+        this_trial_indices = trial_indices(this_trial,:);
         trial_start = this_trial_indices(1);  
         
         % load trial video
