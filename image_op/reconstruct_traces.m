@@ -48,6 +48,7 @@ if ~isempty(varargin)
         end
     end
 end
+
 fprintf('Loading movie.. \n');
 M = load_movie(movie_source);
 [height,width,num_frames] = size(M);
@@ -63,11 +64,8 @@ end
 
 num_ICs = size(ica_filters,3);
 fprintf('Thresholding IC filters.. \n');
-% Threshold the ica_filters
 for idx_cell = 1:num_ICs
-    ica_filter = ica_filters(:,:,idx_cell);
-    ica_filter(ica_filter<threshIC*max(ica_filter(:))) = 0;
-    ica_filters(:,:,idx_cell) = ica_filter/sum(ica_filter(:));
+    ica_filters(:,:,idx_cell) = threshold_ic_filter(ica_filters(:,:,idx_cell),threshIC);
 end
 
 reconst_traces = zeros(num_frames,num_ICs);
@@ -79,4 +77,5 @@ for idx_cell = 1:num_ICs
     movie_portion(movie_portion<threshMov) = 0;
     reconst_traces(:,idx_cell) = movie_portion * ica_filter(pix_active);  
 end
-fprintf('Done! \n');
+fprintf('Reconstructing traces v2.. \n');
+
