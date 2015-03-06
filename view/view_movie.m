@@ -1,7 +1,6 @@
 function view_movie(M, varargin)
 % Displays the frames of a movie matrix M [height x row x num_frames]
 %   (Note: also works with a single image)
-% Optional input will repeat the movie.
 
 num_repeats = 1;
 rescale_each_frame = false;
