@@ -48,9 +48,9 @@ function [trial_frames] = mouse_path_plotter( movie, centroids_mat, varargin)
         colormap gray;
         hold on
         
+        color_options = jet(size(centroids(trial_start:trial_end,1),1));
         % plot centroids in color
         for i = trial_start:trial_end
-            color_options = jet(size(centroids(trial_start:trial_end,1),1));
             plot(centroids(i,1),centroids(i,2),'*','Color',color_options(i-trial_start+1,:))
         end
     end
