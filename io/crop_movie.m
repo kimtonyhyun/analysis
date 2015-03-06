@@ -60,6 +60,11 @@ h5create(movie_out, movie_dataset,...
          'ChunkSize', [cropped_height, cropped_width 1],...
          'Datatype', in_data_type); % Preserve data type
 
+copy_hdf5_params(movie_in, movie_out);
+
+h5create(movie_out, '/Crop/CropRect', [1 4], 'Datatype', 'uint16');
+h5write(movie_out, '/Crop/CropRect', uint16(rect_params));
+
 % Process the remainder of the movie
 frame_chunk_size = 2500;
 [frame_chunks, num_chunks] = make_frame_chunks(num_frames, frame_chunk_size);
