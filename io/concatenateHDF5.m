@@ -78,44 +78,57 @@ for i=1:length(list)
         %%% trial
         if(str2num(xmlData.dropped_count) ~= 0)
             droppedFrames = str2num(xmlData.dropped);
+            numDroppedFrames = length(droppedFrames);
         else
             numFrames = oriFrames;
             droppedFrames = 0;
+            numDroppedFrames = 0;
         end
         
         %%% Read in the images, trim the frames at the beginning and end 
         %%% of the trial (set by the 'trim' argument), and downsample by the 
         %%% 'downsmpFactor' argument
-        imageStack = zeros(downsmpRows,downsmpCols,oriFrames-trim(1)-trim(2),'uint16');
+        imageStack = zeros(downsmpRows,downsmpCols,oriFrames,'uint16');
         if(downsmpFactor == 1)
-            for j=1:oriFrames-trim(1)-trim(2)
-                tifFile.setDirectory(j+trim(1));
+            for j=1:oriFrames
+                tifFile.setDirectory(j);
                 imageStack(:,:,j) = uint16(tifFile.read());
             end
         else
-            for j=1:oriFrames-trim(1)-trim(2)
-                tifFile.setDirectory(j+trim(1));
+            for j=1:oriFrames
+                tifFile.setDirectory(j);
                 imageStack(:,:,j) = uint16(imresize(tifFile.read(),downsmpFactor,'bilinear'));
             end
         end
         
         %%% Replace any dropped frames with the frame immediately
-        %%% preceeding it
+        %%% preceeding it (or after it if the first frame of the trial was
+        %%% dropped)
         if(droppedFrames ~= 0)
-            for j=1:length(droppedFrames)
+            while(~isempty(droppedFrames))
                 disp('DroppedFrame');
-                droppedFrame = droppedFrames(j);
-                if((droppedFrame > trim(1)) && (droppedFrame < oriFrames-trim(2)))
-                    droppedFrame = droppedFrame+trim(1);
+                droppedFrame = droppedFrames(1);
+                if(droppedFrame == 1)
+                    smallestFrame = find(min(droppedFrames~=1:oriFrames));
+                    frontStack = repmat(imageStack(:,:,smallestStack),[1 1 smallestFrame-1]);
+                    backStack = imageStack(:,:,smallestStack:end);
+                    newImageStack = cat(3,frontStack,backStack);
+                    clear imageStack
+                    imageStack = newImageStack;
+                    droppedFrames(1:smallestFrame-1) = [];
+                else
                     frontStack = imageStack(:,:,1:droppedFrame-1);
                     frontStack = cat(3,frontStack,imageStack(:,:,droppedFrame-1));
                     backStack = imageStack(:,:,droppedFrame:end);
                     newImageStack = cat(3,frontStack,backStack);
                     clear imageStack
                     imageStack = newImageStack;
+                    droppedFrames(1) = [];
                 end
             end
         end
+        
+        imageStack = imageStack(:,:,trim(1)+1:(oriFrames+numDroppedFrames)-trim(2));
         
         numFrames = size(imageStack,3);
         [dRows,dCols] = size(imageStack(:,:,1));
@@ -146,26 +159,20 @@ for i=1:length(list)
         totalFrames = totalFrames+numFrames;
         
         %%% Total frame count corresponding to behavior text file
-        testFrames = testFrames+oriFrames;
+        testFrames = testFrames+oriFrames+numDroppedFrames;
         
         clear imageStack tifName tifInfo tifFile droppedFrames newImageStack
     end
 end
 
-[path,name,ext] = fileparts(list(1).name);
+[~,name,~] = fileparts(list(1).name);
 xmlName = [fullfile(tifDir,name),'.xml'];
 xmlData = parse_miniscope_xml(xmlName);
-frameRate = str2num(xmlData.fps);
+frameRate = str2double(xmlData.fps);
 
 %%% Remove the extra frame count needed to index the hdf5 file
 totalFrames = totalFrames-1;
 
-h5create(fullfile(outputDir,hdf5Name),'/Params/NumFrames',1);
-h5write(fullfile(outputDir,hdf5Name),'/Params/NumFrames',totalFrames);
-h5create(fullfile(outputDir,hdf5Name),'/Params/NumRows',1,'Datatype','uint16');
-h5write(fullfile(outputDir,hdf5Name),'/Params/NumRows',uint16(dRows));
-h5create(fullfile(outputDir,hdf5Name),'/Params/NumCols',1,'Datatype','uint16');
-h5write(fullfile(outputDir,hdf5Name),'/Params/NumCols',uint16(dCols));
 h5create(fullfile(outputDir,hdf5Name),'/Params/TrimVals',[1 2],'Datatype','uint16');
 h5write(fullfile(outputDir,hdf5Name),'/Params/TrimVals',uint16(trim));
 h5create(fullfile(outputDir,hdf5Name),'/Params/DownsmpFactor',1,'Datatype','double');
