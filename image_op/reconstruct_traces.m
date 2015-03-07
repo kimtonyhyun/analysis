@@ -78,5 +78,5 @@ for idx_cell = 1:num_ICs
     movie_portion(movie_portion<threshMov) = 0;
     reconst_traces(:,idx_cell) = movie_portion * ica_filter(pix_active);  
 end
-fprintf('Reconstructing traces v2.. \n');
+fprintf('Done!');
 
