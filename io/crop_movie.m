@@ -36,6 +36,9 @@ height = movie_size(1);
 width = movie_size(2);
 num_frames = movie_size(3);
 
+% Begin crop processing
+%------------------------------------------------------------
+
 % Optional specification of the cropping ROI
 x_bounds = [];
 y_bounds = [];
@@ -50,8 +53,6 @@ if ~isempty(varargin)
     end
 end
 
-% Let the user select the crop region
-%------------------------------------------------------------
 ref_idx = 1;
 ref_frame = h5read(movie_in, movie_dataset, [1 1 ref_idx], [height width 1]);
 
