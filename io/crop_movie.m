@@ -31,12 +31,10 @@ end
 movie_dataset = '/Data/Images';
 
 % Grab the movie parameters
-h5att = h5info(movie_in, movie_dataset);
-in_data_type = datatype_hdf5_to_matlab(h5att.Datatype.Type); % e.g. 'uint16'
-
-height = h5att.Dataspace.Size(1);
-width = h5att.Dataspace.Size(2);
-num_frames = h5att.Dataspace.Size(3);
+[movie_size, in_data_type] = get_dataset_info(movie_in, movie_dataset);
+height = movie_size(1);
+width = movie_size(2);
+num_frames = movie_size(3);
 
 % Optional specification of the cropping ROI
 x_bounds = [];

@@ -44,11 +44,10 @@ transform = @(A) mosaic_transform(A, hDisk, hDisk2);
 movie_dataset = '/Data/Images';
 
 % Grab the movie parameters
-h5att = h5info(movie_in, movie_dataset);
-
-height = h5att.Dataspace.Size(1);
-width = h5att.Dataspace.Size(2);
-num_frames = h5att.Dataspace.Size(3);
+[movie_size, ~] = get_dataset_info(movie_in, movie_dataset);
+height = movie_size(1);
+width = movie_size(2);
+num_frames = movie_size(3);
 
 % Begin TurboReg processing
 %------------------------------------------------------------
