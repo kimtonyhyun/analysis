@@ -1,4 +1,24 @@
 function register_movie(movie_in, movie_out, varargin)
+% Motion correct HDF5 movie from file ('movie_in') to file ('movie_out').
+% Registration is performed with TurboReg (turbocoreg.mex). The
+% registration is performed after filtering the frames with the "Mosaic
+% filter", consisting of two steps: (1) "subtract spatial mean", and 
+% (2) "apply spatial mean". Two optional arguments provide parameters for
+% the two filtering steps.
+%
+% If 'movie_out' is left as an empty string, then default name will be
+% provided.
+%
+% The motion correction parameters will also be saved in the output HDF5 
+% file under the '/MotCorr' directory
+%
+% Inputs:
+%   movie_in:  Name of incoming HDF5 movie
+%   movie_out: Name of outgoing HDF5 movie
+%
+% Example usage:
+%   register_movie('c9m7d12.hdf5','',20,5);
+%
 
 if isempty(movie_out)
     [~, name] = fileparts(movie_in);
