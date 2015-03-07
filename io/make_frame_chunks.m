@@ -1,4 +1,4 @@
-function [ frame_chunks ] = make_frame_chunks( num_frames , chunk_size)
+function [ frame_chunks, num_chunks ] = make_frame_chunks( num_frames , chunk_size)
 % Creates frame chunks so that get_mouse_XY_pos can go
 %   through the behavior video in chunks (not enough memory to
 %   load the whole video)
@@ -14,6 +14,7 @@ function [ frame_chunks ] = make_frame_chunks( num_frames , chunk_size)
     x = (1:chunk_size:num_frames)';
     y = [x(2:end)-1; num_frames];
     frame_chunks = [x y];
-
+    num_chunks = size(frame_chunks,1);
+    
 end
 
