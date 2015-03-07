@@ -26,6 +26,18 @@ if isempty(movie_out)
     fprintf('register_movie: Output movie will be saved as "%s"\n', movie_out);
 end
 
+% Default dataset name for the movie
+movie_dataset = '/Data/Images';
+
+% Grab the movie parameters
+[movie_size, ~] = get_dataset_info(movie_in, movie_dataset);
+height = movie_size(1);
+width = movie_size(2);
+num_frames = movie_size(3);
+
+% Begin TurboReg processing
+%------------------------------------------------------------
+
 % Optional parameters specify the "Mosaic filter", which consists of:
 %   1) Subtract spatial mean
 %   2) Apply spatial mean -- to the output of (1)
@@ -40,17 +52,7 @@ hDisk  = fspecial('disk', ssm_radius);
 hDisk2 = fspecial('disk', asm_radius);
 transform = @(A) mosaic_transform(A, hDisk, hDisk2);
 
-% Default dataset name for the movie
-movie_dataset = '/Data/Images';
-
-% Grab the movie parameters
-[movie_size, ~] = get_dataset_info(movie_in, movie_dataset);
-height = movie_size(1);
-width = movie_size(2);
-num_frames = movie_size(3);
-
-% Begin TurboReg processing
-%------------------------------------------------------------
+% Common reference for registration
 ref_idx = 1;
 im_ref = h5read(movie_in, movie_dataset, [1 1 ref_idx], [height width 1]);
 im_ref = transform(single(im_ref));
