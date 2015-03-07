@@ -8,7 +8,7 @@ if ~isempty(varargin)
     len = length(varargin);
     for k = 1:len
         switch lower(varargin{k})
-            case 'repeats'
+            case {'repeat', 'repeats'}
                 num_repeats = varargin{k+1};
             case 'rescale'
                 rescale_each_frame = true;
