@@ -32,7 +32,7 @@ function [intermediate_centroids,param_centroids] = reparameterize_centroids(cen
         %replace (0,0)'s with the first detected location
         centroids(1:acc-1,:) = centroids(acc,:);
     end
-
+    
     % Use segmented least squares fitting with one knot. The knot is
     % found by trying every possible one and selecting the one with lowest
     % reconstruction error.
@@ -64,7 +64,7 @@ function [intermediate_centroids,param_centroids] = reparameterize_centroids(cen
     % Reconstruct y trace from x trace
     y_reconst = dum.*(slope*coord_x+intercept1)+...
         dum_prime.*(-1/slope *coord_x + intercept2);    
-    intermediate_centroids = [coord_x,y_reconstruct];
+    intermediate_centroids = [coord_x,y_reconst];
     
     % Find x,y points where two lines intersect, that point is the knot
     knot = [-slope,1;1/slope,1] \ [intercept1;intercept2];
@@ -80,7 +80,7 @@ function [intermediate_centroids,param_centroids] = reparameterize_centroids(cen
     angToShift = angle;
     rotationMat = [cos(angToShift),-sin(angToShift);sin(angToShift),cos(angToShift)];
     param_centroids = [x_shifted,y_shifted]*rotationMat;
-
+    
     %round anything in [-1,1] to zero
     param_centroids(param_centroids<1 & param_centroids>-1) = 0;
 
