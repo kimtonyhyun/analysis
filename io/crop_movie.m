@@ -77,7 +77,7 @@ colormap gray;
 axis image;
 title(sprintf('%s (cropped)',strrep(movie_in, '_', '\_')));
 
-input('crop_movie: Press enter to apply crop to entire movie >> ');
+input('crop_movie: Press enter to proceed >> ');
 
 % Prepare output movie
 %------------------------------------------------------------

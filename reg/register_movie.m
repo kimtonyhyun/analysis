@@ -69,7 +69,7 @@ options.rotation_enable = true;
 options.mingain = 0.0; % Max accuracy
 options.levels = calculate_pyramid_depth(min(height, width));
 
-input('register_movie: Please enter to begin registration >> ');
+input('register_movie: Please enter to proceed >> ');
 
 % Prepare output movie
 %------------------------------------------------------------
