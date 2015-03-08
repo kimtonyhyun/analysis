@@ -24,13 +24,14 @@ for i = 1:length(ic_boundaries)
     ic_boundary = ic_boundaries{i};
     plot(ic_boundary(:,1), ic_boundary(:,2), 'r', 'LineWidth', 2);
 end
-hold off;
 
 % Compute the center of mass of the filter
 [height, width] = size(ic_mask);
 props = regionprops(ic_mask, 'Centroid');
 COM = props.Centroid;
 zoom_half_width = min([width, height])/20;
+plot(COM(1), COM(2), 'r.');
+hold off;
 
 % Compute the active portions of the trace
 %------------------------------------------------------------
