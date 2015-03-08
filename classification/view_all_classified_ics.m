@@ -1,4 +1,4 @@
-function view_all_classified_ics(class_file,ica_mat,label_option)
+function view_all_classified_ics(ic_dir, label_option)
 % View ICs on top of cell map, where color of outline indicates
 %   cell (green) or not (cell)
 %   
@@ -8,15 +8,15 @@ function view_all_classified_ics(class_file,ica_mat,label_option)
 %
 % 2015 02 19 Fori Wang
 
-figure;
+% Load data
+ica_file = get_most_recent_file(ic_dir, 'ica_*.mat');
+class_file = get_most_recent_file(ic_dir, 'class_*.txt');
 
-% load ICs
-load(ica_mat); % 'ica_info', 'ica_traces', 'ica_filters'
-
-% Pull out classification data
+load(ica_file); % 'ica_info', 'ica_traces', 'ica_filters'
 class = load_classification(class_file);
 
 % Draw background image (sum of all IC filters)
+figure;
 h = imagesc(sum(ica_filters,3));
 colormap gray;
 axis image;
