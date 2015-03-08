@@ -11,7 +11,7 @@ function view_all_classified_ics(class_file,ica_mat,label_option)
 figure;
 
 % load ICs
-load(ica_mat);
+load(ica_mat); % 'ica_info', 'ica_traces', 'ica_filters'
 
 % Pull out classification data
 class = load_classification(class_file);
@@ -27,32 +27,27 @@ title_class_file = strrep(class_file, '_','\_');
 title(['Classified ICs for ',title_pwd, ' from ',title_class_file])
 
 hold on;
-colors = ['g'; 'r'];
 
 % Draw all filter outlines (green = cell; red = not cell)
+ic_filter_threshold = 0.3;
 for ic_idx = 1:length(class)
-    % Generate the outline of the IC filter
-    ic_filter_threshold = 0.3;
     ic_filter = ica_filters(:,:,ic_idx);
-    B = threshold_ic_filter(ic_filter, ic_filter_threshold);
-    boundaries = bwboundaries(B, 'noholes');
-
+    boundaries = compute_ic_boundary(ic_filter, ic_filter_threshold);
+    boundary = boundaries{1}; % Longest boundary
+    
     % Setup colors
-    if strcmp(class(ic_idx),'cell')
-        line_color = colors(1);
+    if strcmp(class(ic_idx),'not a cell')
+        line_color = 'r';
     else
-        line_color = colors(2);
+        line_color = 'g';
     end
     
     % Draw filter outline, color depending on classification
-    for i = 1:length(boundaries)
-        boundary = boundaries{i};
-        plot(boundary(:,2), boundary(:,1), line_color, 'LineWidth', 1);
-    end
+    plot(boundary(:,1), boundary(:,2), line_color, 'LineWidth', 1);
     
     % label outline with IC #
     if strcmp(label_option,'y')
-        text(max(boundary(:,2)),max(boundary(:,1)),int2str(ic_idx),...
+        text(max(boundary(:,1)),max(boundary(:,2)),int2str(ic_idx),...
                 'Color',line_color);
     end
 end
