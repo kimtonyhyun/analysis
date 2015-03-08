@@ -30,7 +30,7 @@ end
 props = regionprops(ic_mask, 'Centroid');
 COM = props.Centroid;
 zoom_half_width = min([width, height])/20;
-plot(COM(1), COM(2), 'r.');
+plot(COM(1), COM(2), 'b.');
 hold off;
 
 % Compute the active portions of the trace
