@@ -81,7 +81,7 @@ function watch_trial_with_centroids( movie, centroids_mat, trial, varargin )
         % display black screen at end of each trial
         set(k,'CData',blank_image);
         set(l,'color','k');
-        pause(0.5);
+        pause(0.25);
     end
 
 end
