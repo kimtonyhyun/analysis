@@ -1,8 +1,10 @@
 function F = compute_fluorescence_stats(M)
-% Compute the mean fluorescence of a movie M on a frame-by-frame basis.
-%   M: [h x w x num_frames]
+% Compute fluorescence stats (min, mean, max) of a movie M on a 
+% frame-by-frame basis.
 %
-% 2015 01 31 Tony Hyun Kim
+% Inputs:
+%   M: [height x width x num_frames] movie to be examined
+%
 
 num_frames = size(M,3);
 F = zeros(num_frames, 3);
