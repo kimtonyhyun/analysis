@@ -2,6 +2,14 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
 % Extract the X,Y positions ( centroids ) of the mouse from the behavior
 %   video ( movie ), with live monitor option (specify 'displayTracking')
 %  
+% Example uses:
+%     Normal mode:
+%       centroids = get_mouse_XY_pos('c9m7d08_ti2-sub.mp4');
+%   Live monitor mode:	
+%         centroids = get_mouse_XY_pos('c9m7d08_ti2-sub.mp4','displayTracking');
+%     Trial-aware mode:
+%       centroids = get_mouse_XY_pos('c9m7d08_ti2-sub.mp4','c9m7d08_cr_ti2.txt');
+% 
 % Input:
 %   - movie: Behavior video (m4v); movie should be cropped (wavy curtain
 %   leads to fall centroids (haven't found another way to fix this)
@@ -19,11 +27,8 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
 %   number of frames in movie
 %
 % Notes: Analyzes movie in chunks of chunk_size=1000 frames (smaller memory load)
-%   *** read function does not work properly on Linux, so unfortunately
-%   have to run this on a Windows machine ***
-%   *** Not very fast, but only have to run once; ~54K frames = ~40 min
 %
-% 2015-02-26 Fori Wang
+% Updated 2015-03-10 Fori Wang
 
     display_tracking = 0;
     % check if live monitor option requested
@@ -34,8 +39,6 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
             figure;
             fprintf('Displaying live tracking...');            
         else
-%             fprintf('Did not recognize %s.',option);
-%             return
             trial_aware = 1;
             trial_indices = get_trial_frame_indices(option);
             trial_indices = trial_indices(:,[1 4]);
@@ -63,9 +66,6 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
     bg_image = uint8(bg_image);
     
     c_old = [0 0];
-    
-
-    
     
     for idx = 1:length(frame_chunks)
 
@@ -148,7 +148,6 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
                 
                 % trial_aware mode
                 if reassign_prev_centroid % assign c_new to previous centroid where blob was lost
-                    centroids(true_frame_idx-1,:) = c_new;
                     centroids(true_frame_idx-lost_centroids:true_frame_idx-1,:) = c_new;
                     reassign_prev_centroid = 0;
                     lost_centroids = 0;
