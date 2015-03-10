@@ -19,15 +19,19 @@ axis image;
 xlabel('x [px]');
 ylabel('y [px]');
 hold on;
-[ic_boundary, ic_mask] = compute_ic_boundary(ic_filter, ic_filter_threshold);
-plot(ic_boundary(:,1), ic_boundary(:,2), 'r', 'LineWidth', 2);
-hold off;
+[ic_boundaries, ic_mask] = compute_ic_boundary(ic_filter, ic_filter_threshold);
+for i = 1:length(ic_boundaries)
+    ic_boundary = ic_boundaries{i};
+    plot(ic_boundary(:,1), ic_boundary(:,2), 'r', 'LineWidth', 2);
+end
 
 % Compute the center of mass of the filter
 [height, width] = size(ic_mask);
 props = regionprops(ic_mask, 'Centroid');
 COM = props.Centroid;
 zoom_half_width = min([width, height])/20;
+plot(COM(1), COM(2), 'b.');
+hold off;
 
 % Compute the active portions of the trace
 %------------------------------------------------------------

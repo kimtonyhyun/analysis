@@ -61,18 +61,19 @@ while (~all(sel_ics_idx == num_ics_for_alignment))
     if ~isempty(ic_idx) % Hit
         sel_idx = sel_ics_idx(source_idx) + 1;
         if (sel_idx <= num_ics_for_alignment)
-            fill(bounds{source_idx}{ic_idx}(:,1),...
-                 bounds{source_idx}{ic_idx}(:,2),...
+            boundary = bounds{source_idx}{ic_idx};
+            fill(boundary(:,1),...
+                 boundary(:,2),...
                  sel_colors(mod(sel_idx,length(sel_colors))+1));
 
-            props = regionprops(masks{source_idx}{ic_idx},'centroid');
+            sel_ic_centroid = mean(boundary,1);
             fprintf('  %s: IC %d selected (at [%.1f %.1f])!\n',...
                 sources{source_idx}, ic_idx,...
-                props.Centroid(1), props.Centroid(2));
+                sel_ic_centroid(1), sel_ic_centroid(2));
             
             sel_ics(sel_idx, source_idx) = ic_idx;
             sel_ics_idx(source_idx) = sel_idx;
-            sel_ics_centers(sel_idx,:,source_idx) = props.Centroid;
+            sel_ics_centers(sel_idx,:,source_idx) = sel_ic_centroid;
         else
             fprintf('  %s: No more ICs needed!\n',...
                 sources{source_idx});
@@ -92,8 +93,8 @@ tform = fitgeotrans(sel_ics_centers(:,:,2),... % Moving points
 
 figure;
 subplot(121); % Pre-transform comparison
-plot_boundaries(bounds{1}, c1, 'b', sel_ics(:,1), []);
-plot_boundaries(bounds{2}, c2, 'r', sel_ics(:,2), []);
+plot_boundaries(bounds{1}, c1, 'b', 2, sel_ics(:,1), []);
+plot_boundaries(bounds{2}, c2, 'r', 1, sel_ics(:,2), []);
 title(sprintf('Pre-transform: %s (blue) vs. %s (red)',...
                 strrep(sources{1}, '_', '\_'),...
                 strrep(sources{2}, '_', '\_')));
@@ -101,8 +102,8 @@ axis equal;
 set(gca, 'YDir', 'Reverse');
 
 subplot(122); % Post-transform comparison
-plot_boundaries(bounds{1}, c1, 'b', sel_ics(:,1), []);
-plot_boundaries(bounds{2}, c2, 'r', sel_ics(:,2), tform);
+plot_boundaries(bounds{1}, c1, 'b', 2, sel_ics(:,1), []);
+plot_boundaries(bounds{2}, c2, 'r', 1, sel_ics(:,2), tform);
 title(sprintf('Post-transform: %s (blue) vs. %s (red)',...
                 strrep(sources{1}, '_', '\_'),...
                 strrep(sources{2}, '_', '\_')));
@@ -147,20 +148,21 @@ function [boundaries, masks, ic_map] = plot_ic_filters(ica_filters, cl, ic_filte
     
     for ic_idx = 1:num_ics
         ic_filter = ica_filters(:,:,ic_idx);
-        [boundary, mask] = compute_ic_boundary(ic_filter, ic_filter_threshold);
-        if strcmp(cl{ic_idx}, 'not a cell')
-            color = 'r';
-        else
+        [ic_boundaries, mask] = compute_ic_boundary(ic_filter, ic_filter_threshold);
+        ic_boundary = ic_boundaries{1}; % Longest boundary
+        if any(strcmp(cl{ic_idx}, {'phase-sensitive cell', 'cell'}))
             color = 'g';
+        else
+            color = 'r';
         end
-        plot(boundary(:,1), boundary(:,2), color);
+        plot(ic_boundary(:,1), ic_boundary(:,2), color);
         
-        boundaries{ic_idx} = boundary;
+        boundaries{ic_idx} = ic_boundary;
         masks{ic_idx} = mask;
     end
 end
 
-function plot_boundaries(boundaries, cl, color, sel_ics, tform)
+function plot_boundaries(boundaries, cl, linespec, linewidth, sel_ics, tform)
     % Plot boundaries as a single color, with an optional transform
     num_ics = length(cl);
     for ic_idx = 1:num_ics
@@ -169,10 +171,10 @@ function plot_boundaries(boundaries, cl, color, sel_ics, tform)
             boundary = transformPointsForward(tform, boundary);
         end
         if ismember(ic_idx, sel_ics) % One of the user-selected ICs
-            fill(boundary(:,1), boundary(:,2), color);
+            fill(boundary(:,1), boundary(:,2), linespec, 'LineWidth', linewidth);
         else
-            if ~strcmp(cl{ic_idx}, 'not a cell') % Is a cell
-                plot(boundary(:,1), boundary(:,2), color);
+            if any(strcmp(cl{ic_idx}, {'phase-sensitive cell', 'cell'}))
+                plot(boundary(:,1), boundary(:,2), linespec, 'LineWidth', linewidth);
             end
         end
         hold on;
