@@ -136,7 +136,7 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
                     reassign_prev_centroid = 1;
                     lost_centroids = lost_centroids+1;
                     centroid_color = 'm';
-                elseif trial_aware && reassign_prev_centroid == 1
+                elseif reassign_prev_centroid
                     % in cases mouse also lost in frames immediately
                     % following first frame
                     lost_centroids = lost_centroids+1;
