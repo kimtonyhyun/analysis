@@ -2,24 +2,33 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
 % Extract the X,Y positions ( centroids ) of the mouse from the behavior
 %   video ( movie ), with live monitor option (specify 'displayTracking')
 %  
+% Example uses:
+%     Normal mode:
+%       centroids = get_mouse_XY_pos('c9m7d08_ti2-sub.mp4');
+%   Live monitor mode:	
+%         centroids = get_mouse_XY_pos('c9m7d08_ti2-sub.mp4','displayTracking');
+%     Trial-aware mode:
+%       centroids = get_mouse_XY_pos('c9m7d08_ti2-sub.mp4','c9m7d08_cr_ti2.txt');
+% 
 % Input:
 %   - movie: Behavior video (m4v); movie should be cropped (wavy curtain
 %   leads to fall centroids (haven't found another way to fix this)
-%   - varargin: 'displayTracking' displays side-by-side of original movie and
-%   processing movie, along with centroid on each. blue * means good
-%   centroid value, red * means could not find mouse, using previous
-%   centroid value
+%   - varargin:
+%     'displayTracking': Displays side-by-side of original movie and
+%           processing movie, along with centroid on each. blue * means good
+%           centroid value, red * means could not find mouse, using previous
+%           centroid value, magenta * means temporary centroid assigned at
+%           trial boundary (to be reassigned same as next centroid)
+%     'trial_indices.txt': If provided, will not use prev_centroid method
+%     at the trial boundaries to avoid bleed-through across trials
 %
 % Returns matrix centroids where each row is an (x,y) coordinate of the
 %   mouse. 1st column = X, 2nd column = Y. Length of matrix =
 %   number of frames in movie
 %
 % Notes: Analyzes movie in chunks of chunk_size=1000 frames (smaller memory load)
-%   *** read function does not work properly on Linux, so unfortunately
-%   have to run this on a Windows machine ***
-%   *** Not very fast, but only have to run once; ~54K frames = ~40 min
 %
-% 2015-02-26 Fori Wang
+% Updated 2015-03-10 Fori Wang
 
     display_tracking = 0;
     % check if live monitor option requested
@@ -28,10 +37,11 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
         if strcmp(option,'displayTracking')
             display_tracking = 1;
             figure;
-            fprintf('Displaying live tracking...');
+            fprintf('Displaying live tracking...');            
         else
-            fprintf('Did not recognize %s.',option);
-            return
+            trial_aware = 1;
+            trial_indices = get_trial_frame_indices(option);
+            trial_indices = trial_indices(:,[1 4]);
         end
     end
         
@@ -40,6 +50,10 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
 
     % initialize centroids
     centroids = zeros(num_frames,2);
+    
+    % initialize variables for trial_aware mode
+    lost_centroids=0;
+    reassign_prev_centroid=0;
     
     % setup chunks of frames to read in movie
     chunk_size = 1000;
@@ -112,14 +126,38 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
             end
 
             % Save centroids data and update plot
+            true_frame_idx = frame_chunks(idx,1)+frame_idx-1;           
+                
             if isempty(area_vector) %sometimes blob disappears, go to previous centroid
-                centroids(frame_chunks(idx,1)+frame_idx-1,:) = c_old;
-                centroid_color = 'r';
+                
+                % trial_aware mode
+                % if image is the first image of a trial, use next centroid
+                if trial_aware && find(true_frame_idx==trial_indices(:,1),1)
+                    reassign_prev_centroid = 1;
+                    lost_centroids = lost_centroids+1;
+                    centroid_color = 'm';
+                elseif reassign_prev_centroid
+                    % in cases mouse also lost in frames immediately
+                    % following first frame
+                    lost_centroids = lost_centroids+1;
+                    centroid_color = 'm';
+                else % use previous centroid
+                    centroids(true_frame_idx,:) = c_old;
+                    centroid_color = 'r';
+                end
                 
             else % new centroid
                 [~, id] = max(length_vector); %assume mouse is the fattest blob
                 c_new = s(id(1)).Centroid(1:2);
-                centroids(frame_chunks(idx,1)+frame_idx-1,:) = c_new;
+                centroids(true_frame_idx,:) = c_new;
+                
+                % trial_aware mode
+                if reassign_prev_centroid % assign c_new to previous centroid where blob was lost
+                    centroids(true_frame_idx-lost_centroids:true_frame_idx-1,:) = c_new;
+                    reassign_prev_centroid = 0;
+                    lost_centroids = 0;
+                end
+                
                 c_old = c_new;
                 centroid_color = 'b';
             end
