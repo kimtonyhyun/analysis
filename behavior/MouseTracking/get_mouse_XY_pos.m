@@ -52,6 +52,8 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
                     else
                         error('trialAware input must be .txt file.');
                     end
+                otherwise
+                    error('Optional varargin not recognized.');
             end
         end
     end
