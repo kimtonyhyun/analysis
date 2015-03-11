@@ -3,12 +3,12 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
 %   video ( movie ), with live monitor option (specify 'displayTracking')
 %  
 % Example uses:
-%     Normal mode:
+%   Normal mode:
 %       centroids = get_mouse_XY_pos('c9m7d08_ti2-sub.mp4');
 %   Live monitor mode:	
-%         centroids = get_mouse_XY_pos('c9m7d08_ti2-sub.mp4','displayTracking');
-%     Trial-aware mode:
-%       centroids = get_mouse_XY_pos('c9m7d08_ti2-sub.mp4','c9m7d08_cr_ti2.txt');
+%       centroids = get_mouse_XY_pos('c9m7d08_ti2-sub.mp4','displayTracking');
+%   Trial-aware mode:
+%       centroids = get_mouse_XY_pos('c9m7d08_ti2-sub.mp4','trialAware','c9m7d08_cr_ti2.txt');
 % 
 % Input:
 %   - movie: Behavior video (m4v); movie should be cropped (wavy curtain
@@ -19,8 +19,9 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
 %           centroid value, red * means could not find mouse, using previous
 %           centroid value, magenta * means temporary centroid assigned at
 %           trial boundary (to be reassigned same as next centroid)
-%     'trial_indices.txt': If provided, will not use prev_centroid method
-%     at the trial boundaries to avoid bleed-through across trials
+%     'trialAware','trial_indices.txt': If 'trialAware' and .txt file provided,
+%           will not use prev_centroid method at the trial boundaries to avoid
+%           bleed-through across trials
 %
 % Returns matrix centroids where each row is an (x,y) coordinate of the
 %   mouse. 1st column = X, 2nd column = Y. Length of matrix =
@@ -30,21 +31,34 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
 %
 % Updated 2015-03-10 Fori Wang
 
-    display_tracking = 0;
-    % check if live monitor option requested
+    % Default settings
+    display_tracking = 0; trial_aware = 0;
+    
+    % Check varargins
     if ~isempty(varargin)
-        option = varargin{1};
-        if strcmp(option,'displayTracking')
-            display_tracking = 1;
-            figure;
-            fprintf('Displaying live tracking...');            
-        else
-            trial_aware = 1;
-            trial_indices = get_trial_frame_indices(option);
-            trial_indices = trial_indices(:,[1 4]);
+        num_vararg = length(varargin);
+        for k = 1:num_vararg
+            switch varargin{k}
+                case 'displayTracking'
+                    display_tracking = 1;
+                    figure;
+                    fprintf('displayTracking ON\n');
+                case 'trialAware'
+                    if strfind(varargin{k+1},'.txt')
+                        trial_aware = 1;
+                        trial_indices = get_trial_frame_indices(varargin{k+1});
+                        trial_indices = trial_indices(:,[1 4]);
+                        fprintf('trialAware ON\n');
+                    else
+                        error('trialAware input must be .txt file.');
+                    end
+                otherwise
+                    error('Optional varargin not recognized.');
+            end
         end
     end
-        
+    
+    fprintf('Reading in behavior video...\n');
     behavior_vid = VideoReader(movie);
     num_frames = behavior_vid.NumberofFrames;
 
