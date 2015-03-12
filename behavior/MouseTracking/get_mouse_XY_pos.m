@@ -73,8 +73,9 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
     
     % setup background image: average of 5000 frames
     bg_vid = read(behavior_vid,[1 5000]);
-%     bg_vid = squeeze(bg_vid(:,:,1,:)); % 3D movie stack
-    bg_image = mean(bg_vid,4);
+    bg_vid = squeeze(bg_vid(:,:,1,:)); % 3D movie stack
+%     bg_image = mean(bg_vid,4);
+    bg_image = mean(bg_vid,3);
     bg_image = uint8(bg_image);
     
     c_old = [0 0];
@@ -87,13 +88,14 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
         % read in all of the frames for the trial at the beginning
         frame_range = frame_chunks(idx,:);
         video = read(behavior_vid,frame_range);
-%         video = squeeze(video(:,:,1,:)); % 3D movie stack
+        video = squeeze(video(:,:,1,:)); % 3D movie stack
         
         if display_tracking
             
             % plot original image on the left
             subplot(121);
-            image = video(:,:,:,1);
+%             image = video(:,:,:,1);
+            image = video(:,:,1);
             h = imagesc(image);
             title(sprintf('Original: Frames %d - %d',...
                           frame_chunks(idx,1), frame_chunks(idx,2)));
@@ -115,11 +117,12 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
             l = plot(0,0,'k*');
         end
 
-        for frame_idx = 1:size(video,4)
+%         for frame_idx = 1:size(video,4)
+        for frame_idx = 1:size(video,3)
            
            % Update original image CData
-            image = video(:,:,:,frame_idx);
-%             image = im2double(image,'indexed');
+%             image = video(:,:,:,frame_idx);
+            image = video(:,:,frame_idx);
             if display_tracking
                 set(h,'CData',image);
                 pause(0.00001);
