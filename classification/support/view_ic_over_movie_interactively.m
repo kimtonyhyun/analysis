@@ -26,12 +26,15 @@ for i = 1:length(ic_boundaries)
 end
 
 % Compute the center of mass of the filter
-[height, width] = size(ic_mask);
-props = regionprops(ic_mask, 'Centroid');
-COM = props.Centroid;
-zoom_half_width = min([width, height])/20;
+masked_filter = ic_mask .* ic_filter;
+[height, width] = size(masked_filter);
+COM = [(1:width) * sum(masked_filter,1)';
+       (1:height)* sum(masked_filter,2)];
+COM = COM / sum(masked_filter(:));
 plot(COM(1), COM(2), 'b.');
 hold off;
+
+zoom_half_width = min([width, height])/10;
 
 % Compute the active portions of the trace
 %------------------------------------------------------------
@@ -118,7 +121,7 @@ while (1)
                 if ~isempty(state.last_val)
                     display_active_period(state.last_val);
                 end
-                
+                            
             case 'z' % "zoom"
                 subplot(3,3,[4 5 7 8]); % Focus on the movie subplot
                 if (state.zoomed) % Return to original view
