@@ -12,7 +12,7 @@ thresh = mad_threshold_scale*mad;
 clf;
 subplot(3,1,[2 3]);
 % set(gcf, 'units', 'normalized', 'outerposition', [0 0 1 1]); % Maximize figure
-view_superimposed_trials_in_trace(time, trace, frame_indices);
+view_superimposed_trials_in_trace(trace, frame_indices);
 hold on;
 plot([0 1], thresh*[1 1], 'r--', 'LineWidth', 2);
 hold off;
