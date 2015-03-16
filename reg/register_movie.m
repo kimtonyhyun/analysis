@@ -58,6 +58,7 @@ im_ref = h5read(movie_in, movie_dataset, [1 1 ref_idx], [height width 1]);
 im_ref = transform(single(im_ref));
 
 % Specify ROI
+fprintf('register_movie: Please select ROI for TurboReg\n');
 imagesc(im_ref); axis image; colormap gray;
 title(strrep(movie_in,'_','\_'));
 h_poly = impoly;
