@@ -1,4 +1,3 @@
-classdef DaySummary
 % Summary of PlusMaze data for a single day.
 %
 % Inputs:
@@ -14,6 +13,7 @@ classdef DaySummary
 % Example usage:
 %   ds = DaySummary('c9m7d06_ti2.txt', 'ica001');
 %
+classdef DaySummary
     properties
         cells
         trials
@@ -85,6 +85,41 @@ classdef DaySummary
             trace = obj.trials(trial_idx).traces(cell_idx,:);
             frame_indices = obj.trial_indices(trial_idx,1):...
                             obj.trial_indices(trial_idx,end);
+        end
+        
+        % Built-in visualization functions
+        % Note: Do NOT make use of subplots in the built-in plot methods
+        %------------------------------------------------------------
+        function plot_cell_phase(obj, cell_idx)           
+            trace_min = Inf;
+            trace_max = -Inf;
+            
+            colors = 'kbr';
+            for k = 1:obj.num_trials
+                trial_trace = obj.get_cell_trial(cell_idx, k);
+                
+                trial_trace_min = min(trial_trace);
+                trial_trace_max = max(trial_trace);
+                if (trial_trace_min < trace_min)
+                    trace_min = trial_trace_min;
+                end
+                if (trial_trace_max > trace_max)
+                    trace_max = trial_trace_max;
+                end
+                    
+                plot(linspace(0, 1, length(trial_trace)),...
+                     trial_trace,...
+                     colors(mod(k,length(colors))+1));
+                hold on;
+            end
+            hold off;
+            grid on;
+            xlim([0 1]);
+            trace_delta = trace_max - trace_min;
+            ylim([trace_min trace_max] + 0.1*trace_delta*[-1 1]);
+            xlabel('Trial phase [a.u.]');
+            ylabel('Trace [a.u.]');
+            title(sprintf('IC %d', cell_idx));
         end
     end
 end
