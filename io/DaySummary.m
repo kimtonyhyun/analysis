@@ -119,7 +119,7 @@ classdef DaySummary
             ylim([trace_min trace_max] + 0.1*trace_delta*[-1 1]);
             xlabel('Trial phase [a.u.]');
             ylabel('Trace [a.u.]');
-            title(sprintf('IC %d', cell_idx));
+%             title(sprintf('IC %d', cell_idx));
         end
     end
 end
