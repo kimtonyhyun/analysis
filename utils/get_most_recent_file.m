@@ -6,8 +6,8 @@ files = dir(fullfile(path_to, pattern));
 
 filename = '';
 if ~isempty(files)
-    datenums = files.datenum;
-    [~, sorted] = sort(datenums);
+    datenums = [files.datenum];
+    [~, sorted] = sort(datenums, 'descend');
 
     filename = fullfile(path_to, files(sorted(1)).name);
 end
