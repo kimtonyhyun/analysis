@@ -74,26 +74,29 @@ ica = load(ica_filename);
 
 % Compute the reconstruction
 %------------------------------------------------------------
-rec_info.movie_source = movie_source;
-rec_info.ica_source = ica_filename;
-rec_info.threshIC = threshIC;
-rec_info.threshMov = threshMov; %#ok<STRNU>
+info.type = 'reconstruction';
+info.movie_source = movie_source;
+info.ica_source = ica_filename;
 
-num_ICs = size(ica.ica_filters,3);
+info.num_pairs = ica.info.num_ICs; % In the future, may be different
+info.threshIC = threshIC;
+info.threshMov = threshMov; %#ok<STRNU>
+
+num_ICs = ica.info.num_ICs;
 fprintf('%s: Thresholding IC filters...\n', datestr(now));
-rec_filters = zeros(size(ica.ica_filters), 'single');
+filters = zeros(size(ica.filters), 'single');
 for idx_cell = 1:num_ICs
-    rec_filters(:,:,idx_cell) = threshold_ic_filter(ica.ica_filters(:,:,idx_cell),threshIC);
+    filters(:,:,idx_cell) = threshold_ic_filter(ica.filters(:,:,idx_cell),threshIC);
 end
 
-rec_traces = zeros(num_frames,num_ICs, 'single');
+traces = zeros(num_frames, num_ICs, 'single');
 fprintf('%s: Reconstructing traces...\n', datestr(now));
 for idx_cell = 1:num_ICs
-    rec_filter = rec_filters(:,:,idx_cell);
+    rec_filter = filters(:,:,idx_cell);
     pix_active = find(rec_filter>0);
     movie_portion = M(pix_active,:)';
     movie_portion(movie_portion<threshMov) = 0;
-    rec_traces(:,idx_cell) = movie_portion * rec_filter(pix_active);  
+    traces(:,idx_cell) = movie_portion * rec_filter(pix_active);  
 end
 
 % Save the result to mat file
@@ -101,7 +104,7 @@ end
 timestamp = datestr(now, 'yymmdd-HHMMSS');
 rec_savename = sprintf('rec_%s.mat', timestamp);
 
-save(rec_savename, 'rec_info', 'rec_filters', 'rec_traces');
+save(rec_savename, 'info', 'filters', 'traces');
 
 fprintf('%s: Done!\n', datestr(now));
 
