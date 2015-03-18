@@ -90,27 +90,45 @@ classdef DaySummary
         % Built-in visualization functions
         % Note: Do NOT make use of subplots in the built-in plot methods
         %------------------------------------------------------------
-        function plot_cell_phase(obj, cell_idx)           
+        function plot_superposed_trials(obj, cell_idx, varargin)
+            % Optional arguments allow for filtering of trials, e.g.
+            %   "plot_superposed_trials(cell_idx, 'start', 'east')"
+            
+            display_trial = ones(obj.num_trials, 1);
+            for k = 1:length(varargin)
+                vararg = varargin{k};
+                if ischar(vararg)
+                    switch lower(vararg)
+                        case 'start'
+                            display_trial = strcmp({obj.trials.start}, varargin{k+1});
+                        case 'end'
+                            display_trial = strcmp({obj.trials.end}, varargin{k+1});
+                    end
+                end
+            end
+            
             trace_min = Inf;
             trace_max = -Inf;
             
             colors = 'kbr';
             for k = 1:obj.num_trials
-                trial_trace = obj.get_cell_trial(cell_idx, k);
-                
-                trial_trace_min = min(trial_trace);
-                trial_trace_max = max(trial_trace);
-                if (trial_trace_min < trace_min)
-                    trace_min = trial_trace_min;
+                if display_trial(k)
+                    trial_trace = obj.get_cell_trial(cell_idx, k);
+
+                    trial_trace_min = min(trial_trace);
+                    trial_trace_max = max(trial_trace);
+                    if (trial_trace_min < trace_min)
+                        trace_min = trial_trace_min;
+                    end
+                    if (trial_trace_max > trace_max)
+                        trace_max = trial_trace_max;
+                    end
+
+                    plot(linspace(0, 1, length(trial_trace)),...
+                         trial_trace,...
+                         colors(mod(k,length(colors))+1));
+                    hold on;
                 end
-                if (trial_trace_max > trace_max)
-                    trace_max = trial_trace_max;
-                end
-                    
-                plot(linspace(0, 1, length(trial_trace)),...
-                     trial_trace,...
-                     colors(mod(k,length(colors))+1));
-                hold on;
             end
             hold off;
             grid on;
