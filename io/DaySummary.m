@@ -99,6 +99,8 @@ classdef DaySummary
                 vararg = varargin{k};
                 if ischar(vararg)
                     switch lower(vararg)
+                        case 'correct'
+                            display_trial = strcmp({obj.trials.goal}, {obj.trials.end});
                         case 'start'
                             display_trial = strcmp({obj.trials.start}, varargin{k+1});
                         case 'end'
