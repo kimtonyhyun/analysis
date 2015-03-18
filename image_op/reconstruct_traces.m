@@ -31,7 +31,11 @@ function reconst_traces = reconstruct_traces(movie_source,ica_filters,varargin)
 %
 %Hakan Inan (Mar 15)
 %
-threshMov = 0;threshIC = 0.3; % Defaults
+
+% Reconstruction parameters
+threshMov = -1; % By default keep everything
+threshIC = 0.3;
+
 if ~isempty(varargin)
     len = length(varargin);
     for k = 1:len
@@ -50,7 +54,7 @@ if ~isempty(varargin)
     end
 end
 
-fprintf('Loading movie.. \n');
+fprintf('%s: Loading movie...\n', datestr(now));
 M = load_movie(movie_source);
 [height,width,num_frames] = size(M);
 M = reshape(M,height*width,num_frames);
@@ -64,13 +68,13 @@ elseif threshMov>0
 end
 
 num_ICs = size(ica_filters,3);
-fprintf('Thresholding IC filters.. \n');
+fprintf('%s: Thresholding IC filters...\n', datestr(now));
 for idx_cell = 1:num_ICs
     ica_filters(:,:,idx_cell) = threshold_ic_filter(ica_filters(:,:,idx_cell),threshIC);
 end
 
 reconst_traces = zeros(num_frames,num_ICs);
-fprintf('Reconstructing traces.. \n');
+fprintf('%s: Reconstructing traces...\n', datestr(now));
 for idx_cell = 1:num_ICs
     ica_filter = ica_filters(:,:,idx_cell);
     pix_active = find(ica_filter>0);
@@ -78,5 +82,5 @@ for idx_cell = 1:num_ICs
     movie_portion(movie_portion<threshMov) = 0;
     reconst_traces(:,idx_cell) = movie_portion * ica_filter(pix_active);  
 end
-fprintf('Done!');
+fprintf('%s: Done!\n', datestr(now));
 
