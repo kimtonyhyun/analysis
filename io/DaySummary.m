@@ -81,7 +81,7 @@ classdef DaySummary
                 'label', class);
         end
         
-        function [trace, frame_indices] = get_cell_trial(obj, cell_idx, trial_idx)
+        function [trace, frame_indices] = get_trace(obj, cell_idx, trial_idx)
             trace = obj.trials(trial_idx).traces(cell_idx,:);
             frame_indices = obj.trial_indices(trial_idx,1):...
                             obj.trial_indices(trial_idx,end);
@@ -117,7 +117,7 @@ classdef DaySummary
             colors = 'kbr';
             for k = 1:obj.num_trials
                 if display_trial(k)
-                    trial_trace = obj.get_cell_trial(cell_idx, k);
+                    trial_trace = obj.get_trace(cell_idx, k);
 
                     trial_trace_min = min(trial_trace);
                     trial_trace_max = max(trial_trace);
@@ -141,7 +141,23 @@ classdef DaySummary
             ylim([trace_min trace_max] + 0.1*trace_delta*[-1 1]);
             xlabel('Trial phase [a.u.]');
             ylabel('Trace [a.u.]');
-%             title(sprintf('IC %d', cell_idx));
+        end
+        
+        function raster = plot_cell_raster(obj, cell_idx)
+            resample_grid = linspace(0, 1, 1000);
+            raster = zeros(obj.num_trials, length(resample_grid));
+            
+            for k = 1:obj.num_trials
+                line = obj.get_trace(cell_idx, k);
+                raster(k,:) = interp1(linspace(0,1,length(line)),...
+                                      line,...
+                                      resample_grid,...
+                                      'pchip');
+            end
+            
+            imagesc(resample_grid, 1:obj.num_trials, raster);
+            xlabel('Trial phase [a.u.]');
+            ylabel('Trial index');
         end
     end
 end
