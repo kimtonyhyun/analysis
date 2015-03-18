@@ -81,10 +81,21 @@ classdef DaySummary
                 'label', class);
         end
         
-        function [trace, frame_indices] = get_trace(obj, cell_idx, trial_idx)
-            trace = obj.trials(trial_idx).traces(cell_idx,:);
-            frame_indices = obj.trial_indices(trial_idx,1):...
-                            obj.trial_indices(trial_idx,end);
+        function [trace, frame_indices] = get_trace(obj, cell_idx, varargin)
+            % Optional varargin specifies subset of trials. If omitted,
+            % then pull the trace from all trials
+            if isempty(varargin)
+                selected_trials = 1:obj.num_trials;
+            else
+                selected_trials = varargin{1};
+            end
+            
+            trace = [];
+            frame_indices = [];
+            for k = selected_trials
+                trace = [trace obj.trials(k).traces(cell_idx,:)]; %#ok<*AGROW>
+                frame_indices = [frame_indices obj.trial_indices(k,1):obj.trial_indices(k,end)];
+            end
         end
         
         % Built-in visualization functions
@@ -93,7 +104,6 @@ classdef DaySummary
         function plot_superposed_trials(obj, cell_idx, varargin)
             % Optional arguments allow for filtering of trials, e.g.
             %   "plot_superposed_trials(cell_idx, 'start', 'east')"
-            
             display_trial = ones(obj.num_trials, 1);
             for k = 1:length(varargin)
                 vararg = varargin{k};
