@@ -28,10 +28,15 @@ classdef DaySummary
         function obj = DaySummary(plusmaze_txt, ica_dir, varargin)
             % Handle optional input
             exclude_probe_trials = 0;
+            use_reconstruction = 0;
             for k = 1:length(varargin)
-                switch lower(varargin{k})
-                    case 'excludeprobe'
-                        exclude_probe_trials = 1;
+                if ischar(varargin{k})
+                    switch lower(varargin{k})
+                        case 'excludeprobe'
+                            exclude_probe_trials = 1;
+                        case 'reconst'
+                            use_reconstruction = 1;
+                    end
                 end
             end
             
@@ -40,7 +45,16 @@ classdef DaySummary
             [trial_indices, loc_info, trial_durations] =...
                 parse_plusmaze(plusmaze_txt);
             
-            data = load(get_most_recent_file(ica_dir, 'ica_*.mat'));
+            if use_reconstruction
+                data_source = get_most_recent_file(ica_dir, 'rec_*.mat');
+                data = load(data_source);
+                obj.num_cells = data.info.num_pairs;
+            else
+                data_source = get_most_recent_file(ica_dir, 'ica_*.mat');
+                data = load(data_source);
+                obj.num_cells = data.info.num_ICs;
+            end
+            fprintf('%s: Loaded data from %s\n', datestr(now), data_source);
             
             % Parse trial data
             %   TODO: Bring in centroids corresponding to mouse position
@@ -59,7 +73,7 @@ classdef DaySummary
             for k = 1:num_trials
                 trial_frames = trial_indices(k,1):...
                                trial_indices(k,end);
-                traces{k} = data.ica_traces(trial_frames, :)';
+                traces{k} = data.traces(trial_frames, :)';
             end
             
             obj.num_trials = num_trials;
@@ -73,11 +87,14 @@ classdef DaySummary
             
             % Parse cell data
             %------------------------------------------------------------
-            obj.num_cells = data.ica_info.num_ICs;
-            
-            class = load_classification(get_most_recent_file(ica_dir, 'class_*.txt'));
+            class_source = get_most_recent_file(ica_dir, 'class_*.txt');
+            class = load_classification(class_source);
+            assert(length(class)==obj.num_cells,...
+                   sprintf('Number of labels in %s is not consistent with %s!',...
+                           class_source, data_source));
+
             obj.cells = struct(...
-                'im', squeeze(num2cell(data.ica_filters, [1 2])),...
+                'im', squeeze(num2cell(data.filters, [1 2])),...
                 'label', class);
         end
         
