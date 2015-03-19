@@ -118,7 +118,7 @@ for ic_idx = 1:num_ICs
             else % Not a number -- done with ROI selection
                 for sel_roi = sel_rois
                     rec_filter_count = rec_filter_count + 1;
-                    filters(:,:,rec_filter_count) = ic_filter .* submasks(sel_roi);
+                    filters(:,:,rec_filter_count) = ic_filter .* submasks(:,:,sel_roi);
                     fprintf('    Added ROI %d from IC %d\n', sel_roi, ic_idx);
                 end
                 break; % Get out of selection loop
