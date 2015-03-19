@@ -8,7 +8,7 @@ function [resp, movie_clim] = view_ic_over_movie_interactively(filter, time, tra
 
 % Some parameters
 ic_filter_threshold = 0.3; % For generating the IC filter outline
-mad_scale = 8; % Used for coarse detection of activity in the IC trace
+mad_scale = 5; % Used for coarse detection of activity in the IC trace
 active_frame_padding = 5*fps; % Use 100 for 20 Hz movie
 time_window = 10; % Width of running window
 
