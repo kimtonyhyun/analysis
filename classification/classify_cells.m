@@ -1,4 +1,4 @@
-function classify_cells(sources, ic_dir, varargin)
+function M = classify_cells(sources, ic_dir, varargin)
 % Perform manual classification of candidate filter/trace pairs
 %
 % Usage:
@@ -11,22 +11,36 @@ function classify_cells(sources, ic_dir, varargin)
 %
 % and 'ica001' is a directory that contains 'ica_*.mat' or 'rec_*.mat'
 %   depending on whether one is classifying ICA or reconstructed pairs.
-%   
+%
+% Optional arguments allow for:
+%   'reconst': Use reconstructed filter/trace pairs, rather than ICA
+%   'movie': Use provided movie, rather than loading from disk
+%
 
+movie_provided = 0;
 use_reconstruction = 0;
 for k = 1:length(varargin)
-    switch lower(varargin{k})
-        case 'reconst'
-            use_reconstruction = 1;
+    if ischar(varargin{k})
+        switch lower(varargin{k})
+            case 'reconst'
+                use_reconstruction = 1;
+            case 'movie'
+                movie_provided = 1;
+                M = varargin{k+1}; % Note Matlab's lazy eval
+        end
     end
 end
 
 % Load movie
-fprintf('  %s: Loading "%s" to memory...\n', datestr(now), sources.miniscope);
-M = load_movie(sources.miniscope);
-num_frames = size(M, 3);
-fprintf('  %s: Done!\n', datestr(now));
+if movie_provided
+    fprintf('  %s: Using provided movie matrix\n', datestr(now));
+else
+    fprintf('  %s: Loading "%s" to memory...\n', datestr(now), sources.miniscope);
+    M = load_movie(sources.miniscope);
+    fprintf('  %s: Done!\n', datestr(now));
+end
 
+num_frames = size(M, 3);
 fps = sources.fps;
 time = 1/fps*((1:num_frames)-1); %#ok<*NODEF>
 
@@ -38,6 +52,8 @@ fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
 % Get trial info from maze output
 trial_indices = get_trial_frame_indices(sources.maze);
 trial_indices = trial_indices(:, [1 end]); % [Start end]
+assert(num_frames == trial_indices(end,end),...
+       'Number of frames in movie does not match trial index table!');
 
 % Load filter/trace pairs to be classified
 if use_reconstruction
