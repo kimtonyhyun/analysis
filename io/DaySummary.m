@@ -1,4 +1,3 @@
-classdef DaySummary
 % Summary of PlusMaze data for a single day.
 %
 % Inputs:
@@ -14,6 +13,7 @@ classdef DaySummary
 % Example usage:
 %   ds = DaySummary('c9m7d06_ti2.txt', 'ica001');
 %
+classdef DaySummary
     properties
         cells
         trials
@@ -81,10 +81,123 @@ classdef DaySummary
                 'label', class);
         end
         
-        function [trace, frame_indices] = get_cell_trial(obj, cell_idx, trial_idx)
-            trace = obj.trials(trial_idx).traces(cell_idx,:);
-            frame_indices = obj.trial_indices(trial_idx,1):...
-                            obj.trial_indices(trial_idx,end);
+        function [trace, frame_indices] = get_trace(obj, cell_idx, varargin)
+            % Optional varargin specifies subset of trials. If omitted,
+            % then pull the trace from all trials
+            if isempty(varargin)
+                selected_trials = 1:obj.num_trials;
+            else
+                selected_trials = varargin{1};
+            end
+            
+            trace = [];
+            frame_indices = [];
+            for k = selected_trials
+                trace = [trace obj.trials(k).traces(cell_idx,:)]; %#ok<*AGROW>
+                frame_indices = [frame_indices obj.trial_indices(k,1):obj.trial_indices(k,end)];
+            end
+        end
+        
+        % Built-in visualization functions
+        % Note: Do NOT make use of subplots in the built-in plot methods
+        %------------------------------------------------------------
+        function plot_trace(obj, cell_idx)
+            % Plot the trace of a single cell, color-coded by trial
+            trace_min = Inf;
+            trace_max = -Inf;
+            
+            colors = 'kbr';
+            for k = 1:obj.num_trials
+                [trace, inds] = obj.get_trace(cell_idx, k);
+                
+                trial_trace_min = min(trace);
+                trial_trace_max = max(trace);
+                if (trial_trace_min < trace_min)
+                    trace_min = trial_trace_min;
+                end
+                if (trial_trace_max > trace_max)
+                    trace_max = trial_trace_max;
+                end
+                
+                plot(inds, trace,...
+                     colors(mod(k,length(colors))+1));
+                hold on;
+            end
+            hold off;
+            xlim([1 inds(end)]); % Using the last 'inds' from loop!
+            trace_delta = trace_max - trace_min;
+            ylim([trace_min trace_max] + 0.1*trace_delta*[-1 1]);
+            xlabel('Frame index');
+            ylabel('Signal [a.u.]');
+        end
+        
+        function plot_superposed_trials(obj, cell_idx, varargin)
+            % Optional arguments allow for filtering of trials, e.g.
+            %   "plot_superposed_trials(cell_idx, 'start', 'east')"
+            display_trial = ones(obj.num_trials, 1);
+            for k = 1:length(varargin)
+                vararg = varargin{k};
+                if ischar(vararg)
+                    switch lower(vararg)
+                        case 'incorrect'
+                            display_trial = ~strcmp({obj.trials.goal}, {obj.trials.end});
+                        case 'correct'
+                            display_trial = strcmp({obj.trials.goal}, {obj.trials.end});
+                        case 'start'
+                            display_trial = strcmp({obj.trials.start}, varargin{k+1});
+                        case 'end'
+                            display_trial = strcmp({obj.trials.end}, varargin{k+1});
+                    end
+                end
+            end
+            
+            trace_min = Inf;
+            trace_max = -Inf;
+            
+            colors = 'kbr';
+            for k = 1:obj.num_trials
+                if display_trial(k)
+                    trial_trace = obj.get_trace(cell_idx, k);
+
+                    trial_trace_min = min(trial_trace);
+                    trial_trace_max = max(trial_trace);
+                    if (trial_trace_min < trace_min)
+                        trace_min = trial_trace_min;
+                    end
+                    if (trial_trace_max > trace_max)
+                        trace_max = trial_trace_max;
+                    end
+
+                    plot(linspace(0, 1, length(trial_trace)),...
+                         trial_trace,...
+                         colors(mod(k,length(colors))+1));
+                    hold on;
+                end
+            end
+            hold off;
+            grid on;
+            xlim([0 1]);
+            trace_delta = trace_max - trace_min;
+            ylim([trace_min trace_max] + 0.1*trace_delta*[-1 1]);
+            xlabel('Trial phase [a.u.]');
+            ylabel('Trace [a.u.]');
+        end
+        
+        function raster = plot_cell_raster(obj, cell_idx)
+            resample_grid = linspace(0, 1, 1000);
+            raster = zeros(obj.num_trials, length(resample_grid));
+            
+            for k = 1:obj.num_trials
+                line = obj.get_trace(cell_idx, k);
+                raster(k,:) = interp1(linspace(0,1,length(line)),...
+                                      line,...
+                                      resample_grid,...
+                                      'pchip');
+            end
+            
+            imagesc(resample_grid, 1:obj.num_trials, raster);
+            xlabel('Trial phase [a.u.]');
+            ylabel('Trial index');
         end
     end
 end
