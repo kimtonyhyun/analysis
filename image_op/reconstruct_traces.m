@@ -84,13 +84,19 @@ for ic_idx = 1:num_ICs
         
         % Show the multiple ROIs to the user
         imagesc(ic_filter .* ic_mask);
+        colormap gray;
         hold on;
         for k = 1:num_boundaries
+            if mod(k,2)
+                color = 'g';
+            else
+                color = 'r';
+            end
             boundary = boundaries{k};
-            plot(boundary(:,1), boundary(:,2), 'r', 'LineWidth', 2);
+            plot(boundary(:,1), boundary(:,2), color, 'LineWidth', 1);
             text(max(boundary(:,1)), min(boundary(:,2)),...
                  num2str(k),...
-                 'Color', 'w');
+                 'Color', color);
              
             submasks(:,:,k) = poly2mask(boundary(:,1), boundary(:,2), height, width);
         end
