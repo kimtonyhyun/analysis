@@ -47,7 +47,7 @@ baseFFT = fft2(cropBase);
 
 chunkSize = [rows,cols,1];
 h5create(hdf5_out_name,dataset,[Inf,Inf,Inf],'ChunkSize',chunkSize,'Datatype','single');
-h5write(hdf5_dir,hdf5_out_name,dataset,baseImage,[1,1,1],[rows,cols,1]);
+h5write(hdf5_out_name,dataset,baseImage,[1,1,1],[rows,cols,1]);
 
 h = waitbar(0,'Motion Correction in Progress...');
 for f=2:frames
