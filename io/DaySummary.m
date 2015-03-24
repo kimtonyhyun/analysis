@@ -86,6 +86,7 @@ classdef DaySummary
                 'traces', traces);
             
             % Parse cell data
+            %   TODO: Consider classification as an optional input
             %------------------------------------------------------------
             class_source = get_most_recent_file(ica_dir, 'class_*.txt');
             class = load_classification(class_source);
