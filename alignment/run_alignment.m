@@ -1,8 +1,12 @@
-function [match_1to2, match_2to1, info] = run_alignment(ds1, ds2)
+function [match_1to2, match_2to1, info] = run_alignment(ds1, ds2, varargin)
 % Align two sets of IC filters.
 %
 % Inputs:
 %   ds1/2: DaySummary object containing cell maps to be aligned
+%
+% Optional inputs:
+%   'one-to-one': Each cell of Dataset1 will match at most one cell of
+%       Dataset 2, and visa versa.
 %
 % Outputs:
 %   match_XtoY: Cell that contains mapping information from source X to
@@ -16,6 +20,17 @@ function [match_1to2, match_2to1, info] = run_alignment(ds1, ds2)
 % Example usage:
 %   [m1to2, m2to1] = run_alignment('c9m7d07_ica001', 'c9m7d08_ica001');
 %
+
+bijective_matching = 0;
+for k = 1:length(varargin)
+    if ischar(varargin{k})
+        switch varargin{k}
+            case {'one-to-one', 'bijective'}
+                bijective_matching = 1;
+        end
+    end
+end
+
 % Control point-based registration of two sets of ICs
 %------------------------------------------------------------
 fprintf('run_alignment: Beginning alignment...\n');    
@@ -75,3 +90,44 @@ info.masks1 = masks1;
 info.masks2 = masks2_tform;
 info.overlap_threshold = overlap_threshold;
 info.overlap_matrix = M;
+
+% Optional bijective filtering
+%------------------------------------------------------------
+if bijective_matching
+    fprintf('run_alignment: Applying bijective filter...\n');
+    for i = 1:length(match_1to2)
+        match_itoj = match_1to2{i};
+        num_matches = size(match_itoj,1);
+        if (num_matches > 1)
+            for k = 2:num_matches
+                j = match_itoj(k,1);
+                match_jtoi = match_2to1{j};
+                [~, diff_inds] = setdiff(match_jtoi(:,1), i);
+                if ~isempty(diff_inds)
+                    match_2to1{j} = match_jtoi(diff_inds,:);
+                else
+                    match_2to1{j} = [];
+                end
+            end
+            match_1to2{i} = match_itoj(1,:);
+        end
+    end
+    
+    for j = 1:length(match_2to1)
+        match_jtoi = match_2to1{j};
+        num_matches = size(match_jtoi,1);
+        if (num_matches > 1)
+            for k = 2:num_matches
+                i = match_jtoi(k,1);
+                match_itoj = match_1to2{i};
+                [~, diff_inds] = setdiff(match_itoj(:,1), j);
+                if ~isempty(diff_inds)
+                    match_1to2{i} = match_itoj(diff_inds,:);
+                else
+                    match_1to2{i} = [];
+                end
+            end
+            match_2to1{j} = match_jtoi(1,:);
+        end
+    end
+end
