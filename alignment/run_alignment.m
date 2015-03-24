@@ -19,8 +19,7 @@ function [match_1to2, match_2to1, info] = run_alignment(ic_source_dir1, ic_sourc
 %
 % Control point-based registration of two sets of ICs
 %------------------------------------------------------------
-fprintf('run_alignment: Beginning alignment of %s and %s\n',...
-    ic_source_dir1, ic_source_dir2);
+fprintf('run_alignment: Beginning alignment...\n');    
 [affine_info, masks1, masks2_tform] = compute_affine_transform(ic_source_dir1, ic_source_dir2);
 
 % Compute matrix of mask overlaps

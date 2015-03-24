@@ -1,9 +1,8 @@
-function [info, masks1, masks2] = compute_affine_transform(source_dir1, source_dir2)
+function [info, masks1, masks2] = compute_affine_transform(day1, day2)
 % IC map alignment based on user-defined control points.
 %
 % Inputs:
-%   source_dirX: Path to directory containing ICA (ica_*.mat) and
-%       classification (class_*.txt) outputs
+%   day1/2: DaySummary object containing cell maps to be aligned
 %
 % Outputs:
 %   info: Struct containing results of the affine transformation fit
@@ -16,32 +15,29 @@ function [info, masks1, masks2] = compute_affine_transform(source_dir1, source_d
 num_ics_for_alignment = 3;
 ic_filter_threshold = 0.3;
 
-% Load data
-%------------------------------------------------------------
-sources = {source_dir1, source_dir2};
-s1 = load(get_most_recent_file(sources{1}, 'ica_*.mat'));
-c1 = load_classification(get_most_recent_file(sources{1}, 'class_*.txt'));
-
-s2 = load(get_most_recent_file(sources{2}, 'ica_*.mat'));
-c2 = load_classification(get_most_recent_file(sources{2}, 'class_*.txt'));
-
 bounds = cell(1,2); % Boundaries of ICs
 masks  = cell(1,2); % BW image of thresholded ICs
+
+% Load data
+filters1 = cat(3, day1.cells.im);
+filters2 = cat(3, day2.cells.im);
+c1 = {day1.cells.label};
+c2 = {day2.cells.label};
 
 % Display the two sets of ICs
 figure;
 ax1 = subplot(121);
-[bounds{1}, masks{1}] = plot_ic_filters(s1.ica_filters, c1, ic_filter_threshold);
-title(strrep(sources{1},'_','\_'));
+[bounds{1}, masks{1}] = plot_ic_filters(filters1, c1, ic_filter_threshold);
+title('Dataset 1');
 
 ax2 = subplot(122);
-[bounds{2}, masks{2}] = plot_ic_filters(s2.ica_filters, c2, ic_filter_threshold);
-title(strrep(sources{2},'_','\_'));
+[bounds{2}, masks{2}] = plot_ic_filters(filters2, c2, ic_filter_threshold);
+title('Dataset 2');
 
 % Allow the user to select the ICs used in matching
 %------------------------------------------------------------
-sel_colors = 'ybk';
-fprintf('compute_affine_transform: Please select %d ICs from each dataset (in order)\n',...
+sel_colors = 'ybm';
+fprintf('compute_affine_transform: Please select %d cells from each dataset (in order)\n',...
     num_ics_for_alignment);
 
 sel_ics = zeros(num_ics_for_alignment,2); % List of selected ICs
@@ -67,20 +63,20 @@ while (~all(sel_ics_idx == num_ics_for_alignment))
                  sel_colors(mod(sel_idx,length(sel_colors))+1));
 
             sel_ic_centroid = mean(boundary,1);
-            fprintf('  %s: IC %d selected (at [%.1f %.1f])!\n',...
-                sources{source_idx}, ic_idx,...
+            fprintf('  Dataset%d: Cell %d selected (at [%.1f %.1f])!\n',...
+                source_idx, ic_idx,...
                 sel_ic_centroid(1), sel_ic_centroid(2));
             
             sel_ics(sel_idx, source_idx) = ic_idx;
             sel_ics_idx(source_idx) = sel_idx;
             sel_ics_centers(sel_idx,:,source_idx) = sel_ic_centroid;
         else
-            fprintf('  %s: No more ICs needed!\n',...
-                sources{source_idx});
+            fprintf('  Dataset%d: No more ICs needed!\n',...
+                source_idx);
         end
     else % No hit
-        fprintf('  %s: No IC detected at cursor!\n',...
-            sources{source_idx});
+        fprintf('  Dataset%d: No IC detected at cursor!\n',...
+            source_idx);
     end
 end
 fprintf('  All reference ICs selected!\n');
@@ -95,24 +91,20 @@ figure;
 subplot(121); % Pre-transform comparison
 plot_boundaries(bounds{1}, c1, 'b', 2, sel_ics(:,1), []);
 plot_boundaries(bounds{2}, c2, 'r', 1, sel_ics(:,2), []);
-title(sprintf('Pre-transform: %s (blue) vs. %s (red)',...
-                strrep(sources{1}, '_', '\_'),...
-                strrep(sources{2}, '_', '\_')));
+title('Pre-transform: Dataset1 (blue) vs. Dataset2 (red)');
 axis equal;
 set(gca, 'YDir', 'Reverse');
 
 subplot(122); % Post-transform comparison
 plot_boundaries(bounds{1}, c1, 'b', 2, sel_ics(:,1), []);
 plot_boundaries(bounds{2}, c2, 'r', 1, sel_ics(:,2), tform);
-title(sprintf('Post-transform: %s (blue) vs. %s (red)',...
-                strrep(sources{1}, '_', '\_'),...
-                strrep(sources{2}, '_', '\_')));
+title('Post-transform: Dataset1 (blue) vs. Dataset2 (red)');
 axis equal;
 set(gca, 'YDir', 'Reverse');
 
 % Transform Source2 masks for output
 mask1_ref = imref2d(size(masks{1}{1}));
-for ic_idx = 1:s2.ica_info.num_ICs
+for ic_idx = 1:day2.num_cells
     masks{2}{ic_idx} = imwarp(masks{2}{ic_idx}, tform,...
         'OutputView', mask1_ref);
 end
@@ -122,10 +114,8 @@ end
 masks1 = masks{1};
 masks2 = masks{2};
 
-info.source1 = source_dir1;
-info.source2 = source_dir2;
-info.num_ics1 = s1.ica_info.num_ICs;
-info.num_ics2 = s2.ica_info.num_ICs;
+info.num_cells1 = day1.num_cells;
+info.num_cells2 = day2.num_cells;
 info.num_ics_for_alignment = num_ics_for_alignment;
 info.ic_filter_threshold = ic_filter_threshold;
 info.sel_ics = sel_ics;
@@ -140,7 +130,8 @@ function [boundaries, masks, ic_map] = plot_ic_filters(ica_filters, cl, ic_filte
     boundaries = cell(num_ics, 1);
     masks = cell(num_ics, 1);
     
-    ic_map = sum(ica_filters,3);
+%     ic_map = sum(ica_filters,3);
+    ic_map = max(ica_filters, [], 3);
     imagesc(ic_map);
     colormap gray;
     axis equal;
