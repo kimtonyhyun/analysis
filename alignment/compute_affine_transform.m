@@ -1,8 +1,8 @@
-function [info, masks1, masks2] = compute_affine_transform(day1, day2)
+function [info, masks1, masks2] = compute_affine_transform(ds1, ds2)
 % IC map alignment based on user-defined control points.
 %
 % Inputs:
-%   day1/2: DaySummary object containing cell maps to be aligned
+%   ds1/2: DaySummary object containing cell maps to be aligned
 %
 % Outputs:
 %   info: Struct containing results of the affine transformation fit
@@ -19,10 +19,10 @@ bounds = cell(1,2); % Boundaries of ICs
 masks  = cell(1,2); % BW image of thresholded ICs
 
 % Load data
-filters1 = cat(3, day1.cells.im);
-filters2 = cat(3, day2.cells.im);
-c1 = {day1.cells.label};
-c2 = {day2.cells.label};
+filters1 = cat(3, ds1.cells.im);
+filters2 = cat(3, ds2.cells.im);
+c1 = {ds1.cells.label};
+c2 = {ds2.cells.label};
 
 % Display the two sets of ICs
 figure;
@@ -104,7 +104,7 @@ set(gca, 'YDir', 'Reverse');
 
 % Transform Source2 masks for output
 mask1_ref = imref2d(size(masks{1}{1}));
-for ic_idx = 1:day2.num_cells
+for ic_idx = 1:ds2.num_cells
     masks{2}{ic_idx} = imwarp(masks{2}{ic_idx}, tform,...
         'OutputView', mask1_ref);
 end
@@ -114,8 +114,8 @@ end
 masks1 = masks{1};
 masks2 = masks{2};
 
-info.num_cells1 = day1.num_cells;
-info.num_cells2 = day2.num_cells;
+info.num_cells1 = ds1.num_cells;
+info.num_cells2 = ds2.num_cells;
 info.num_ics_for_alignment = num_ics_for_alignment;
 info.ic_filter_threshold = ic_filter_threshold;
 info.sel_ics = sel_ics;
