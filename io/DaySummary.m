@@ -160,7 +160,7 @@ classdef DaySummary
             %   "plot_superposed_trials(cell_idx, 'start', 'east')"
             display_trial = ones(obj.num_trials, 1);
             if ~isempty(varargin)
-                display_trial = obj.filter_trials(varargin);
+                display_trial = obj.filter_trials(varargin{:});
             end
             
             trace_min = Inf;
@@ -200,7 +200,7 @@ classdef DaySummary
             %   "plot_cell_raster(cell_idx, 'start', 'east')"
             display_trial = ones(obj.num_trials, 1);
             if ~isempty(varargin)
-                display_trial = obj.filter_trials(varargin);
+                display_trial = obj.filter_trials(varargin{:});
             end
                         
             resample_grid = linspace(0, 1, 1000);
