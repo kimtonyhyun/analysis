@@ -183,19 +183,42 @@ classdef DaySummary
             ylabel('Trace [a.u.]');
         end
         
-        function raster = plot_cell_raster(obj, cell_idx)
+        function raster = plot_cell_raster(obj, cell_idx, varargin)
+            % Optional arguments allow for filtering of trials, e.g.
+            %   "plot_cell_raster(cell_idx, 'start', 'east')"
+            display_trial = ones(obj.num_trials, 1);
+            for k = 1:length(varargin)
+                vararg = varargin{k};
+                if ischar(vararg)
+                    switch lower(vararg)
+                        case 'incorrect'
+                            display_trial = ~strcmp({obj.trials.goal}, {obj.trials.end});
+                        case 'correct'
+                            display_trial = strcmp({obj.trials.goal}, {obj.trials.end});
+                        case 'start'
+                            display_trial = strcmp({obj.trials.start}, varargin{k+1});
+                        case 'end'
+                            display_trial = strcmp({obj.trials.end}, varargin{k+1});
+                    end
+                end
+            end
+                        
             resample_grid = linspace(0, 1, 1000);
-            raster = zeros(obj.num_trials, length(resample_grid));
-            
+            raster = zeros(obj.num_trials, length(resample_grid));            
+            counter = 0;
             for k = 1:obj.num_trials
-                line = obj.get_trace(cell_idx, k);
-                raster(k,:) = interp1(linspace(0,1,length(line)),...
+                if display_trial(k)
+                    counter = counter+1;
+                    line = obj.get_trace(cell_idx, k);
+                    raster(counter,:) = interp1(linspace(0,1,length(line)),...
                                       line,...
                                       resample_grid,...
                                       'pchip');
-            end
+                end
+            end            
+            raster(all(~raster,2), : ) = []; %remove empty rows
             
-            imagesc(resample_grid, 1:obj.num_trials, raster);
+            imagesc(resample_grid, 1:size(raster,1), raster);
             xlabel('Trial phase [a.u.]');
             ylabel('Trial index');
         end
