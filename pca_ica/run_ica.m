@@ -17,7 +17,7 @@ ica_W = compute_ica_weights(ica_mixed, num_ICs, term_tol, max_iter)'; %#ok<NASGU
 
 info.type = 'ica';
 info.pca_source = pca_source;
-info.num_ICs = num_ICs;
+info.num_pairs = num_ICs;
 info.mu = mu; %#ok<*STRNU>
 
 % Save ICA results

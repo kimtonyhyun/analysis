@@ -57,16 +57,13 @@ assert(num_frames == trial_indices(end,end),...
 
 % Load filter/trace pairs to be classified
 if use_reconstruction
-    rec_source = get_most_recent_file(ic_dir, 'rec_*.mat');
-    data = load(rec_source);
-    num_candidates = data.info.num_pairs;
-    fprintf('  %s: Loaded reconstruction file "%s"\n', datestr(now), rec_source);
+    pair_source = get_most_recent_file(ic_dir, 'rec_*.mat');
 else
-    ica_source = get_most_recent_file(ic_dir, 'ica_*.mat');
-    data = load(ica_source);
-    num_candidates = data.info.num_ICs;
-    fprintf('  %s: Loaded ICA file "%s"\n', datestr(now), ica_source);
+    pair_source = get_most_recent_file(ic_dir, 'ica_*.mat');
 end
+data = load(pair_source);
+num_candidates = data.info.num_pairs;
+fprintf('  %s: Loaded filter/traces from "%s"\n', datestr(now), pair_source);
 
 % Begin classification
 %------------------------------------------------------------
