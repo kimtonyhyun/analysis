@@ -122,8 +122,13 @@ classdef DaySummary
             end
         end
         
-        function is_cell = is_cell(obj, cell_idx)
-            is_cell = ~strcmp(obj.cells(cell_idx).label, 'not a cell');
+        function is_cell = is_cell(obj, varargin)
+            % Optional argument specifies subset of cell indices to check
+            cell_indices = 1:obj.num_cells;
+            if ~isempty(varargin)
+                cell_indices = varargin{1};
+            end
+            is_cell = ~strcmp({obj.cells(cell_indices).label}, 'not a cell');
         end
         
         % Built-in visualization functions
