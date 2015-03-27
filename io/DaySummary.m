@@ -134,7 +134,28 @@ classdef DaySummary
         % Built-in visualization functions
         % Note: Do NOT make use of subplots in the built-in plot methods
         %------------------------------------------------------------
-        function plot_cell_map(obj)
+        function plot_cell_map(obj, color_grouping)
+            % Optional argument allows for specification of color used for
+            % the cell in the cell map. The color specification is defined
+            % as follows:
+            %   color_grouping = {[1, 2, 3, 4], [5, 6], [10]}
+            % means that cells [1, 2, 3, 4] will be displayed in one color,
+            % cells [5, 6] in another color, and [10] in another.
+            
+            % By default, color the cells based on classification
+            if ~exist('color_grouping', 'var')
+                cell_colors = arrayfun(@num2color, obj.is_cell());
+            else
+                cell_colors = repmat('w', 1, obj.num_cells); % Ungrouped cells are white
+                % Unpack the colors
+                for k = 1:length(color_grouping)
+                    for cell_idx = color_grouping{k}
+                        cell_colors(cell_idx) = num2color(k);
+                    end
+                end
+            end
+            
+            % Background image to display
             [height, width] = size(obj.cells(1).im);
             ref_image = zeros(height, width);
             for k = 1:obj.num_cells
@@ -148,17 +169,24 @@ classdef DaySummary
             
             hold on;
             for k = 1:obj.num_cells
+                color = cell_colors(k);
                 boundary = obj.cells(k).boundary;
-                if obj.is_cell(k)
-                    color = 'g';
-                else
-                    color = 'r';
-                end
                 plot(boundary(:,1), boundary(:,2), 'Color', color);
                 text(max(boundary(:,1)), min(boundary(:,2)),...
                      sprintf('%d', k), 'Color', color);
             end
             hold off;
+            
+            function color = num2color(num)
+                switch num
+                    case 0
+                        color = 'r';
+                    case 1
+                        color = 'g';
+                    case 2
+                        color = 'm';
+                end
+            end
         end
         
         function plot_trace(obj, cell_idx)
