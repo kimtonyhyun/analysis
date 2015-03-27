@@ -125,6 +125,33 @@ classdef DaySummary
         % Built-in visualization functions
         % Note: Do NOT make use of subplots in the built-in plot methods
         %------------------------------------------------------------
+        function plot_cell_map(obj)
+            [height, width] = size(obj.cells(1).im);
+            ref_image = zeros(height, width);
+            for k = 1:obj.num_cells
+                ref_image = ref_image + obj.cells(k).im;
+            end
+            imagesc(ref_image);
+            colormap gray;
+            axis equal;
+            xlim([1 width]);
+            ylim([1 height]);
+            
+            hold on;
+            for k = 1:obj.num_cells
+                boundary = obj.cells(k).boundary;
+                if strcmp(obj.cells(k).label, 'not a cell')
+                    color = 'r';
+                else
+                    color = 'g';
+                end
+                plot(boundary(:,1), boundary(:,2), 'Color', color);
+                text(max(boundary(:,1)), min(boundary(:,2)),...
+                     sprintf('%d', k), 'Color', color);
+            end
+            hold off;
+        end
+        
         function plot_trace(obj, cell_idx)
             % Plot the trace of a single cell, color-coded by trial
             trace_min = Inf;
