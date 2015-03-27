@@ -47,13 +47,11 @@ classdef DaySummary
             
             if use_reconstruction
                 data_source = get_most_recent_file(ica_dir, 'rec_*.mat');
-                data = load(data_source);
-                obj.num_cells = data.info.num_pairs;
             else
                 data_source = get_most_recent_file(ica_dir, 'ica_*.mat');
-                data = load(data_source);
-                obj.num_cells = data.info.num_ICs;
             end
+            data = load(data_source);
+            obj.num_cells = data.info.num_pairs;
             fprintf('%s: Loaded data from %s\n', datestr(now), data_source);
             
             % Parse trial data
@@ -94,8 +92,16 @@ classdef DaySummary
                    sprintf('Number of labels in %s is not consistent with %s!',...
                            class_source, data_source));
 
+            images = squeeze(num2cell(data.filters, [1 2])); % images{k} is the 2D image of cell k
+            boundaries = cell(size(images));
+            for k = 1:obj.num_cells
+                boundary = compute_ic_boundary(images{k}, 0.3);
+                boundaries{k} = boundary{1};
+            end
+            
             obj.cells = struct(...
-                'im', squeeze(num2cell(data.filters, [1 2])),...
+                'im', images,...
+                'boundary', boundaries,...
                 'label', class);
         end
         
