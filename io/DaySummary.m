@@ -122,6 +122,10 @@ classdef DaySummary
             end
         end
         
+        function is_cell = is_cell(obj, cell_idx)
+            is_cell = ~strcmp(obj.cells(cell_idx).label, 'not a cell');
+        end
+        
         % Built-in visualization functions
         % Note: Do NOT make use of subplots in the built-in plot methods
         %------------------------------------------------------------
@@ -140,10 +144,10 @@ classdef DaySummary
             hold on;
             for k = 1:obj.num_cells
                 boundary = obj.cells(k).boundary;
-                if strcmp(obj.cells(k).label, 'not a cell')
-                    color = 'r';
-                else
+                if obj.is_cell(k)
                     color = 'g';
+                else
+                    color = 'r';
                 end
                 plot(boundary(:,1), boundary(:,2), 'Color', color);
                 text(max(boundary(:,1)), min(boundary(:,2)),...
