@@ -84,13 +84,17 @@ classdef DaySummary
                 'traces', traces);
             
             % Parse cell data
-            %   TODO: Consider classification as an optional input
             %------------------------------------------------------------
             class_source = get_most_recent_file(ica_dir, 'class_*.txt');
-            class = load_classification(class_source);
-            assert(length(class)==obj.num_cells,...
-                   sprintf('Number of labels in %s is not consistent with %s!',...
-                           class_source, data_source));
+            if ~isempty(class_source)
+                class = load_classification(class_source);
+                assert(length(class)==obj.num_cells,...
+                       sprintf('Number of labels in %s is not consistent with %s!',...
+                               class_source, data_source));
+            else % No classification file
+                fprintf('%s: No classification file in %s!\n', datestr(now), ica_dir);
+                class = cell(obj.num_cells,1); % Empty
+            end
 
             images = squeeze(num2cell(data.filters, [1 2])); % images{k} is the 2D image of cell k
             [height, width] = size(images{1});
