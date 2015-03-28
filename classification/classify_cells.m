@@ -49,21 +49,18 @@ movie_clim = compute_movie_scale(M);
 fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
     datestr(now), movie_clim(1), movie_clim(2));
 
-% Get trial info from maze output
-trial_indices = get_trial_frame_indices(sources.maze);
-trial_indices = trial_indices(:, [1 end]); % [Start end]
-assert(num_frames == trial_indices(end,end),...
-       'Number of frames in movie does not match trial index table!');
-
 % Load filter/trace pairs to be classified
 if use_reconstruction
-    pair_source = get_most_recent_file(ic_dir, 'rec_*.mat');
+    ds = DaySummary(sources.maze, ic_dir, 'reconst');
 else
-    pair_source = get_most_recent_file(ic_dir, 'ica_*.mat');
+    ds = DaySummary(sources.maze, ic_dir);
 end
-data = load(pair_source);
-num_candidates = data.info.num_pairs;
-fprintf('  %s: Loaded filter/traces from "%s"\n', datestr(now), pair_source);
+num_candidates = ds.num_cells;
+fprintf('  %s: Loaded filters/traces from "%s"\n', datestr(now), ic_dir);
+
+trial_indices = ds.trial_indices(:, [1 end]); % [Start end]
+assert(num_frames == trial_indices(end,end),...
+       'Number of frames in movie does not match trial index table!');
 
 % Begin classification
 %------------------------------------------------------------
@@ -73,8 +70,8 @@ class = cell(num_candidates, 1);
 ic_idx = 1;
 while (ic_idx <= num_candidates)
     % Load IC
-    filter = data.filters(:, :, ic_idx);
-    trace = data.traces(:, ic_idx);
+    filter = ds.cells(ic_idx).im;
+    trace = ds.get_trace(ic_idx);
     
     view_trace(time, trace, trial_indices);
     title(sprintf('Candidate %d of %d', ic_idx, num_candidates));
