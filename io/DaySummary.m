@@ -110,13 +110,12 @@ classdef DaySummary
                 'label', class);
         end
         
-        function [trace, frame_indices] = get_trace(obj, cell_idx, varargin)
-            % Optional varargin specifies subset of trials. If omitted,
-            % then pull the trace from all trials
-            if isempty(varargin)
+        % Accessors
+        %------------------------------------------------------------
+        function [trace, frame_indices] = get_trace(obj, cell_idx, selected_trials)
+            % When 'selected_trials' is omitted, then return all trials
+            if ~exist('selected_trials', 'var')
                 selected_trials = 1:obj.num_trials;
-            else
-                selected_trials = varargin{1};
             end
             
             trace = [];
