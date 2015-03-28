@@ -126,8 +126,9 @@ while (ic_idx <= num_candidates)
                     full_file = fullfile(path, file);
                     class = load_classification(full_file);
                     fprintf('  Loaded classification from "%s"\n', file);
+                    
+                    ic_idx = find(strcmp(class,''),1); % Go to first unlabeled pair
                 end
-                ic_idx = find(strcmp(class,''),1); % Go to first unlabeled pair
             case 't' % "Take" screenshot
                 screenshot_name = sprintf('ic%03d.png', ic_idx);
                 screenshot_name = fullfile(ic_dir, screenshot_name);
