@@ -93,15 +93,20 @@ classdef DaySummary
                            class_source, data_source));
 
             images = squeeze(num2cell(data.filters, [1 2])); % images{k} is the 2D image of cell k
+            [height, width] = size(images{1});
             boundaries = cell(size(images));
+            masks = cell(size(images));
             for k = 1:obj.num_cells
                 boundary = compute_ic_boundary(images{k}, 0.3);
                 boundaries{k} = boundary{1};
+                masks{k} = poly2mask(boundaries{k}(:,1), boundaries{k}(:,2),...
+                                     height, width);
             end
             
             obj.cells = struct(...
                 'im', images,...
                 'boundary', boundaries,...
+                'mask', masks,...
                 'label', class);
         end
         
@@ -119,6 +124,20 @@ classdef DaySummary
             for k = selected_trials
                 trace = [trace obj.trials(k).traces(cell_idx,:)]; %#ok<*AGROW>
                 frame_indices = [frame_indices obj.trial_indices(k,1):obj.trial_indices(k,end)];
+            end
+        end
+        
+        function mask = get_mask(obj, cell_indices)
+            % When 'cell_indices' is omitted, then return the masks of all
+            % classified cells
+            if ~exist('cell_indices', 'var')
+                cell_indices = find(obj.is_cell);
+            end
+            
+            [height, width] = size(obj.cells(1).im);
+            mask = zeros(height, width);
+            for cell_idx = cell_indices
+                mask = mask | obj.cells(cell_idx).mask;
             end
         end
         
