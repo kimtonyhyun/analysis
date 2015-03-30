@@ -42,7 +42,7 @@ h5create(fullfile(outputDir,hdf5Name),'/TrialInfo/Frames',[Inf,4],'ChunkSize',[1
 h5create(fullfile(outputDir,hdf5Name),'/TrialInfo/Locations',[Inf,3],'ChunkSize',[1,3],'Datatype','uint8');
 h5create(fullfile(outputDir,hdf5Name),'/TrialInfo/Time',[Inf,1],'ChunkSize',[1,1]);
 badTrial = 0;
-testFrames = 1;
+testFrames = startFrames(1,1);
 trialCount = 0;
 
 for i=1:length(list)
@@ -56,6 +56,17 @@ for i=1:length(list)
             tif_info = imfinfo(fullfile(tifDir,list(i).name));
             numBadFrames = length(tif_info);
             testFrames = testFrames + numBadFrames;
+        else
+            %%% Good trial
+            badTrial = 0;
+        end
+    else
+        if(testFrames ~= 1)
+            %%% Bad trial
+            badTrial = 1;
+            tif_info = imfinfo(fullfile(tifDir,list(i).name));
+            numBadFrames = length(tif_info);
+            testFrames = 1 + numBadFrames;
         else
             %%% Good trial
             badTrial = 0;
@@ -78,57 +89,47 @@ for i=1:length(list)
         %%% trial
         if(str2num(xmlData.dropped_count) ~= 0)
             droppedFrames = str2num(xmlData.dropped);
-            numDroppedFrames = length(droppedFrames);
         else
             numFrames = oriFrames;
             droppedFrames = 0;
-            numDroppedFrames = 0;
         end
         
         %%% Read in the images, trim the frames at the beginning and end 
         %%% of the trial (set by the 'trim' argument), and downsample by the 
         %%% 'downsmpFactor' argument
-        imageStack = zeros(downsmpRows,downsmpCols,oriFrames,'uint16');
+        imageStack = zeros(downsmpRows,downsmpCols,oriFrames-trim(1)-trim(2),'uint16');
         if(downsmpFactor == 1)
-            for j=1:oriFrames
-                tifFile.setDirectory(j);
+            for j=1:oriFrames-trim(1)-trim(2)
+                tifFile.setDirectory(j+trim(1));
                 imageStack(:,:,j) = uint16(tifFile.read());
             end
         else
-            for j=1:oriFrames
-                tifFile.setDirectory(j);
+            for j=1:oriFrames-trim(1)-trim(2)
+                tifFile.setDirectory(j+trim(1));
                 imageStack(:,:,j) = uint16(imresize(tifFile.read(),downsmpFactor,'bilinear'));
             end
         end
         
         %%% Replace any dropped frames with the frame immediately
-        %%% preceeding it (or after it if the first frame of the trial was
-        %%% dropped)
+        %%% preceeding it
+        cropDroppedFrames = 0;
         if(droppedFrames ~= 0)
-            while(~isempty(droppedFrames))
+            for j=1:length(droppedFrames)
                 disp('DroppedFrame');
-                droppedFrame = droppedFrames(1);
-                if(droppedFrame == 1)
-                    smallestFrame = find(min(droppedFrames~=1:oriFrames));
-                    frontStack = repmat(imageStack(:,:,smallestStack),[1 1 smallestFrame-1]);
-                    backStack = imageStack(:,:,smallestStack:end);
-                    newImageStack = cat(3,frontStack,backStack);
-                    clear imageStack
-                    imageStack = newImageStack;
-                    droppedFrames(1:smallestFrame-1) = [];
-                else
+                droppedFrame = droppedFrames(j);
+                if((droppedFrame > trim(1)) && (droppedFrame < oriFrames-trim(2)))
+                    droppedFrame = droppedFrame+trim(1);
                     frontStack = imageStack(:,:,1:droppedFrame-1);
                     frontStack = cat(3,frontStack,imageStack(:,:,droppedFrame-1));
                     backStack = imageStack(:,:,droppedFrame:end);
                     newImageStack = cat(3,frontStack,backStack);
                     clear imageStack
                     imageStack = newImageStack;
-                    droppedFrames(1) = [];
+                else
+                    cropDroppedFrames = cropDroppedFrames+1;
                 end
             end
         end
-        
-        imageStack = imageStack(:,:,trim(1)+1:(oriFrames+numDroppedFrames)-trim(2));
         
         numFrames = size(imageStack,3);
         [dRows,dCols] = size(imageStack(:,:,1));
@@ -159,20 +160,26 @@ for i=1:length(list)
         totalFrames = totalFrames+numFrames;
         
         %%% Total frame count corresponding to behavior text file
-        testFrames = testFrames+oriFrames+numDroppedFrames;
+        testFrames = testFrames+oriFrames+cropDroppedFrames;
         
         clear imageStack tifName tifInfo tifFile droppedFrames newImageStack
     end
 end
 
-[~,name,~] = fileparts(list(1).name);
+[path,name,ext] = fileparts(list(1).name);
 xmlName = [fullfile(tifDir,name),'.xml'];
 xmlData = parse_miniscope_xml(xmlName);
-frameRate = str2double(xmlData.fps);
+frameRate = str2num(xmlData.fps);
 
 %%% Remove the extra frame count needed to index the hdf5 file
 totalFrames = totalFrames-1;
 
+h5create(fullfile(outputDir,hdf5Name),'/Params/NumFrames',1);
+h5write(fullfile(outputDir,hdf5Name),'/Params/NumFrames',totalFrames);
+h5create(fullfile(outputDir,hdf5Name),'/Params/NumRows',1,'Datatype','uint16');
+h5write(fullfile(outputDir,hdf5Name),'/Params/NumRows',uint16(dRows));
+h5create(fullfile(outputDir,hdf5Name),'/Params/NumCols',1,'Datatype','uint16');
+h5write(fullfile(outputDir,hdf5Name),'/Params/NumCols',uint16(dCols));
 h5create(fullfile(outputDir,hdf5Name),'/Params/TrimVals',[1 2],'Datatype','uint16');
 h5write(fullfile(outputDir,hdf5Name),'/Params/TrimVals',uint16(trim));
 h5create(fullfile(outputDir,hdf5Name),'/Params/DownsmpFactor',1,'Datatype','double');
