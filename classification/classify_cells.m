@@ -40,54 +40,50 @@ else
     fprintf('  %s: Done!\n', datestr(now));
 end
 
-num_frames = size(M, 3);
-fps = sources.fps;
-time = 1/fps*((1:num_frames)-1); %#ok<*NODEF>
-
 % Compute a common scaling for the movie
 movie_clim = compute_movie_scale(M);
 fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
     datestr(now), movie_clim(1), movie_clim(2));
 
-% Get trial info from maze output
-trial_indices = get_trial_frame_indices(sources.maze);
-trial_indices = trial_indices(:, [1 end]); % [Start end]
-assert(num_frames == trial_indices(end,end),...
-       'Number of frames in movie does not match trial index table!');
-
 % Load filter/trace pairs to be classified
 if use_reconstruction
-    pair_source = get_most_recent_file(ic_dir, 'rec_*.mat');
+    ds = DaySummary(sources.maze, ic_dir, 'reconst');
 else
-    pair_source = get_most_recent_file(ic_dir, 'ica_*.mat');
+    ds = DaySummary(sources.maze, ic_dir);
 end
-data = load(pair_source);
-num_candidates = data.info.num_pairs;
-fprintf('  %s: Loaded filter/traces from "%s"\n', datestr(now), pair_source);
+num_candidates = ds.num_cells;
+fprintf('  %s: Loaded filters/traces from "%s"\n', datestr(now), ic_dir);
+
+trial_indices = ds.trial_indices(:, [1 end]); % [Start end]
+assert(size(M,3) == trial_indices(end,end),...
+       'Error: Number of frames in movie does not match trial index table!');
 
 % Begin classification
 %------------------------------------------------------------
 output_name = sprintf('class_%s.txt', datestr(now, 'yymmdd-HHMMSS'));
 class = cell(num_candidates, 1);
 
-ic_idx = 1;
-while (ic_idx <= num_candidates)
-    % Load IC
-    filter = data.filters(:, :, ic_idx);
-    trace = data.traces(:, ic_idx);
+cell_idx = 1;
+while (cell_idx <= num_candidates)
+    subplot(3,2,[1 2]);
+    ds.plot_trace(cell_idx);
+    title(sprintf('Candidate %d of %d', cell_idx, num_candidates));
     
-    view_trace(time, trace, trial_indices);
-    title(sprintf('Candidate %d of %d', ic_idx, num_candidates));
+    subplot(3,2,[3 5]);
+    ds.plot_superposed_trials(cell_idx);
+    
+    subplot(3,2,[4 6]);
+    ds.plot_cell_raster(cell_idx);
     
     % Ask the user to classify the IC
     prompt = sprintf('Classifier (%d/%d) >> ', ...
-                        ic_idx, num_candidates);
+                        cell_idx, num_candidates);
     resp = strtrim(input(prompt, 's'));
     
     val = str2double(resp);
     if (~isnan(val)) % Is a number. Check if it is a valid IC and jump to it
         if ((1 <= val) && (val <= num_candidates))
-            ic_idx = val;
+            cell_idx = val;
         else
             fprintf('  Sorry, %d is not a valid trace index\n', val);
         end
@@ -97,24 +93,25 @@ while (ic_idx <= num_candidates)
             % Classication options
             %------------------------------------------------------------
             case {'p', 'c'} % Cell
-                [~, movie_clim] = view_ic_over_movie_interactively(filter, time, trace, M, fps, movie_clim);
+                [~, movie_clim] = view_cell_interactively(ds, cell_idx,...
+                                    M, sources.fps, movie_clim);
                 resp2 = input(sprintf('  Confirm classification ("%s") >> ', resp), 's');
                 resp2 = lower(strtrim(resp2));
                 if (strcmp(resp, resp2))
                     switch (resp2)
                         case 'p'
-                            class{ic_idx} = 'phase-sensitive cell';
+                            class{cell_idx} = 'phase-sensitive cell';
                         case 'c'
-                            class{ic_idx} = 'cell';
+                            class{cell_idx} = 'cell';
                     end
-                    fprintf('  Trace %d classified as %s\n', ic_idx, class{ic_idx});
-                    ic_idx = ic_idx + 1;
+                    fprintf('  Trace %d classified as %s\n', cell_idx, class{cell_idx});
+                    cell_idx = cell_idx + 1;
                 end
 
             case 'n' % Not a cell
-                class{ic_idx} = 'not a cell';
-                fprintf('  Trace %d classified as %s\n', ic_idx, class{ic_idx});
-                ic_idx = ic_idx + 1;
+                class{cell_idx} = 'not a cell';
+                fprintf('  Trace %d classified as %s\n', cell_idx, class{cell_idx});
+                cell_idx = cell_idx + 1;
                 
             % Application options
             %------------------------------------------------------------
@@ -129,10 +126,11 @@ while (ic_idx <= num_candidates)
                     full_file = fullfile(path, file);
                     class = load_classification(full_file);
                     fprintf('  Loaded classification from "%s"\n', file);
+                    
+                    cell_idx = find(strcmp(class,''),1); % Go to first unlabeled pair
                 end
-                ic_idx = find(strcmp(class,''),1); % Go to first unlabeled pair
             case 't' % "Take" screenshot
-                screenshot_name = sprintf('ic%03d.png', ic_idx);
+                screenshot_name = sprintf('ic%03d.png', cell_idx);
                 screenshot_name = fullfile(ic_dir, screenshot_name);
                 print('-dpng', screenshot_name);
                 fprintf('  Plot saved to %s\n', screenshot_name);

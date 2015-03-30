@@ -88,14 +88,15 @@ tform = fitgeotrans(sel_ics_centers(:,:,2),... % Moving points
                     'affine');
 
 figure;
-subplot(121); % Pre-transform comparison
+% subplot(121); % Pre-transform comparison
 plot_boundaries(bounds{1}, c1, 'b', 2, sel_ics(:,1), []);
 plot_boundaries(bounds{2}, c2, 'r', 1, sel_ics(:,2), []);
 title('Pre-transform: Dataset1 (blue) vs. Dataset2 (red)');
 axis equal;
 set(gca, 'YDir', 'Reverse');
 
-subplot(122); % Post-transform comparison
+figure;
+% subplot(122); % Post-transform comparison
 plot_boundaries(bounds{1}, c1, 'b', 2, sel_ics(:,1), []);
 plot_boundaries(bounds{2}, c2, 'r', 1, sel_ics(:,2), tform);
 title('Post-transform: Dataset1 (blue) vs. Dataset2 (red)');

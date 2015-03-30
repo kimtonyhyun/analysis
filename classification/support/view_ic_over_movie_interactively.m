@@ -36,7 +36,10 @@ COM = COM / sum(masked_filter(:));
 plot(COM(1), COM(2), 'b.');
 hold off;
 
+% Start off zoomed
 zoom_half_width = min([width, height])/10;
+xlim(COM(1)+zoom_half_width*[-1 1]);
+ylim(COM(2)+zoom_half_width*[-1 1]);
 
 % Compute the active portions of the trace
 %------------------------------------------------------------
@@ -102,7 +105,7 @@ val = str2double(resp);
 
 % State of interaction loop
 state.last_val = [];
-state.zoomed = false;
+state.zoomed = true;
 while (1)
     if (~isnan(val)) % Is a number
         if ((1 <= val) && (val <= num_active_periods))

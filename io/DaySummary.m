@@ -84,34 +84,42 @@ classdef DaySummary
                 'traces', traces);
             
             % Parse cell data
-            %   TODO: Consider classification as an optional input
             %------------------------------------------------------------
             class_source = get_most_recent_file(ica_dir, 'class_*.txt');
-            class = load_classification(class_source);
-            assert(length(class)==obj.num_cells,...
-                   sprintf('Number of labels in %s is not consistent with %s!',...
-                           class_source, data_source));
+            if ~isempty(class_source)
+                class = load_classification(class_source);
+                assert(length(class)==obj.num_cells,...
+                       sprintf('Number of labels in %s is not consistent with %s!',...
+                               class_source, data_source));
+            else % No classification file
+                fprintf('%s: No classification file in %s!\n', datestr(now), ica_dir);
+                class = cell(obj.num_cells,1); % Empty
+            end
 
             images = squeeze(num2cell(data.filters, [1 2])); % images{k} is the 2D image of cell k
+            [height, width] = size(images{1});
             boundaries = cell(size(images));
+            masks = cell(size(images));
             for k = 1:obj.num_cells
                 boundary = compute_ic_boundary(images{k}, 0.3);
-                boundaries{k} = boundary{1};
+                boundaries{k} = boundary{1}; % Keeps only the longest-boundary!
+                masks{k} = poly2mask(boundaries{k}(:,1), boundaries{k}(:,2),...
+                                     height, width);
             end
             
             obj.cells = struct(...
                 'im', images,...
                 'boundary', boundaries,...
+                'mask', masks,...
                 'label', class);
         end
         
-        function [trace, frame_indices] = get_trace(obj, cell_idx, varargin)
-            % Optional varargin specifies subset of trials. If omitted,
-            % then pull the trace from all trials
-            if isempty(varargin)
+        % Accessors
+        %------------------------------------------------------------
+        function [trace, frame_indices] = get_trace(obj, cell_idx, selected_trials)
+            % When 'selected_trials' is omitted, then return all trials
+            if ~exist('selected_trials', 'var')
                 selected_trials = 1:obj.num_trials;
-            else
-                selected_trials = varargin{1};
             end
             
             trace = [];
@@ -122,13 +130,33 @@ classdef DaySummary
             end
         end
         
-        function is_cell = is_cell(obj, varargin)
-            % Optional argument specifies subset of cell indices to check
-            cell_indices = 1:obj.num_cells;
-            if ~isempty(varargin)
-                cell_indices = varargin{1};
+        function mask = get_mask(obj, cell_indices)
+            % When 'cell_indices' is omitted, then return the masks of all
+            % classified cells
+            if ~exist('cell_indices', 'var')
+                cell_indices = find(obj.is_cell);
             end
-            is_cell = ~strcmp({obj.cells(cell_indices).label}, 'not a cell');
+            
+            [height, width] = size(obj.cells(1).im);
+            mask = zeros(height, width);
+            for cell_idx = cell_indices
+                mask = mask | obj.cells(cell_idx).mask;
+            end
+        end
+        
+        function is_cell = is_cell(obj, cell_indices)
+            % When 'cell_indices' is omitted, then return the label of all
+            % cells
+            if ~exist('cell_indices', 'var')
+                cell_indices = 1:obj.num_cells;
+            end
+            
+            is_cell = zeros(size(cell_indices));
+            for k = 1:length(cell_indices)
+                cell_idx = cell_indices(k);
+                is_cell(k) = any(strcmp(obj.cells(cell_idx).label,...
+                    {'phase-sensitive cell', 'cell'}));
+            end
         end
         
         % Built-in visualization functions
@@ -311,6 +339,7 @@ classdef DaySummary
             end
             
             imagesc(resample_grid, 1:size(raster,1), raster);
+            colormap jet;
             xlabel('Trial phase [a.u.]');
             ylabel('Trial index');
         end
