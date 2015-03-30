@@ -35,6 +35,9 @@ end
 for cidx = setdiff(1:ds.num_cells, cell_idx) 
     boundary = ds.cells(cidx).boundary;
     plot(boundary(:,1), boundary(:,2), 'y--');
+    text(mean(boundary(:,1)), mean(boundary(:,2)),...
+        num2str(cidx), 'Color', 'y',...
+        'Clipping', 'on');
 end
 
 % Compute the center of mass of the filter
