@@ -334,6 +334,7 @@ classdef DaySummary
             end
             
             imagesc(resample_grid, 1:size(raster,1), raster);
+            colormap jet;
             xlabel('Trial phase [a.u.]');
             ylabel('Trial index');
         end

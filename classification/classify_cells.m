@@ -74,7 +74,15 @@ while (ic_idx <= num_candidates)
     trace = ds.get_trace(ic_idx);
     
     view_trace(time, trace, trial_indices);
+    subplot(3,2,[1 2]);
+    ds.plot_trace(ic_idx);
     title(sprintf('Candidate %d of %d', ic_idx, num_candidates));
+    
+    subplot(3,2,[3 5]);
+    ds.plot_superposed_trials(ic_idx);
+    
+    subplot(3,2,[4 6]);
+    ds.plot_cell_raster(ic_idx);
     
     % Ask the user to classify the IC
     prompt = sprintf('Classifier (%d/%d) >> ', ...
