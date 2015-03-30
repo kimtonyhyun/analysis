@@ -37,10 +37,11 @@ other_cells = setdiff(1:ds.num_cells, cell_idx);
 num_other_cells = length(other_cells);
 other_cell_handles = zeros(num_other_cells, 2);
 
-for oc_idx = other_cells
+for n = 1:num_other_cells
+    oc_idx = other_cells(n);
     boundary = ds.cells(oc_idx).boundary;
-    other_cell_handles(oc_idx,1) = plot(boundary(:,1), boundary(:,2), 'y--');
-    other_cell_handles(oc_idx,2) = text(mean(boundary(:,1)), mean(boundary(:,2)),...
+    other_cell_handles(n,1) = plot(boundary(:,1), boundary(:,2), 'y--');
+    other_cell_handles(n,2) = text(mean(boundary(:,1)), mean(boundary(:,2)),...
                                     num2str(oc_idx), 'Color', 'y',...
                                     'Clipping', 'on');
 end
