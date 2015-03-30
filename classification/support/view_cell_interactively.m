@@ -31,14 +31,20 @@ for i = 1:length(ic_boundaries)
     plot(ic_boundary(:,1), ic_boundary(:,2), 'r', 'LineWidth', 2);
 end
 
-% Plot boundaries of other cells
-for cidx = setdiff(1:ds.num_cells, cell_idx) 
-    boundary = ds.cells(cidx).boundary;
-    plot(boundary(:,1), boundary(:,2), 'y--');
-    text(mean(boundary(:,1)), mean(boundary(:,2)),...
-        num2str(cidx), 'Color', 'y',...
-        'Clipping', 'on');
+% Plot boundaries of other cells, and retrieve their handles so that
+%   we can toggle the boundaries on and off
+other_cells = setdiff(1:ds.num_cells, cell_idx);
+num_other_cells = length(other_cells);
+other_cell_handles = zeros(num_other_cells, 2);
+
+for oc_idx = other_cells
+    boundary = ds.cells(oc_idx).boundary;
+    other_cell_handles(oc_idx,1) = plot(boundary(:,1), boundary(:,2), 'y--');
+    other_cell_handles(oc_idx,2) = text(mean(boundary(:,1)), mean(boundary(:,2)),...
+                                    num2str(oc_idx), 'Color', 'y',...
+                                    'Clipping', 'on');
 end
+show_other_cells(false); % Turn off the boundaries of other cells
 
 % Compute the center of mass of the filter
 masked_filter = ic_mask .* filter;
@@ -119,6 +125,7 @@ val = str2double(resp);
 % State of interaction loop
 state.last_val = [];
 state.zoomed = true;
+state.show_other_cells = false;
 while (1)
     if (~isnan(val)) % Is a number
         if ((1 <= val) && (val <= num_active_periods))
@@ -165,6 +172,10 @@ while (1)
                         movie_clim(1), movie_clim(2));
                 end
                 set(gca, 'CLim', movie_clim);
+                
+            case 'n' % Show "neighboring" cells
+                state.show_other_cells = ~state.show_other_cells;
+                show_other_cells(state.show_other_cells);
 
             otherwise
                 fprintf('  Sorry, could not parse "%s"\n', resp);
@@ -197,6 +208,18 @@ end
             end
         end
     end % display_active_period
+
+    function show_other_cells(show)
+        vis_val = 'off';
+        if (show)
+            vis_val = 'on';
+        end
+        
+        for m = 1:num_other_cells
+            set(other_cell_handles(m,1), 'Visible', vis_val);
+            set(other_cell_handles(m,2), 'Visible', vis_val);
+        end
+    end % show_other_cells
 
 end % main function
 
