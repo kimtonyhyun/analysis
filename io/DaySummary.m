@@ -102,7 +102,7 @@ classdef DaySummary
             masks = cell(size(images));
             for k = 1:obj.num_cells
                 boundary = compute_ic_boundary(images{k}, 0.3);
-                boundaries{k} = boundary{1};
+                boundaries{k} = boundary{1}; % Keeps only the longest-boundary!
                 masks{k} = poly2mask(boundaries{k}(:,1), boundaries{k}(:,2),...
                                      height, width);
             end

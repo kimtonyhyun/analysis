@@ -31,6 +31,12 @@ for i = 1:length(ic_boundaries)
     plot(ic_boundary(:,1), ic_boundary(:,2), 'r', 'LineWidth', 2);
 end
 
+% Plot boundaries of other cells
+for cidx = setdiff(1:ds.num_cells, cell_idx) 
+    boundary = ds.cells(cidx).boundary;
+    plot(boundary(:,1), boundary(:,2), 'y--');
+end
+
 % Compute the center of mass of the filter
 masked_filter = ic_mask .* filter;
 [height, width] = size(masked_filter);
@@ -103,7 +109,7 @@ hold off;
 % Interaction loop:
 %   Display the user-specified active period
 %------------------------------------------------------------
-prompt = 'IC viewer >> ';
+prompt = 'Cell viewer >> ';
 resp = lower(strtrim(input(prompt, 's')));
 val = str2double(resp);
 
