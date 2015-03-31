@@ -159,6 +159,10 @@ classdef DaySummary
             end
         end
         
+        function is_correct = get_trial_correctness(obj)
+            is_correct = cellfun(@strcmp, {obj.trials.goal}, {obj.trials.end});
+        end
+        
         % Built-in visualization functions
         % Note: Do NOT make use of subplots in the built-in plot methods
         %------------------------------------------------------------
