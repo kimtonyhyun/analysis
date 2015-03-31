@@ -203,11 +203,7 @@ classdef DaySummary
             for k = 1:obj.num_cells
                 color = cell_colors(k);
                 boundary = obj.cells(k).boundary;
-                if obj.is_cell(k)
-                    color = 'g';
-                else
-                    color = 'r';
-                end
+
                 plot(boundary(:,1), boundary(:,2), 'Color', color);
                 text(max(boundary(:,1)), min(boundary(:,2)),...
                      sprintf('%d', k), 'Color', color);
