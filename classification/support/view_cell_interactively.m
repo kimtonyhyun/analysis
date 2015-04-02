@@ -14,7 +14,7 @@ time = 1/fps*((1:length(trace))-1);
 ic_filter_threshold = 0.3; % For generating the IC filter outline
 mad_scale = 5; % Used for coarse detection of activity in the IC trace
 active_frame_padding = 5*fps; % Use 100 for 20 Hz movie
-time_window = 10; % Width of running window
+time_window = 100/fps; % Width of running window
 
 % Generate the outline of the filter
 %------------------------------------------------------------
