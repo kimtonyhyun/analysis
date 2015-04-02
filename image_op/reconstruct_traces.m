@@ -80,6 +80,12 @@ for ic_idx = 1:num_ICs
         rec_filter_count = rec_filter_count + 1;
         filters(:,:,rec_filter_count) = ic_filter .* ic_mask;
     else % Multiple ROIs detected
+        if (num_boundaries > 20)
+            fprintf('%s: IC %d has %d boundaries, skipping...\n',...
+                datestr(now), ic_idx, num_boundaries);
+            continue;
+        end
+        
         submasks = zeros(height, width, num_boundaries);
         
         % Show the multiple ROIs to the user
