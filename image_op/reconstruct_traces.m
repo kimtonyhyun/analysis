@@ -108,7 +108,8 @@ for ic_idx = 1:num_ICs
         end
         hold off;
         
-        title(sprintf('%s -- IC %d', strrep(ica_filename, '_', '\_'), ic_idx));
+        title(sprintf('%s -- IC %d', ica_filename, ic_idx),...
+              'Interpreter', 'none'); % Turn off Tex
         axis image;
         drawnow;
         
