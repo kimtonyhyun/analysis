@@ -28,10 +28,15 @@ classdef DaySummary
         function obj = DaySummary(plusmaze_txt, ica_dir, varargin)
             % Handle optional input
             exclude_probe_trials = 0;
+            use_reconstruction = 0;
             for k = 1:length(varargin)
-                switch lower(varargin{k})
-                    case 'excludeprobe'
-                        exclude_probe_trials = 1;
+                if ischar(varargin{k})
+                    switch lower(varargin{k})
+                        case 'excludeprobe'
+                            exclude_probe_trials = 1;
+                        case 'reconst'
+                            use_reconstruction = 1;
+                    end
                 end
             end
             
@@ -40,7 +45,14 @@ classdef DaySummary
             [trial_indices, loc_info, trial_durations] =...
                 parse_plusmaze(plusmaze_txt);
             
-            data = load(get_most_recent_file(ica_dir, 'ica_*.mat'));
+            if use_reconstruction
+                data_source = get_most_recent_file(ica_dir, 'rec_*.mat');
+            else
+                data_source = get_most_recent_file(ica_dir, 'ica_*.mat');
+            end
+            data = load(data_source);
+            obj.num_cells = data.info.num_pairs;
+            fprintf('%s: Loaded data from %s\n', datestr(now), data_source);
             
             % Parse trial data
             %   TODO: Bring in centroids corresponding to mouse position
@@ -59,7 +71,7 @@ classdef DaySummary
             for k = 1:num_trials
                 trial_frames = trial_indices(k,1):...
                                trial_indices(k,end);
-                traces{k} = data.ica_traces(trial_frames, :)';
+                traces{k} = data.traces(trial_frames, :)';
             end
             
             obj.num_trials = num_trials;
@@ -73,21 +85,41 @@ classdef DaySummary
             
             % Parse cell data
             %------------------------------------------------------------
-            obj.num_cells = data.ica_info.num_ICs;
+            class_source = get_most_recent_file(ica_dir, 'class_*.txt');
+            if ~isempty(class_source)
+                class = load_classification(class_source);
+                assert(length(class)==obj.num_cells,...
+                       sprintf('Number of labels in %s is not consistent with %s!',...
+                               class_source, data_source));
+            else % No classification file
+                fprintf('%s: No classification file in %s!\n', datestr(now), ica_dir);
+                class = cell(obj.num_cells,1); % Empty
+            end
+
+            images = squeeze(num2cell(data.filters, [1 2])); % images{k} is the 2D image of cell k
+            [height, width] = size(images{1});
+            boundaries = cell(size(images));
+            masks = cell(size(images));
+            for k = 1:obj.num_cells
+                boundary = compute_ic_boundary(images{k}, 0.3);
+                boundaries{k} = boundary{1}; % Keeps only the longest-boundary!
+                masks{k} = poly2mask(boundaries{k}(:,1), boundaries{k}(:,2),...
+                                     height, width);
+            end
             
-            class = load_classification(get_most_recent_file(ica_dir, 'class_*.txt'));
             obj.cells = struct(...
-                'im', squeeze(num2cell(data.ica_filters, [1 2])),...
+                'im', images,...
+                'boundary', boundaries,...
+                'mask', masks,...
                 'label', class);
         end
         
-        function [trace, frame_indices] = get_trace(obj, cell_idx, varargin)
-            % Optional varargin specifies subset of trials. If omitted,
-            % then pull the trace from all trials
-            if isempty(varargin)
+        % Accessors
+        %------------------------------------------------------------
+        function [trace, frame_indices] = get_trace(obj, cell_idx, selected_trials)
+            % When 'selected_trials' is omitted, then return all trials
+            if ~exist('selected_trials', 'var')
                 selected_trials = 1:obj.num_trials;
-            else
-                selected_trials = varargin{1};
             end
             
             trace = [];
@@ -98,9 +130,98 @@ classdef DaySummary
             end
         end
         
+        function mask = get_mask(obj, cell_indices)
+            % When 'cell_indices' is omitted, then return the masks of all
+            % classified cells
+            if ~exist('cell_indices', 'var')
+                cell_indices = find(obj.is_cell);
+            end
+            
+            [height, width] = size(obj.cells(1).im);
+            mask = zeros(height, width);
+            for cell_idx = cell_indices
+                mask = mask | obj.cells(cell_idx).mask;
+            end
+        end
+        
+        function is_cell = is_cell(obj, cell_indices)
+            % When 'cell_indices' is omitted, then return the label of all
+            % cells
+            if ~exist('cell_indices', 'var')
+                cell_indices = 1:obj.num_cells;
+            end
+            
+            is_cell = zeros(size(cell_indices));
+            for k = 1:length(cell_indices)
+                cell_idx = cell_indices(k);
+                is_cell(k) = any(strcmp(obj.cells(cell_idx).label,...
+                    {'phase-sensitive cell', 'cell'}));
+            end
+        end
+        
+        function is_correct = get_trial_correctness(obj)
+            is_correct = cellfun(@strcmp, {obj.trials.goal}, {obj.trials.end});
+        end
+        
         % Built-in visualization functions
         % Note: Do NOT make use of subplots in the built-in plot methods
         %------------------------------------------------------------
+        function plot_cell_map(obj, color_grouping)
+            % Optional argument allows for specification of color used for
+            % the cell in the cell map. The color specification is defined
+            % as follows:
+            %   color_grouping = {[1, 2, 3, 4], [5, 6], [10]}
+            % means that cells [1, 2, 3, 4] will be displayed in one color,
+            % cells [5, 6] in another color, and [10] in another.
+            
+            % By default, color the cells based on classification
+            if ~exist('color_grouping', 'var')
+                cell_colors = arrayfun(@num2color, obj.is_cell());
+            else
+                cell_colors = repmat('w', 1, obj.num_cells); % Ungrouped cells are white
+                % Unpack the colors
+                for k = 1:length(color_grouping)
+                    for cell_idx = color_grouping{k}
+                        cell_colors(cell_idx) = num2color(k);
+                    end
+                end
+            end
+            
+            % Background image to display
+            [height, width] = size(obj.cells(1).im);
+            ref_image = zeros(height, width);
+            for k = 1:obj.num_cells
+                ref_image = ref_image + obj.cells(k).im;
+            end
+            imagesc(ref_image);
+            colormap gray;
+            axis equal;
+            xlim([1 width]);
+            ylim([1 height]);
+            
+            hold on;
+            for k = 1:obj.num_cells
+                color = cell_colors(k);
+                boundary = obj.cells(k).boundary;
+
+                plot(boundary(:,1), boundary(:,2), 'Color', color);
+                text(max(boundary(:,1)), min(boundary(:,2)),...
+                     sprintf('%d', k), 'Color', color);
+            end
+            hold off;
+            
+            function color = num2color(num)
+                switch num
+                    case 0
+                        color = 'r';
+                    case 1
+                        color = 'g';
+                    case 2
+                        color = 'm';
+                end
+            end
+        end
+        
         function plot_trace(obj, cell_idx)
             % Plot the trace of a single cell, color-coded by trial
             trace_min = Inf;
@@ -218,6 +339,7 @@ classdef DaySummary
             end
             
             imagesc(resample_grid, 1:size(raster,1), raster);
+            colormap jet;
             xlabel('Trial phase [a.u.]');
             ylabel('Trial index');
         end
