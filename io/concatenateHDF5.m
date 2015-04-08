@@ -117,7 +117,6 @@ for i=1:length(list)
             for j=1:length(droppedFrames)
                 fprintf('DroppedFrame: %i\n',droppedFrames(j));
                 droppedFrame = droppedFrames(j);
-                droppedFrame = droppedFrame+trim(1);
                 frontStack = imageStack(:,:,1:droppedFrame-1);
                 frontStack = cat(3,frontStack,imageStack(:,:,droppedFrame-1));
                 backStack = imageStack(:,:,droppedFrame:end);
