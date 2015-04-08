@@ -1,4 +1,5 @@
-function reconstruct_traces(movie_source, ica_dir, varargin)
+%function reconstruct_traces(movie_source, ica_dir, varargin)
+
 % Reconstruct trace from the movie using the IC filters.
 %
 % inputs:
@@ -32,7 +33,7 @@ function reconstruct_traces(movie_source, ica_dir, varargin)
 %
 
 % Reconstruction parameters
-threshMov = -1; % By default keep everything
+threshMov = 0; 
 threshIC = 0.3;
 
 if ~isempty(varargin)
@@ -151,6 +152,7 @@ end
 
 % Reconstruct traces
 %------------------------------------------------------------
+
 fprintf('%s: Loading movie...\n', datestr(now));
 M = load_movie(movie_source);
 [height, width, num_frames] = size(M);
@@ -171,7 +173,11 @@ for cell_idx = 1:rec_filter_count
     pix_active = find(rec_filter>0);
     movie_portion = M(pix_active,:)';
     movie_portion(movie_portion<threshMov) = 0;
-    traces(:,cell_idx) = movie_portion * rec_filter(pix_active);  
+    trace_this = (movie_portion * rec_filter(pix_active))';  
+    % Fix baseline
+    h = polyfit(1:num_frames,min(trace_this,2*quantile(trace_this,0.3)),1);
+    subst = h(2)+h(1)*(1:num_frames);
+    traces(:,cell_idx) = trace_this-subst;
 end
 
 % Save the result to mat file
