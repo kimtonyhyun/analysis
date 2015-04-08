@@ -1,4 +1,4 @@
-function concatenateHDF5_test(tifDir,outputDir,hdf5Name,downsmpFactor,plusmazeName,trim)
+function concatenateHDF5(tifDir,outputDir,hdf5Name,downsmpFactor,plusmazeName,trim)
 
 % Concatenates all tif files in the specified directory into an
 % hdf5 file. The stored files are all downsampled by the factor set in 
