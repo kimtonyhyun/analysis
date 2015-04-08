@@ -145,10 +145,17 @@ end
 info.num_pairs = rec_filter_count; %#ok<STRNU>
 filters = filters(:,:,1:rec_filter_count);
 
+cells_to_exclude = [];
 for cell_idx = 1:rec_filter_count % Normalize
     filter = filters(:,:,cell_idx);
-    filters(:,:,cell_idx) = filter / sum(filter(:));
+    sum_filter = sum(filter(:));
+    if sum_filter>0
+        filters(:,:,cell_idx) = filter / sum_filter;
+    else
+        cells_to_exclude(end+1) = cell_idx;
+    end
 end
+filters(:,:,cells_to_exclude) = []; 
 
 % Reconstruct traces
 %------------------------------------------------------------
