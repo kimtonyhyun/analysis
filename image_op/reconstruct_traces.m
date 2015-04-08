@@ -32,6 +32,9 @@ function reconstruct_traces(movie_source, ica_dir, varargin)
 % Hakan Inan (Mar 15)
 %
 
+% Minimum number of active pixels in an IC filter to be regarded as valid
+min_num_pixels = 4;
+
 % Reconstruction parameters
 threshMov = 0; 
 threshIC = 0.3;
@@ -149,10 +152,10 @@ cells_to_exclude = [];
 for cell_idx = 1:rec_filter_count % Normalize
     filter = filters(:,:,cell_idx);
     sum_filter = sum(filter(:));
-    if sum_filter>0
+    if sum_filter>0 && sum(filter(:)>0)>=min_num_pixels
         filters(:,:,cell_idx) = filter / sum_filter;
     else
-        cells_to_exclude(end+1) = cell_idx;
+        cells_to_exclude(end+1) = cell_idx; 
     end
 end
 filters(:,:,cells_to_exclude) = []; 
