@@ -1,4 +1,4 @@
-%function reconstruct_traces(movie_source, ica_dir, varargin)
+function reconstruct_traces(movie_source, ica_dir, varargin)
 
 % Reconstruct trace from the movie using the IC filters.
 %
