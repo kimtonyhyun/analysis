@@ -1,33 +1,45 @@
-function [resp, movie_clim] = view_ic_over_movie_interactively(ic_filter, time, trace, movie, fps, movie_clim)
+function [resp, movie_clim] = view_ic_over_movie_interactively(filter, time, trace, movie, fps, movie_clim)
 % Visually inspect the active portions of an IC trace side-by-side with
-%   the provided miniscope movie
+%   the provided miniscope movie.
 %
-% 2015 01 31 Tony Hyun Kim
+% Do NOT modify the large 'movie' matrix, lest Matlab make a duplicate
+%   in memory!
+%
 
 % Some parameters
 ic_filter_threshold = 0.3; % For generating the IC filter outline
-mad_scale = 8; % Used for coarse detection of activity in the IC trace
+mad_scale = 5; % Used for coarse detection of activity in the IC trace
 active_frame_padding = 5*fps; % Use 100 for 20 Hz movie
 time_window = 10; % Width of running window
 
-% Generate the outline of the IC filter
+% Generate the outline of the filter
 %------------------------------------------------------------
 subplot(3,3,[4 5 7 8]);
-h = imagesc(ic_filter, movie_clim);
+h = imagesc(rescale_filter_to_clim(filter, movie_clim), movie_clim);
 colormap gray;
 axis image;
 xlabel('x [px]');
 ylabel('y [px]');
 hold on;
-[ic_boundary, ic_mask] = compute_ic_boundary(ic_filter, ic_filter_threshold);
-plot(ic_boundary(:,1), ic_boundary(:,2), 'r', 'LineWidth', 2);
-hold off;
+[ic_boundaries, ic_mask] = compute_ic_boundary(filter, ic_filter_threshold);
+for i = 1:length(ic_boundaries)
+    ic_boundary = ic_boundaries{i};
+    plot(ic_boundary(:,1), ic_boundary(:,2), 'r', 'LineWidth', 2);
+end
 
 % Compute the center of mass of the filter
-[height, width] = size(ic_mask);
-props = regionprops(ic_mask, 'Centroid');
-COM = props.Centroid;
-zoom_half_width = min([width, height])/20;
+masked_filter = ic_mask .* filter;
+[height, width] = size(masked_filter);
+COM = [(1:width) * sum(masked_filter,1)';
+       (1:height)* sum(masked_filter,2)];
+COM = COM / sum(masked_filter(:));
+plot(COM(1), COM(2), 'b.');
+hold off;
+
+% Start off zoomed
+zoom_half_width = min([width, height])/10;
+xlim(COM(1)+zoom_half_width*[-1 1]);
+ylim(COM(2)+zoom_half_width*[-1 1]);
 
 % Compute the active portions of the trace
 %------------------------------------------------------------
@@ -93,7 +105,7 @@ val = str2double(resp);
 
 % State of interaction loop
 state.last_val = [];
-state.zoomed = false;
+state.zoomed = true;
 while (1)
     if (~isnan(val)) % Is a number
         if ((1 <= val) && (val <= num_active_periods))
@@ -114,7 +126,7 @@ while (1)
                 if ~isempty(state.last_val)
                     display_active_period(state.last_val);
                 end
-                
+                            
             case 'z' % "zoom"
                 subplot(3,3,[4 5 7 8]); % Focus on the movie subplot
                 if (state.zoomed) % Return to original view
@@ -177,7 +189,6 @@ end % main function
 
 function active_frames = parse_active_frames(binary_trace, half_width)
 % Segment the active portions of a binary trace into intervals
-% 2015 01 31 Tony Hyun Kim
 
     if (half_width > 0)
         trace = single(binary_trace);
@@ -213,4 +224,19 @@ function active_frames = parse_active_frames(binary_trace, half_width)
     end
 
     active_frames = reshape(active_frames, 2, length(active_frames)/2)';
+end
+
+function filter_out = rescale_filter_to_clim(filter, clim)
+% Numerically rescale the filter to match the provided clim
+
+    f_max = max(filter(:));
+    f_min = min(filter(:));
+
+    filter_norm = (filter-f_min)/f_max; % Matched to range [0, 1]
+
+    clim_delta = clim(2)-clim(1);
+    clim_usage = 0.8;
+    filter_out = clim(1) + (1-clim_usage)/2*clim_delta +...
+                 clim_usage*clim_delta*filter_norm;
+
 end

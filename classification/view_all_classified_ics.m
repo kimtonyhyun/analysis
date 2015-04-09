@@ -1,4 +1,4 @@
-function view_all_classified_ics(class_file,ica_mat,label_option)
+function view_all_classified_ics(ic_dir, label_option)
 % View ICs on top of cell map, where color of outline indicates
 %   cell (green) or not (cell)
 %   
@@ -8,15 +8,15 @@ function view_all_classified_ics(class_file,ica_mat,label_option)
 %
 % 2015 02 19 Fori Wang
 
-figure;
+% Load data
+ica_file = get_most_recent_file(ic_dir, 'ica_*.mat');
+class_file = get_most_recent_file(ic_dir, 'class_*.txt');
 
-% load ICs
-load(ica_mat);
-
-% Pull out classification data
+load(ica_file); % 'ica_info', 'ica_traces', 'ica_filters'
 class = load_classification(class_file);
 
 % Draw background image (sum of all IC filters)
+figure;
 h = imagesc(sum(ica_filters,3));
 colormap gray;
 axis image;
@@ -27,32 +27,27 @@ title_class_file = strrep(class_file, '_','\_');
 title(['Classified ICs for ',title_pwd, ' from ',title_class_file])
 
 hold on;
-colors = ['g'; 'r'];
 
 % Draw all filter outlines (green = cell; red = not cell)
+ic_filter_threshold = 0.3;
 for ic_idx = 1:length(class)
-    % Generate the outline of the IC filter
-    ic_filter_threshold = 0.3;
     ic_filter = ica_filters(:,:,ic_idx);
-    B = threshold_ic_filter(ic_filter, ic_filter_threshold);
-    boundaries = bwboundaries(B, 'noholes');
-
+    boundaries = compute_ic_boundary(ic_filter, ic_filter_threshold);
+    boundary = boundaries{1}; % Longest boundary
+    
     % Setup colors
-    if strcmp(class(ic_idx),'cell')
-        line_color = colors(1);
+    if strcmp(class(ic_idx),'not a cell')
+        line_color = 'r';
     else
-        line_color = colors(2);
+        line_color = 'g';
     end
     
     % Draw filter outline, color depending on classification
-    for i = 1:length(boundaries)
-        boundary = boundaries{i};
-        plot(boundary(:,2), boundary(:,1), line_color, 'LineWidth', 1);
-    end
+    plot(boundary(:,1), boundary(:,2), line_color, 'LineWidth', 1);
     
     % label outline with IC #
     if strcmp(label_option,'y')
-        text(max(boundary(:,2)),max(boundary(:,1)),int2str(ic_idx),...
+        text(max(boundary(:,1)),max(boundary(:,2)),int2str(ic_idx),...
                 'Color',line_color);
     end
 end

@@ -9,10 +9,13 @@ BOld = zeros(size(ica_A));
 min_abs_cos = 0;
 
 iter = 0;
-while ((iter < max_iter) &&...
-       ((1-min_abs_cos) >  term_tol))
+while ((1-min_abs_cos) >  term_tol)
     iter = iter + 1;
-%     fprintf(' ICA iteration %d\n', iter);
+    if (iter > max_iter)
+        fprintf('  compute_ica_weights: Maximum iteration (%d) reached! Exiting...\n',...
+            max_iter);
+        break;
+    end
     
     if (iter > 1)
         interm = data'*ica_A;

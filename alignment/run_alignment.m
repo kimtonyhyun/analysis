@@ -1,9 +1,12 @@
-function [match_1to2, match_2to1, info] = run_alignment(ic_source_dir1, ic_source_dir2)
+function [match_1to2, match_2to1, info] = run_alignment(ds1, ds2, varargin)
 % Align two sets of IC filters.
 %
 % Inputs:
-%   ic_source_dirX: Directory name that contains the ICA filter/trace pairs
-%       ("ica_*.mat") and classification results ("class_*.txt")
+%   ds1/2: DaySummary object containing cell maps to be aligned
+%
+% Optional inputs:
+%   'one-to-one': Each cell of Dataset1 will match at most one cell of
+%       Dataset 2, and visa versa.
 %
 % Outputs:
 %   match_XtoY: Cell that contains mapping information from source X to
@@ -17,23 +20,33 @@ function [match_1to2, match_2to1, info] = run_alignment(ic_source_dir1, ic_sourc
 % Example usage:
 %   [m1to2, m2to1] = run_alignment('c9m7d07_ica001', 'c9m7d08_ica001');
 %
+
+bijective_matching = 0;
+for k = 1:length(varargin)
+    if ischar(varargin{k})
+        switch varargin{k}
+            case {'one-to-one', 'bijective'}
+                bijective_matching = 1;
+        end
+    end
+end
+
 % Control point-based registration of two sets of ICs
 %------------------------------------------------------------
-fprintf('run_alignment: Beginning alignment of %s and %s\n',...
-    ic_source_dir1, ic_source_dir2);
-[affine_info, masks1, masks2_tform] = compute_affine_transform(ic_source_dir1, ic_source_dir2);
+fprintf('run_alignment: Beginning alignment...\n');    
+[affine_info, masks1, masks2_tform] = compute_affine_transform(ds1, ds2);
 
 % Compute matrix of mask overlaps
 %   Note that the overlap matrix is non-symmetric!
 %------------------------------------------------------------
 input('run_alignment: Press any key to continue with mask matching >> ');
-M = zeros(affine_info.num_ics1, affine_info.num_ics2);
-for i = 1:affine_info.num_ics1
+M = zeros(affine_info.num_cells1, affine_info.num_cells2);
+for i = 1:affine_info.num_cells1
     if (mod(i,20)==0)
         fprintf('  %s: Computing overlaps (%.1f%%)...\n',...
-            datestr(now), 100*i/affine_info.num_ics1);
+            datestr(now), 100*i/affine_info.num_cells1);
     end
-    for j = 1:affine_info.num_ics2
+    for j = 1:affine_info.num_cells2
         M(i,j) = compute_mask_overlap(masks1{i}, masks2_tform{j});
     end
 end
@@ -42,8 +55,8 @@ fprintf('  %s: Overlap matrix completed!\n', datestr(now));
 % Find the nonzero elements of the mask overlap matrix
 %------------------------------------------------------------
 overlap_threshold = 1/3;
-match_1to2 = cell(affine_info.num_ics1,1);
-for i = 1:affine_info.num_ics1
+match_1to2 = cell(size(M,1),1);
+for i = 1:size(M,1)
     m = M(i,:);
     matching_js = find(m>overlap_threshold);
     if isempty(matching_js)
@@ -56,8 +69,8 @@ for i = 1:affine_info.num_ics1
     end
 end
 
-match_2to1 = cell(affine_info.num_ics2,1); % Same in the opposite direction
-for j = 1:affine_info.num_ics2
+match_2to1 = cell(size(M,2),1); % Same in the opposite direction
+for j = 1:size(M,2)
     m = M(:,j)';
     matching_is = find(m>overlap_threshold);
     if isempty(matching_is)
@@ -72,10 +85,49 @@ end
 
 % Set up auxiliary output
 %------------------------------------------------------------
-info.ic_source1 = ic_source_dir1;
-info.ic_source2 = ic_source_dir2;
 info.affine = affine_info;
 info.masks1 = masks1;
 info.masks2 = masks2_tform;
 info.overlap_threshold = overlap_threshold;
 info.overlap_matrix = M;
+
+% Optional bijective filtering
+%------------------------------------------------------------
+if bijective_matching
+    fprintf('run_alignment: Applying bijective filter...\n');
+    for i = 1:length(match_1to2)
+        match_itoj = match_1to2{i};
+        num_matches = size(match_itoj,1);
+        if (num_matches > 1)
+            for k = 2:num_matches
+                j = match_itoj(k,1);
+                match_jtoi = match_2to1{j};
+                [~, diff_inds] = setdiff(match_jtoi(:,1), i);
+                if ~isempty(diff_inds)
+                    match_2to1{j} = match_jtoi(diff_inds,:);
+                else
+                    match_2to1{j} = [];
+                end
+            end
+            match_1to2{i} = match_itoj(1,:);
+        end
+    end
+    
+    for j = 1:length(match_2to1)
+        match_jtoi = match_2to1{j};
+        num_matches = size(match_jtoi,1);
+        if (num_matches > 1)
+            for k = 2:num_matches
+                i = match_jtoi(k,1);
+                match_itoj = match_1to2{i};
+                [~, diff_inds] = setdiff(match_itoj(:,1), j);
+                if ~isempty(diff_inds)
+                    match_1to2{i} = match_itoj(diff_inds,:);
+                else
+                    match_1to2{i} = [];
+                end
+            end
+            match_2to1{j} = match_jtoi(1,:);
+        end
+    end
+end
