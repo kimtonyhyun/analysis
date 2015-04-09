@@ -97,44 +97,41 @@ for i=1:length(list)
         %%% Read in the images, trim the frames at the beginning and end 
         %%% of the trial (set by the 'trim' argument), and downsample by the 
         %%% 'downsmpFactor' argument
-        imageStack = zeros(downsmpRows,downsmpCols,oriFrames-trim(1)-trim(2),'uint16');
+        imageStack = zeros(downsmpRows,downsmpCols,oriFrames,'uint16');
         if(downsmpFactor == 1)
-            for j=1:oriFrames-trim(1)-trim(2)
-                tifFile.setDirectory(j+trim(1));
+            for j=1:oriFrames
+                tifFile.setDirectory(j);
                 imageStack(:,:,j) = uint16(tifFile.read());
             end
         else
-            for j=1:oriFrames-trim(1)-trim(2)
-                tifFile.setDirectory(j+trim(1));
+            for j=1:oriFrames
+                tifFile.setDirectory(j);
                 imageStack(:,:,j) = uint16(imresize(tifFile.read(),downsmpFactor,'bilinear'));
             end
         end
         
         %%% Replace any dropped frames with the frame immediately
         %%% preceeding it
-        cropDroppedFrames = 0;
+
+        numDroppedFrames = 0;
         if(droppedFrames ~= 0)
             for j=1:length(droppedFrames)
-                disp('DroppedFrame');
+                fprintf('DroppedFrame: %i\n',droppedFrames(j));
                 droppedFrame = droppedFrames(j);
-                if((droppedFrame > trim(1)) && (droppedFrame < oriFrames-trim(2)))
-                    droppedFrame = droppedFrame+trim(1);
-                    frontStack = imageStack(:,:,1:droppedFrame-1);
-                    frontStack = cat(3,frontStack,imageStack(:,:,droppedFrame-1));
-                    backStack = imageStack(:,:,droppedFrame:end);
-                    newImageStack = cat(3,frontStack,backStack);
-                    clear imageStack
-                    imageStack = newImageStack;
-                else
-                    cropDroppedFrames = cropDroppedFrames+1;
-                end
+                frontStack = imageStack(:,:,1:droppedFrame-1);
+                frontStack = cat(3,frontStack,imageStack(:,:,droppedFrame-1));
+                backStack = imageStack(:,:,droppedFrame:end);
+                newImageStack = cat(3,frontStack,backStack);
+                clear imageStack
+                imageStack = newImageStack;
+                numDroppedFrames = numDroppedFrames+1;
             end
         end
+        finalImageStack = imageStack(:,:,trim(1)+1:end-trim(2));
+        numFrames = size(finalImageStack,3);
+        [dRows,dCols] = size(finalImageStack(:,:,1));
         
-        numFrames = size(imageStack,3);
-        [dRows,dCols] = size(imageStack(:,:,1));
-        
-        h5write(fullfile(outputDir,hdf5Name),'/Data/Images',imageStack,[1,1,totalFrames],[dRows,dCols,numFrames]);
+        h5write(fullfile(outputDir,hdf5Name),'/Data/Images',finalImageStack,[1,1,totalFrames],[dRows,dCols,numFrames]);
         
         %%% Find frames that correspond to the gate going up and down for
         %%% the current trial
@@ -160,8 +157,7 @@ for i=1:length(list)
         totalFrames = totalFrames+numFrames;
         
         %%% Total frame count corresponding to behavior text file
-        testFrames = testFrames+oriFrames+cropDroppedFrames;
-        
+        testFrames = testFrames+oriFrames+numDroppedFrames;
         clear imageStack tifName tifInfo tifFile droppedFrames newImageStack
     end
 end
