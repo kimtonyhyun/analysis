@@ -36,7 +36,7 @@ function reconstruct_traces(movie_source, ica_dir, varargin)
 min_num_pixels = 4;
 
 % Reconstruction parameters
-threshMov = 0; 
+threshMov = -1; 
 threshIC = 0.3;
 
 if ~isempty(varargin)
@@ -145,7 +145,6 @@ for ic_idx = 1:num_ICs
         end
     end
 end
-info.num_pairs = rec_filter_count; %#ok<STRNU>
 filters = filters(:,:,1:rec_filter_count);
 
 cells_to_exclude = [];
@@ -159,6 +158,8 @@ for cell_idx = 1:rec_filter_count % Normalize
     end
 end
 filters(:,:,cells_to_exclude) = []; 
+rec_filter_count = rec_filter_count - length(cells_to_exclude);
+info.num_pairs = rec_filter_count;%#ok<STRNU>
 
 % Reconstruct traces
 %------------------------------------------------------------
@@ -184,10 +185,7 @@ for cell_idx = 1:rec_filter_count
     movie_portion = M(pix_active,:)';
     movie_portion(movie_portion<threshMov) = 0;
     trace_this = (movie_portion * rec_filter(pix_active))';  
-    % Fix baseline
-    h = polyfit(1:num_frames,min(trace_this,2*quantile(trace_this,0.3)),1);
-    subst = h(2)+h(1)*(1:num_frames);
-    traces(:,cell_idx) = trace_this-subst;
+    traces(:,cell_idx) = fix_baseline(trace_this);
 end
 
 % Save the result to mat file
