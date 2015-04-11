@@ -1,4 +1,5 @@
 function reconstruct_traces(movie_source, ica_dir, varargin)
+
 % Reconstruct trace from the movie using the IC filters.
 %
 % inputs:
@@ -31,8 +32,11 @@ function reconstruct_traces(movie_source, ica_dir, varargin)
 % Hakan Inan (Mar 15)
 %
 
+% Minimum number of active pixels in an IC filter to be regarded as valid
+min_num_pixels = 4;
+
 % Reconstruction parameters
-threshMov = -1; % By default keep everything
+threshMov = -1; 
 threshIC = 0.3;
 
 if ~isempty(varargin)
@@ -141,16 +145,25 @@ for ic_idx = 1:num_ICs
         end
     end
 end
-info.num_pairs = rec_filter_count; %#ok<STRNU>
 filters = filters(:,:,1:rec_filter_count);
 
+cells_to_exclude = [];
 for cell_idx = 1:rec_filter_count % Normalize
     filter = filters(:,:,cell_idx);
-    filters(:,:,cell_idx) = filter / sum(filter(:));
+    sum_filter = sum(filter(:));
+    if sum_filter>0 && sum(filter(:)>0)>=min_num_pixels
+        filters(:,:,cell_idx) = filter / sum_filter;
+    else
+        cells_to_exclude(end+1) = cell_idx; 
+    end
 end
+filters(:,:,cells_to_exclude) = []; 
+rec_filter_count = rec_filter_count - length(cells_to_exclude);
+info.num_pairs = rec_filter_count;%#ok<STRNU>
 
 % Reconstruct traces
 %------------------------------------------------------------
+
 fprintf('%s: Loading movie...\n', datestr(now));
 M = load_movie(movie_source);
 [height, width, num_frames] = size(M);
@@ -171,7 +184,8 @@ for cell_idx = 1:rec_filter_count
     pix_active = find(rec_filter>0);
     movie_portion = M(pix_active,:)';
     movie_portion(movie_portion<threshMov) = 0;
-    traces(:,cell_idx) = movie_portion * rec_filter(pix_active);  
+    trace_this = (movie_portion * rec_filter(pix_active))';  
+    traces(:,cell_idx) = fix_baseline(trace_this);
 end
 
 % Save the result to mat file
