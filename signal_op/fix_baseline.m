@@ -41,8 +41,4 @@ function trace_out = fix_baseline(trace_in)
 
     trace_out = trace_in-subt;
 
-    
-    plot(trace_in)
-    hold on
-    plot(subt)
-    hold off
+ 
