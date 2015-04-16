@@ -1,4 +1,4 @@
-% function trace_out = fix_baseline(trace_in)
+function trace_out = fix_baseline(trace_in)
 % Remove baseline offset of cell trace with following steps:
 %    - sample baseline for overlapping small segments
 %    - smooth baseline samples
