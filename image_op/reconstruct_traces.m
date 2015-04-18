@@ -157,6 +157,9 @@ for cell_idx = 1:rec_filter_count % Normalize
         cells_to_exclude(end+1) = cell_idx; 
     end
 end
+fprintf('%s: Eliminated %d filters based on minimum size requirement\n',...
+    datestr(now), length(cells_to_exclude));
+
 filters(:,:,cells_to_exclude) = []; 
 rec_filter_count = rec_filter_count - length(cells_to_exclude);
 info.num_pairs = rec_filter_count;%#ok<STRNU>
