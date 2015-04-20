@@ -287,6 +287,9 @@ classdef DaySummary
                         case 'end'
                             filtered_trials = filtered_trials &...
                                 strcmp({obj.trials.end}, varargin{k+1});
+                        case 'turn'
+                            filtered_trials = filtered_trials &...
+                                strcmp({obj.trials.turn}, varargin{k+1});
                     end
                 end
             end
