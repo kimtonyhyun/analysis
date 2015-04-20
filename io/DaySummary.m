@@ -42,9 +42,6 @@ classdef DaySummary
             
             % Load data
             %------------------------------------------------------------
-            [trial_indices, loc_info, trial_durations] =...
-                parse_plusmaze(plusmaze_txt);
-            
             if use_reconstruction
                 data_source = get_most_recent_file(ica_dir, 'rec_*.mat');
             else
@@ -57,6 +54,9 @@ classdef DaySummary
             % Parse trial data
             %   TODO: Bring in centroids corresponding to mouse position
             %------------------------------------------------------------
+            [trial_indices, loc_info, trial_durations] =...
+                parse_plusmaze(plusmaze_txt);
+            
             if (exclude_probe_trials)
                 is_probe = strcmp(loc_info(:,1), 'north') | ...
                            strcmp(loc_info(:,1), 'south');
@@ -67,11 +67,13 @@ classdef DaySummary
             end
             
             num_trials = size(trial_indices, 1);
+            turns = cell(num_trials, 1);
             traces = cell(num_trials, 1);
             for k = 1:num_trials
                 trial_frames = trial_indices(k,1):...
                                trial_indices(k,end);
                 traces{k} = data.traces(trial_frames, :)';
+                turns{k} = obj.compute_turn(loc_info{k,1}, loc_info{k,3});
             end
             
             obj.num_trials = num_trials;
@@ -80,6 +82,7 @@ classdef DaySummary
                 'start', loc_info(:,1),...
                 'goal',  loc_info(:,2),...
                 'end',   loc_info(:,3),...
+                'turn',  turns,...
                 'time',  num2cell(trial_durations),...
                 'traces', traces);
             
@@ -112,6 +115,20 @@ classdef DaySummary
                 'boundary', boundaries,...
                 'mask', masks,...
                 'label', class);
+        end
+        
+        % Helper functions
+        %------------------------------------------------------------
+        function turn = compute_turn(obj, start, final)
+            path = {start, final};
+            if (all(strcmp(path, {'east', 'south'})) || ...
+                all(strcmp(path, {'south', 'west'})) || ...
+                all(strcmp(path, {'west', 'north'})) || ...
+                all(strcmp(path, {'north', 'east'})))
+                turn = 'left';
+            else
+                turn = 'right';
+            end
         end
         
         % Accessors
