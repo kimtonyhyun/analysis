@@ -74,46 +74,7 @@ thresh = mad_scale * mad;
 [active_periods, num_active_periods] =...
     parse_active_frames(trace > thresh, active_frame_padding);
 
-% Prepare global trace
-subplot(3,3,[1 2 3]);
-plot(time, trace, 'b');
-hold on;
-plot(x_range, thresh*[1 1], 'r--'); % Display threshold
-for period_idx = 1:num_active_periods
-    active_period = active_periods(period_idx, :);
-    active_frames = active_period(1):active_period(2);
-    plot(time(active_frames), trace(active_frames), 'r');
-    text(double(time(active_frames(1))),... % 'text' fails on single
-         double(y_range(2)),...
-         num2str(period_idx),...
-         'Color', 'r',...
-         'VerticalAlignment', 'top');
-end
-xlim(x_range);
-ylim(y_range);
-t1 = plot(time(1)*[1 1], y_range, 'k'); % Time indicator
-xlabel('Time [s]');
-ylabel('Signal [a.u.]');
-hold off;
-
-% Prepare running trace
-a = subplot(3,3,[6 9]);
-plot(time, trace, 'b');
-hold on;
-for period_idx = 1:num_active_periods
-    active_period = active_periods(period_idx, :);
-    active_frames = active_period(1):active_period(2);
-    plot(time(active_frames), trace(active_frames), 'r');
-end
-xlim([0 time_window]);
-ylim(y_range);
-t2 = plot(time(1)*[1 1], y_range, 'k'); % Time indicator
-d = plot(time(1), trace(1), 'or',...
-            'MarkerFaceColor', 'r',...
-            'MarkerSize', 12); % Dot
-xlabel('Time [s]');
-ylabel('Signal [a.u.]');
-hold off;
+setup_traces();
 
 % Interaction loop:
 %   Display the user-specified active period
@@ -186,9 +147,56 @@ while (1)
     val = str2double(resp);
 end
 
-    % Display subroutine. Note that frames are mean subtracted!
+    % Display subroutines
     %------------------------------------------------------------
+    function setup_traces()
+        global t1 t2 a d;
+        
+        % Prepare global trace
+        subplot(3,3,[1 2 3]);
+        plot(time, trace, 'b');
+        hold on;
+        plot(x_range, thresh*[1 1], 'r--'); % Display threshold
+        for period_idx = 1:num_active_periods
+            active_period = active_periods(period_idx, :);
+            active_frames = active_period(1):active_period(2);
+            plot(time(active_frames), trace(active_frames), 'r');
+            text(double(time(active_frames(1))),... % 'text' fails on single
+                 double(y_range(2)),...
+                 num2str(period_idx),...
+                 'Color', 'r',...
+                 'VerticalAlignment', 'top');
+        end
+        xlim(x_range);
+        ylim(y_range);
+        t1 = plot(time(1)*[1 1], y_range, 'k'); % Time indicator
+        xlabel('Time [s]');
+        ylabel('Signal [a.u.]');
+        hold off;
+
+        % Prepare running trace
+        a = subplot(3,3,[6 9]);
+        plot(time, trace, 'b');
+        hold on;
+        for period_idx = 1:num_active_periods
+            active_period = active_periods(period_idx, :);
+            active_frames = active_period(1):active_period(2);
+            plot(time(active_frames), trace(active_frames), 'r');
+        end
+        xlim([0 time_window]);
+        ylim(y_range);
+        t2 = plot(time(1)*[1 1], y_range, 'k'); % Time indicator
+        d = plot(time(1), trace(1), 'or',...
+                    'MarkerFaceColor', 'r',...
+                    'MarkerSize', 12); % Dot
+        xlabel('Time [s]');
+        ylabel('Signal [a.u.]');
+        hold off;
+    end % setup_traces
+    
     function display_active_period(selected_indices)
+        global t1 t2 a d;
+        
         for selected_idx = selected_indices
             frames = active_periods(selected_idx,1):...
                      active_periods(selected_idx,2);
