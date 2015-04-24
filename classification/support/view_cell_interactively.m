@@ -71,9 +71,8 @@ y_range = y_range + 0.1*y_delta*[-1 1];
 mad = compute_mad(trace);
 thresh = mad_scale * mad;
 
-active_periods = parse_active_frames(trace > thresh,...
-                                     active_frame_padding);
-num_active_periods = size(active_periods, 1);
+[active_periods, num_active_periods] =...
+    parse_active_frames(trace > thresh, active_frame_padding);
 
 % Prepare global trace
 subplot(3,3,[1 2 3]);
@@ -224,7 +223,7 @@ end
 
 end % main function
 
-function active_frames = parse_active_frames(binary_trace, half_width)
+function [active_frames, num_active] = parse_active_frames(binary_trace, half_width)
 % Segment the active portions of a binary trace into intervals
 
     if (half_width > 0)
@@ -261,6 +260,7 @@ function active_frames = parse_active_frames(binary_trace, half_width)
     end
 
     active_frames = reshape(active_frames, 2, length(active_frames)/2)';
+    num_active = size(active_frames, 1);
 end
 
 function filter_out = rescale_filter_to_clim(filter, clim)
