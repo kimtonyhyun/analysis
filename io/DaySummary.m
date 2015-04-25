@@ -88,6 +88,7 @@ classdef DaySummary
             class_source = get_most_recent_file(ica_dir, 'class_*.txt');
             if ~isempty(class_source)
                 class = load_classification(class_source);
+                fprintf('  %s: Loaded classification from %s\n', datestr(now), class_source);
                 assert(length(class)==obj.num_cells,...
                        sprintf('Number of labels in %s is not consistent with %s!',...
                                class_source, data_source));
