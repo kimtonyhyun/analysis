@@ -103,6 +103,23 @@ while (1)
             case 'a' % "all"
                 display_active_period(1:num_active_periods);
                 
+            case 't' % "threshold"
+                fprintf('  Please select a new threshold on the global trace\n');
+                while (1)
+                    [~, thresh] = ginput(1);
+                    if (gca == global_trace)
+                        break;
+                    else
+                        fprintf('  Error! New threshold must be defined on the GLOBAL trace\n');
+                    end
+                end
+                fprintf('  New threshold value of %.3f selected!\n', thresh);
+
+                % Recompute active periods and redraw
+                [active_periods, num_active_periods] =...
+                    parse_active_frames(trace > thresh, active_frame_padding);
+                setup_traces();
+                
             case 'r' % "replay"
                 if ~isempty(state.last_val)
                     display_active_period(state.last_val);
@@ -150,10 +167,10 @@ end
     % Display subroutines
     %------------------------------------------------------------
     function setup_traces()
-        global t1 t2 a d;
+        global running_trace t_g t_r dot;
         
         % Prepare global trace
-        subplot(3,3,[1 2 3]);
+        global_trace = subplot(3,3,[1 2 3]);
         plot(time, trace, 'b');
         hold on;
         plot(x_range, thresh*[1 1], 'r--'); % Display threshold
@@ -169,13 +186,13 @@ end
         end
         xlim(x_range);
         ylim(y_range);
-        t1 = plot(time(1)*[1 1], y_range, 'k'); % Time indicator
+        t_g = plot(time(1)*[1 1], y_range, 'k'); % Time indicator
         xlabel('Time [s]');
         ylabel('Signal [a.u.]');
         hold off;
 
         % Prepare running trace
-        a = subplot(3,3,[6 9]);
+        running_trace = subplot(3,3,[6 9]);
         plot(time, trace, 'b');
         hold on;
         for period_idx = 1:num_active_periods
@@ -185,8 +202,8 @@ end
         end
         xlim([0 time_window]);
         ylim(y_range);
-        t2 = plot(time(1)*[1 1], y_range, 'k'); % Time indicator
-        d = plot(time(1), trace(1), 'or',...
+        t_r = plot(time(1)*[1 1], y_range, 'k'); % Time indicator
+        dot = plot(time(1), trace(1), 'or',...
                     'MarkerFaceColor', 'r',...
                     'MarkerSize', 12); % Dot
         xlabel('Time [s]');
@@ -195,23 +212,22 @@ end
     end % setup_traces
     
     function display_active_period(selected_indices)
-        global t1 t2 a d;
+        global running_trace t_g t_r dot;
         
         for selected_idx = selected_indices
             frames = active_periods(selected_idx,1):...
                      active_periods(selected_idx,2);
             for k = frames
                 A = movie(:,:,k);
-               % A = A - mean(A(:));
                 set(h, 'CData', A);
 
                 % Update time indicators and dot
-                set(t1, 'XData', time(k)*[1 1]);
-                set(t2, 'XData', time(k)*[1 1]);
-                set(d, 'XData', time(k), 'YData', trace(k));
+                set(t_g, 'XData', time(k)*[1 1]);
+                set(t_r, 'XData', time(k)*[1 1]);
+                set(dot, 'XData', time(k), 'YData', trace(k));
 
                 % Update running trace
-                set(a, 'XLim', time(k) + time_window/2*[-1 1]);
+                set(running_trace, 'XLim', time(k) + time_window/2*[-1 1]);
                 drawnow;
             end
         end
