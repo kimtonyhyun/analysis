@@ -52,7 +52,7 @@ classdef DaySummary
             end
             data = load(data_source);
             obj.num_cells = data.info.num_pairs;
-            fprintf('%s: Loaded data from %s\n', datestr(now), data_source);
+            fprintf('  %s: Loaded data from %s\n', datestr(now), data_source);
             
             % Parse trial data
             %   TODO: Bring in centroids corresponding to mouse position
@@ -92,7 +92,7 @@ classdef DaySummary
                        sprintf('Number of labels in %s is not consistent with %s!',...
                                class_source, data_source));
             else % No classification file
-                fprintf('%s: No classification file in %s!\n', datestr(now), ica_dir);
+                fprintf('  %s: No classification file in %s!\n', datestr(now), ica_dir);
                 class = cell(obj.num_cells,1); % Empty
             end
 
