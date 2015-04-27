@@ -71,50 +71,10 @@ y_range = y_range + 0.1*y_delta*[-1 1];
 mad = compute_mad(trace);
 thresh = mad_scale * mad;
 
-active_periods = parse_active_frames(trace > thresh,...
-                                     active_frame_padding);
-num_active_periods = size(active_periods, 1);
+[active_periods, num_active_periods] =...
+    parse_active_frames(trace > thresh, active_frame_padding);
 
-% Prepare global trace
-subplot(3,3,[1 2 3]);
-plot(time, trace, 'b');
-hold on;
-plot(x_range, thresh*[1 1], 'r--'); % Display threshold
-for period_idx = 1:num_active_periods
-    active_period = active_periods(period_idx, :);
-    active_frames = active_period(1):active_period(2);
-    plot(time(active_frames), trace(active_frames), 'r');
-    text(double(time(active_frames(1))),... % 'text' fails on single
-         double(y_range(2)),...
-         num2str(period_idx),...
-         'Color', 'r',...
-         'VerticalAlignment', 'top');
-end
-xlim(x_range);
-ylim(y_range);
-t1 = plot(time(1)*[1 1], y_range, 'k'); % Time indicator
-xlabel('Time [s]');
-ylabel('Signal [a.u.]');
-hold off;
-
-% Prepare running trace
-a = subplot(3,3,[6 9]);
-plot(time, trace, 'b');
-hold on;
-for period_idx = 1:num_active_periods
-    active_period = active_periods(period_idx, :);
-    active_frames = active_period(1):active_period(2);
-    plot(time(active_frames), trace(active_frames), 'r');
-end
-xlim([0 time_window]);
-ylim(y_range);
-t2 = plot(time(1)*[1 1], y_range, 'k'); % Time indicator
-d = plot(time(1), trace(1), 'or',...
-            'MarkerFaceColor', 'r',...
-            'MarkerSize', 12); % Dot
-xlabel('Time [s]');
-ylabel('Signal [a.u.]');
-hold off;
+setup_traces();
 
 % Interaction loop:
 %   Display the user-specified active period
@@ -142,6 +102,23 @@ while (1)
                 
             case 'a' % "all"
                 display_active_period(1:num_active_periods);
+                
+            case 't' % "threshold"
+                fprintf('  Please select a new threshold on the global trace\n');
+                while (1)
+                    [~, thresh] = ginput(1);
+                    if (gca == global_trace)
+                        break;
+                    else
+                        fprintf('  Error! New threshold must be defined on the GLOBAL trace\n');
+                    end
+                end
+                fprintf('  New threshold value of %.3f selected!\n', thresh);
+
+                % Recompute active periods and redraw
+                [active_periods, num_active_periods] =...
+                    parse_active_frames(trace > thresh, active_frame_padding);
+                setup_traces();
                 
             case 'r' % "replay"
                 if ~isempty(state.last_val)
@@ -187,24 +164,70 @@ while (1)
     val = str2double(resp);
 end
 
-    % Display subroutine. Note that frames are mean subtracted!
+    % Display subroutines
     %------------------------------------------------------------
+    function setup_traces()
+        global running_trace t_g t_r dot;
+        
+        % Prepare global trace
+        global_trace = subplot(3,3,[1 2 3]);
+        plot(time, trace, 'b');
+        hold on;
+        plot(x_range, thresh*[1 1], 'r--'); % Display threshold
+        for period_idx = 1:num_active_periods
+            active_period = active_periods(period_idx, :);
+            active_frames = active_period(1):active_period(2);
+            plot(time(active_frames), trace(active_frames), 'r');
+            text(double(time(active_frames(1))),... % 'text' fails on single
+                 double(y_range(2)),...
+                 num2str(period_idx),...
+                 'Color', 'r',...
+                 'VerticalAlignment', 'top');
+        end
+        xlim(x_range);
+        ylim(y_range);
+        t_g = plot(time(1)*[1 1], y_range, 'k'); % Time indicator
+        xlabel('Time [s]');
+        ylabel('Signal [a.u.]');
+        hold off;
+
+        % Prepare running trace
+        running_trace = subplot(3,3,[6 9]);
+        plot(time, trace, 'b');
+        hold on;
+        for period_idx = 1:num_active_periods
+            active_period = active_periods(period_idx, :);
+            active_frames = active_period(1):active_period(2);
+            plot(time(active_frames), trace(active_frames), 'r');
+        end
+        xlim([0 time_window]);
+        ylim(y_range);
+        t_r = plot(time(1)*[1 1], y_range, 'k'); % Time indicator
+        dot = plot(time(1), trace(1), 'or',...
+                    'MarkerFaceColor', 'r',...
+                    'MarkerSize', 12); % Dot
+        xlabel('Time [s]');
+        ylabel('Signal [a.u.]');
+        hold off;
+    end % setup_traces
+    
     function display_active_period(selected_indices)
+        global running_trace t_g t_r dot;
+        
         for selected_idx = selected_indices
             frames = active_periods(selected_idx,1):...
                      active_periods(selected_idx,2);
             for k = frames
                 A = movie(:,:,k);
-               % A = A - mean(A(:));
                 set(h, 'CData', A);
 
                 % Update time indicators and dot
-                set(t1, 'XData', time(k)*[1 1]);
-                set(t2, 'XData', time(k)*[1 1]);
-                set(d, 'XData', time(k), 'YData', trace(k));
+                set(t_g, 'XData', time(k)*[1 1]);
+                set(t_r, 'XData', time(k)*[1 1]);
+                set(dot, 'XData', time(k), 'YData', trace(k));
 
                 % Update running trace
-                set(a, 'XLim', time(k) + time_window/2*[-1 1]);
+                set(running_trace, 'XLim', time(k) + time_window/2*[-1 1]);
                 drawnow;
             end
         end
@@ -224,7 +247,7 @@ end
 
 end % main function
 
-function active_frames = parse_active_frames(binary_trace, half_width)
+function [active_frames, num_active] = parse_active_frames(binary_trace, half_width)
 % Segment the active portions of a binary trace into intervals
 
     if (half_width > 0)
@@ -261,6 +284,7 @@ function active_frames = parse_active_frames(binary_trace, half_width)
     end
 
     active_frames = reshape(active_frames, 2, length(active_frames)/2)';
+    num_active = size(active_frames, 1);
 end
 
 function filter_out = rescale_filter_to_clim(filter, clim)
