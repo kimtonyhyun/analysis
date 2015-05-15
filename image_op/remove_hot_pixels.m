@@ -20,12 +20,12 @@ if ~isempty(varargin)
 else
     num_hot_pixels = 30;
 end
-fprintf('Loading movie into memory... \n');
+fprintf('%s: Loading movie into memory... \n',datestr(now));
 
 M = load_movie(movie_in);
 [height,width,num_frames] = size(M);
 
-fprintf('Removing hot pixels... \n');
+fprintf('%s: Removing hot pixels... \n',datestr(now));
 
 min_proj = double(min(M,[],3));
 median_min_proj = medfilt2(min_proj,[3,3]);
@@ -56,7 +56,7 @@ for i = 1:length(hot_y)
     M(hot_y(i),hot_x(i),:) = median(M_neighbors,1);
 end
 
-fprintf('Writing the output movie to disk... \n');
+fprintf('%s: Writing the output movie to disk... \n',datestr(now));
 
 if isempty(movie_out)
     [~, name] = fileparts(movie_in);
@@ -77,3 +77,5 @@ h5create(movie_out, movie_dataset,...
 copy_hdf5_params(movie_in, movie_out);  
 
 h5write(movie_out, movie_dataset,M);
+
+fprintf('%s: All done! \n',datestr(now));
