@@ -201,11 +201,14 @@ else
     F = reshape(filters,height*width,rec_filter_count);
     idx_nonzero = find(sum(F,2)>0);
     F_small = F(idx_nonzero,:); 
-    proj_F = (F_small'*F_small)\F_small';
-
-    for idx_frame = 1:num_frames
-        traces(idx_frame,:) = fix_baseline( proj_F *M(idx_nonzero,idx_frame) );
+    
+    % Caution: Below line requires memory of size roughly 10-20% of M
+    traces = (F_small'*F_small)\(F_small'*M(idx_nonzero,:)); 
+    traces = traces';
+    for k = 1:rec_filter_count;
+        traces(:,k) = fix_baseline(traces(:,k));
     end
+
 end
 
 
