@@ -38,6 +38,7 @@ min_num_pixels = 4;
 % Reconstruction parameters
 threshMov = -1; 
 threshIC = 0.3;
+use_legacy = 0;
 
 if ~isempty(varargin)
     len = length(varargin);
@@ -53,6 +54,8 @@ if ~isempty(varargin)
                 if ~isnumeric(threshIC)
                     error('IC filter threshold must be numerical');
                 end
+            case 'legacy'
+                use_legacy = 1;
         end
     end
 end
@@ -182,14 +185,29 @@ end
 
 traces = zeros(num_frames, rec_filter_count, 'single');
 fprintf('%s: Reconstructing traces...\n', datestr(now));
-for cell_idx = 1:rec_filter_count
-    rec_filter = filters(:,:,cell_idx);
-    pix_active = find(rec_filter>0);
-    movie_portion = M(pix_active,:)';
-    movie_portion(movie_portion<threshMov) = 0;
-    trace_this = (movie_portion * rec_filter(pix_active))';  
-    traces(:,cell_idx) = fix_baseline(trace_this);
+
+if use_legacy
+    % Inner product method (Not recommended)
+    for cell_idx = 1:rec_filter_count
+        rec_filter = filters(:,:,cell_idx);
+        pix_active = find(rec_filter>0);
+        movie_portion = M(pix_active,:)';
+        movie_portion(movie_portion<threshMov) = 0;
+        trace_this = (movie_portion * rec_filter(pix_active))';  
+        traces(:,cell_idx) = fix_baseline(trace_this);
+    end
+else
+    %Least Squares Method
+    F = reshape(filters,height*width,rec_filter_count);
+    idx_nonzero = find(sum(F,2)>0);
+    F_small = F(idx_nonzero,:); 
+    proj_F = (F_small'*F_small)\F_small';
+
+    for idx_frame = 1:num_frames
+        traces(idx_frame,:) = fix_baseline( proj_F *M(idx_nonzero,idx_frame) );
+    end
 end
+
 
 % Save the result to mat file
 %------------------------------------------------------------
