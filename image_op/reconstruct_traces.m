@@ -193,7 +193,7 @@ if use_legacy
         pix_active = find(rec_filter>0);
         movie_portion = M(pix_active,:)';
         movie_portion(movie_portion<threshMov) = 0;
-        trace_this = (movie_portion * rec_filter(pix_active))';  
+        traces(:,cell_idx) = (movie_portion * rec_filter(pix_active))';  
     end
 else
     %Least Squares Method
