@@ -194,7 +194,6 @@ if use_legacy
         movie_portion = M(pix_active,:)';
         movie_portion(movie_portion<threshMov) = 0;
         trace_this = (movie_portion * rec_filter(pix_active))';  
-        traces(:,cell_idx) = fix_baseline(trace_this);
     end
 else
     %Least Squares Method
@@ -205,12 +204,12 @@ else
     % Caution: Below line requires memory of size roughly 10-20% of M
     traces = (F_small'*F_small)\(F_small'*M(idx_nonzero,:)); 
     traces = traces';
-    for k = 1:rec_filter_count;
-        traces(:,k) = fix_baseline(traces(:,k));
-    end
-
 end
 
+% Remove baseline fluctuations
+for k = 1:rec_filter_count;
+    traces(:,k) = fix_baseline(traces(:,k));
+end
 
 % Save the result to mat file
 %------------------------------------------------------------
