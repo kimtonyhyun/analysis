@@ -7,8 +7,9 @@ function [resp, movie_clim] = view_cell_interactively(ds, cell_idx, movie, fps, 
 %
 
 filter = ds.cells(cell_idx).im;
-trace = ds.get_trace(cell_idx);
-time = 1/fps*((1:length(trace))-1);
+trace_orig  = ds.get_trace(cell_idx);
+trace_fixed = fix_baseline(trace_orig);
+time = 1/fps*((1:length(trace_orig))-1);
 
 % Some parameters
 ic_filter_threshold = 0.3; % For generating the IC filter outline
@@ -63,13 +64,8 @@ ylim(COM(2)+zoom_half_width*[-1 1]);
 
 % Compute the active portions of the trace
 %------------------------------------------------------------
-x_range = [time(1) time(end)];
-y_range = [min(trace(:)) max(trace(:))];
-y_delta = y_range(2) - y_range(1);
-y_range = y_range + 0.1*y_delta*[-1 1];
-
-mad = compute_mad(trace);
-thresh = mad_scale * mad;
+trace = trace_orig; % By default, select the original trace
+thresh = mad_scale * compute_mad(trace);
 
 [active_periods, num_active_periods] =...
     parse_active_frames(trace > thresh, active_frame_padding);
@@ -87,6 +83,8 @@ val = str2double(resp);
 state.last_val = [];
 state.zoomed = true;
 state.show_other_cells = false;
+state.baseline_removed = false;
+
 while (1)
     if (~isnan(val)) % Is a number
         if ((1 <= val) && (val <= num_active_periods))
@@ -119,6 +117,22 @@ while (1)
                 [active_periods, num_active_periods] =...
                     parse_active_frames(trace > thresh, active_frame_padding);
                 setup_traces();
+                
+            case 'b' % Fix "baseline"
+                if (state.baseline_removed)
+                    trace = trace_orig;
+                    fprintf('  Showing original trace without baseline correction\n');
+                else
+                    trace = trace_fixed;
+                    fprintf('  Showing trace with baseline correction\n');
+                end
+                
+                thresh = mad_scale * compute_mad(trace);
+                [active_periods, num_active_periods] = ...
+                    parse_active_frames(trace > thresh, active_frame_padding);
+                setup_traces();
+                
+                state.baseline_removed = ~state.baseline_removed; % Toggle
                 
             case 'r' % "replay"
                 if ~isempty(state.last_val)
@@ -168,6 +182,11 @@ end
     %------------------------------------------------------------
     function setup_traces()
         global running_trace t_g t_r dot;
+        
+        x_range = [time(1) time(end)];
+        y_range = [min(trace(:)) max(trace(:))];
+        y_delta = y_range(2) - y_range(1);
+        y_range = y_range + 0.1*y_delta*[-1 1];
         
         % Prepare global trace
         global_trace = subplot(3,3,[1 2 3]);
