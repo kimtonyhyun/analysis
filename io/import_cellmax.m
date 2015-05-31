@@ -24,6 +24,8 @@ info.cellmax_source = inputname(1); % Workspace variable name of `cellmax_struct
 filters = cellmax_struct.cellImages; %#ok<*NASGU>
 traces = cellmax_struct.dsCellTraces';
 
+info.num_pairs = size(filters, 3);
+
 % Save the CellMax traces & filters to a mat file
 timestamp = datestr(now, 'yymmdd-HHMMSS');
 rec_savename = sprintf('rec_%s.mat', timestamp);
