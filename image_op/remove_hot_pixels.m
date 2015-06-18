@@ -27,12 +27,12 @@ M = load_movie(movie_in);
 
 fprintf('%s: Removing hot pixels... \n',datestr(now));
 
-min_proj = double(min(M,[],3));
-median_min_proj = medfilt2(min_proj,[3,3]);
+mean_proj = double(mean(M,3));
+median_min_proj = medfilt2(mean_proj,[3,3]);
 
 %Difference between the min projection before and after median filtering
 %determines hot pixels
-diff_proj = min_proj - median_min_proj;
+diff_proj = mean_proj - median_min_proj;
 
 % Remove corner pixels introduced due to median filter
 for y = [1,height]
