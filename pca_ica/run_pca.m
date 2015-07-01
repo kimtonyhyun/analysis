@@ -1,4 +1,14 @@
 function run_pca(movie_source, num_PCs)
+% Runs PCA factorization of the movie provided in `movie_source`. Saves the
+% result to 'pca_(...).mat' file.
+%
+% Inputs:
+%   movie_source: Movie filename
+%   num_PCs: Number of requested PCs
+%
+% Example usage:
+%   run_pca('c9m7d25_dff.hdf5', 500);
+%
 
 fprintf('%s: Loading %s...\n', datestr(now), movie_source);
 M = load_movie(movie_source);
