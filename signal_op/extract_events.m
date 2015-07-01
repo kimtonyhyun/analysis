@@ -58,14 +58,15 @@ val_events = val_events(idx_unique);
 if do_plot    
     spikes_vec = zeros(1,length(smooth_trace));        
     spikes_vec(idx_events) = val_events;
-
-    plot(smooth_trace);
+    plot(trace,'--m');
     hold on;
+    plot(smooth_trace);
     stem(spikes_vec);
     plot(ones(1,length(smooth_trace))*thresh,'r')
-    plot(trace,'--m');
+    
     hold off
     for k = 1:length(idx_events)
         text(idx_events(k),double(thresh*1.1),num2str(k))
     end
+    legend('Raw trace','Smooth trace','Events')
 end
