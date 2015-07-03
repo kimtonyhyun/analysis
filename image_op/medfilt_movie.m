@@ -1,4 +1,4 @@
-function medfilt_movie(movie_in, movie_out, varargin)
+function medfilt_movie(movie_in, varargin)
 % Apply median filtering from file ('movie_in') to file ('movie_out').
 % Optional argument specifies the half-width of the median filter.
 %
@@ -10,19 +10,24 @@ function medfilt_movie(movie_in, movie_out, varargin)
 %
 % Inputs:
 %   movie_in:  Name of incoming HDF5 movie
+%
+% Variable input arguments
 %   movie_out: Name of outgoing HDF5 movie
+%   medfilt_halfwidth: Half-width of the median filter kernel
+%   'crop_edges': add it as an argument for cropping off zeros at the edges
+%   introduced by median filter
 %
 % Example usage:
 %   norm_movie('c9m7d12.hdf5','',15);
 %
-if isempty(movie_out)
-    [~, name] = fileparts(movie_in);
-    movie_out = sprintf('%s_med.hdf5', name);
-    fprintf('medfilt_movie: Output movie will be saved as "%s"\n', movie_out);
-end
+
 
 % Default dataset name for the movie
 movie_dataset = '/Data/Images';
+
+% Defaults
+crop_edges = 0;
+movie_out = '';
 
 % Grab the movie parameters
 [movie_size, in_data_type] = get_dataset_info(movie_in, movie_dataset);
@@ -30,18 +35,34 @@ height = movie_size(1);
 width = movie_size(2);
 num_frames = movie_size(3);
 
-% Begin medfilt processing
-%------------------------------------------------------------
+
 medfilt_halfwidth = 1;
 if ~isempty(varargin)
-    medfilt_halfwidth = varargin{1};
+    for k = 1:length(varargin)
+        switch varargin{k}
+            case 'movie_out'
+                movie_out = varargin{k+1};
+            case 'medfilt_halfwidth'
+                medfilt_halfwidth = varargin{k+1};
+            case 'crop_edges'
+                crop_edges = 1;
+        end
+    end
+    
 end
+
+if isempty(movie_out)
+    [~, name] = fileparts(movie_in);
+    movie_out = sprintf('%s_med.hdf5', name);
+    fprintf('medfilt_movie: Output movie will be saved as "%s"\n', movie_out);
+end
+    
 
 medfilt_neighborhood = (1+2*medfilt_halfwidth)*[1 1];
 
 % Prepare output movie
-output_height = height - 2*medfilt_halfwidth;
-output_width  = width  - 2*medfilt_halfwidth;
+output_height = height - 2*medfilt_halfwidth*crop_edges;
+output_width  = width  - 2*medfilt_halfwidth*crop_edges;
 h5create(movie_out, movie_dataset,...
          [output_height, output_width, num_frames],...
          'Datatype', in_data_type);
@@ -72,8 +93,13 @@ for i = 1:num_chunks
         frame = movie_chunk(:,:,frame_idx);
         frame_med = medfilt2(frame, medfilt_neighborhood);
         
-        movie_chunk_med(:,:,frame_idx) = frame_med((1+medfilt_halfwidth):(end-medfilt_halfwidth),...
+        if crop_edges == 1
+            movie_chunk_med(:,:,frame_idx) = frame_med((1+medfilt_halfwidth):(end-medfilt_halfwidth),...
                                                    (1+medfilt_halfwidth):(end-medfilt_halfwidth));
+        else
+            movie_chunk_med(:,:,frame_idx) = frame_med;
+        end
+        
     end
     
     h5write(movie_out, movie_dataset,...
