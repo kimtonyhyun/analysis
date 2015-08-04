@@ -44,11 +44,17 @@ x_bounds = [];
 y_bounds = [];
 if ~isempty(varargin)
     for k = 1:length(varargin)
-        switch lower(varargin{k})
-            case 'trim' % Trim borders
-                trim = varargin{k+1};
-                x_bounds = [1+trim width-trim];
-                y_bounds = [1+trim height-trim];
+        if ischar(varargin{k})
+            switch lower(varargin{k})
+                case 'trim' % Trim borders
+                    trim = varargin{k+1};
+                    x_bounds = [1+trim width-trim];
+                    y_bounds = [1+trim height-trim];
+                case 'bounds' % Specify [x_bounds y_bounds]
+                    bounds = varargin{k+1};
+                    x_bounds = bounds(1:2);
+                    y_bounds = bounds(3:4);
+            end
         end
     end
 end
