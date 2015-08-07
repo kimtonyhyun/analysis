@@ -2,6 +2,7 @@ function view_movie(M, varargin)
 % Displays the frames of a movie matrix M [height x row x num_frames]
 %   (Note: also works with a single image)
 
+movie_clim = [];
 use_mask = 0;
 num_repeats = 1;
 rescale_each_frame = false;
@@ -17,6 +18,8 @@ for k = 1:length(varargin)
                 % Pixels with logical 1 in the provided mask will be displayed
                 use_mask = true;
                 mask = ~varargin{k+1};
+            case 'clim'
+                movie_clim = varargin{k+1};
         end
     end
 end
@@ -28,7 +31,9 @@ if (rescale_each_frame || isa(M, 'uint16'))
     h = imagesc(M(:,:,1));
     mask_val = 0; % FIXME
 else % Otherwise, use common CLim scaling
-    movie_clim = compute_movie_scale(M);
+    if isempty(movie_clim)
+        movie_clim = compute_movie_scale(M);
+    end
     mask_val = movie_clim(1);
     h = imagesc(M(:,:,1), movie_clim);
 end
