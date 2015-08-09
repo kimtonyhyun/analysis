@@ -60,6 +60,10 @@ if ~isempty(varargin)
     end
 end
 
+% Check that the movie file exists
+assert(~isempty(dir(movie_source)),...
+       sprintf('Movie file %s not found!', movie_source));
+
 % Load ICA
 ica_filename = get_most_recent_file(ica_dir, 'ica_*.mat');
 ica = load(ica_filename);
