@@ -18,6 +18,12 @@ function extract_cells(movie_source,pca_source,max_num)
 %   Hakan Inan (Aug 15)
 %
 
+% Some parameters
+maxsize_chunk_GPU = 500;
+maxsize_chunk_CPU = 1000;
+corr_thresh = 0.1;
+filter_thresh = 0.35;
+
 fprintf('%s : Loading movie and its singular vectors...\n',datestr(now));
 
 M = load_movie(movie_source);
@@ -48,7 +54,7 @@ if use_gpu %GPU
     U = gpuArray(U);
     one_norms = gpuArray(zeros(1,N,'single'));
     norms_U = gpuArray(norms_U);
-    chunk_size = min(chunk_size,500); % Set upper limit
+    chunk_size = min(chunk_size,maxsize_chunk_GPU); % Set upper limit
     
     for i = 1:chunk_size:N
         fin = min(chunk_size-1,N-i);
@@ -63,7 +69,7 @@ if use_gpu %GPU
     norms_U = gather(norms_U);
     
 else % CPU
-    chunk_size = 1000;
+    chunk_size = maxsize_chunk_CPU;
     one_norms = zeros(1,N);
     for i = 1:chunk_size:N
         fin = min(chunk_size-1,N-i);
@@ -75,7 +81,6 @@ else % CPU
 end
 
 % Extract filters recursively using the 1-norm criterion
-thresh = 0.1;
 idx_possible = 1:N;
 F = zeros(N,max_num);
 acc=0;
@@ -86,7 +91,7 @@ while true
     idx_this = idx_possible(idx_this);
     sig_this = U*U_norm(idx_this,:)';    
     correl = sig_this.*(1./norms_U);
-    idx_possible = intersect(find(abs(correl)<thresh),idx_possible);
+    idx_possible = intersect(find(abs(correl)<corr_thresh),idx_possible);
     F(:,acc) = sig_this;
     % Termination condition
     if isempty(idx_possible) || acc==max_num
@@ -99,7 +104,7 @@ end
 F = F(:,1:acc);
 
 fprintf('%s : Cleaning filters and removing duplicates...\n',datestr(now));
-F = modify_filters(F,[],0.35,[h,w]);
+F = modify_filters(F,filter_thresh);
 
 % Extract time traces
 fprintf('%s : Extracting traces...\n',datestr(now));
