@@ -1,5 +1,23 @@
 function extract_cells(movie_source,pca_source,max_num)
 
+%   Cell extraction method that is based on an algorithm that essentially
+%   solves the sparse source separation problem to find cell filters.
+%   Traces are then found by using least squares.
+%
+%   Inputs:
+%
+%       movie_source: path to the movie matrix (height x width x frames)
+%
+%       pca_sources: path to the pca .mat file. It is assumed that there is
+%       a variable named pca_filters that has size [# of PCs x # of pixels]
+%       in the .mat file.
+%       
+%       max_num = Maximum estimated number of cells. Set to inf to get all
+%       that the algorithm can find in the movie.
+%
+%   Hakan Inan (Aug 15)
+%
+
 fprintf('%s : Loading movie and its singular vectors...\n',datestr(now));
 
 M = load_movie(movie_source);
@@ -30,21 +48,16 @@ if use_gpu %GPU
     U = gpuArray(U);
     one_norms = gpuArray(zeros(1,N,'single'));
     norms_U = gpuArray(norms_U);
-    chunk_size = min(chunk_size,500);
+    chunk_size = min(chunk_size,500); % Set upper limit
     
     for i = 1:chunk_size:N
         fin = min(chunk_size-1,N-i);
         Q = bsxfun(@times,U(i:i+fin,:),1./norms_U(i:i+fin))';
         one_norms(i:i+fin) = sum(abs(U*Q),1);
         clear Q;
-
-%         if mod(i,chunk_size*20)==1
-%             fprintf('%s: i=%d \n',datestr(now),i);
-%         end
-
     end
 
-    % GPU processing is over, transfer variables back to CPU
+    % Transfer variables back to CPU
     U = gather(U);
     one_norms = gather(one_norms);
     norms_U = gather(norms_U);
@@ -57,7 +70,6 @@ else % CPU
         Q = U_norm(i:i+fin,:)';
         one_norms(i:i+fin) = sum(abs(U*Q),1);
         clear Q;
-
     end
 
 end
@@ -66,13 +78,12 @@ end
 thresh = 0.1;
 idx_possible = 1:N;
 F = zeros(N,max_num);
-idx_cells = zeros(1,max_num);
 acc=0;
+
 while true
     acc = acc+1;
     [~,idx_this] = min(one_norms(idx_possible));
     idx_this = idx_possible(idx_this);
-    idx_cells(acc) = idx_this;
     sig_this = U*U_norm(idx_this,:)';    
     correl = sig_this.*(1./norms_U);
     idx_possible = intersect(find(abs(correl)<thresh),idx_possible);
@@ -84,25 +95,20 @@ while true
     
 end
 
-% Truncate F and idx_cells if there are less components than max_num
+% Truncate F in case there are less components than max_num
 F = F(:,1:acc);
-idx_cells = idx_cells(1:acc);
-
-% % Centroids
-% cent = zeros(2,acc);
-% [cent(2,:),cent(1,:)] = ind2sub([h,w],idx_cells);
 
 fprintf('%s : Cleaning filters and removing duplicates...\n',datestr(now));
-F = modify_filters(F,0.35);
+F = modify_filters(F,[],0.35,[h,w]);
 
-fprintf('%s : Extracting traces...\n',datestr(now));
 % Extract time traces
+fprintf('%s : Extracting traces...\n',datestr(now));
 M = reshape(M,h*w,t);
 idx_nonzero = find(sum(F,2)>0);
 M_small = M(idx_nonzero,:);
 F_small = F(idx_nonzero,:);
 T = (F_small'*F_small+0*eye(size(F,2))) \  (F_small'*M_small);
-M = reshape(M,h,w,t);
+clear M;
 
 % Reconstruction settings
 info.type = 'simple';
