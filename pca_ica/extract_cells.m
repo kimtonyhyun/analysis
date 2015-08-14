@@ -55,7 +55,16 @@ use_gpu = 0;
 gpu_exists = gpuDeviceCount>0;
 if gpu_exists
     D = gpuDevice;
-    f = max(D.AvailableMemory/4 - N*(num_pcs+2),0); % available data size assuming single type
+    % Handle 2 different versions of gpuDevice
+    if isprop(D,'AvailableMemory')
+        avail_mem = D.AvailableMemory;
+    elseif isprop(D,'FreeMemory')
+        avail_mem = D.FreeMemory;
+    else 
+        avail_mem = 0;
+    end
+    
+    f = max(avail_mem/4 - N*(num_pcs+2),0); % available data size assuming single type
     f = f-f/10; % Leave some buffer space in GPU
     chunk_size = floor(f/ (2*N+num_pcs));
     use_gpu = chunk_size>=1;
