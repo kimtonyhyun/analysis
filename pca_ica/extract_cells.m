@@ -22,7 +22,9 @@ function extract_cells(movie_source,pca_source,max_num)
 maxsize_chunk_GPU = 500;
 maxsize_chunk_CPU = 1000;
 corr_thresh = 0.1;
-filter_thresh = 0.35;
+filter_thresh = 0.25;
+
+max_num = min(max_num,1000); % Internal control for max_num
 
 fprintf('%s : Loading movie and its singular vectors...\n',datestr(now));
 
@@ -50,7 +52,7 @@ if gpu_exists
 end
 
 if use_gpu %GPU
-    fprintf('%s : Using GPU to accelarate processing...\n',datestr(now));
+    fprintf('\t \t \t Using GPU to accelarate processing\n');
     U = gpuArray(U);
     one_norms = gpuArray(zeros(1,N,'single'));
     norms_U = gpuArray(norms_U);
@@ -83,16 +85,18 @@ end
 % Extract filters recursively using the 1-norm criterion
 idx_possible = 1:N;
 F = zeros(N,max_num);
+inv_quality = zeros(1,max_num);
 acc=0;
 
 while true
     acc = acc+1;
-    [~,idx_this] = min(one_norms(idx_possible));
+    [val,idx_this] = min(one_norms(idx_possible));
     idx_this = idx_possible(idx_this);
     sig_this = U*U_norm(idx_this,:)';    
     correl = sig_this.*(1./norms_U);
     idx_possible = intersect(find(abs(correl)<corr_thresh),idx_possible);
     F(:,acc) = sig_this;
+    inv_quality(:,acc) = val;
     % Termination condition
     if isempty(idx_possible) || acc==max_num
         break;
@@ -102,9 +106,19 @@ end
 
 % Truncate F in case there are less components than max_num
 F = F(:,1:acc);
+inv_quality = inv_quality(1:acc)/sqrt(N);
 
+fprintf('\t \t \t Extracted %d potential cells \n',acc);
 fprintf('%s : Cleaning filters and removing duplicates...\n',datestr(now));
-F = modify_filters(F,filter_thresh);
+[F,idx_keep] = modify_filters(F,filter_thresh);
+inv_quality = inv_quality(idx_keep);
+
+figure,
+plot(inv_quality,'LineWidth',1.5);
+title('Inverse quality metric for the extracted potential cells','Fontsize',16);
+xlabel('Cell index','Fontsize',16)
+ylabel('Inverse quality(normalized to 1)','Fontsize',16)
+
 
 % Extract time traces
 fprintf('%s : Extracting traces...\n',datestr(now));
@@ -145,10 +159,10 @@ fprintf('%s : All done! \n',datestr(now));
 % Internal functions
 %-------------------
 
-function filters_out = modify_filters(filters_in,filter_thresh)
+function [filters_out,idx_keep] = modify_filters(filters_in,filter_thresh)
 
     % Clean up the filters
-    [masks,filters_int,cent_int] = cleanup_filters(filters_in,filter_thresh);
+    [masks,filters_int,cent_int,idx_keep] = cleanup_filters(filters_in,filter_thresh);
 
     % Identify duplicate cells
     new_assignments = compute_reassignments(masks,cent_int);
@@ -156,26 +170,33 @@ function filters_out = modify_filters(filters_in,filter_thresh)
     % Write to output variable (merging the duplicates)
     filters_out = zeros(h*w,length(unique(new_assignments)));
     acc = 0;
-    for idx_filt = 1:size(filters_in,2)
+    idx_merged = [];
+    for idx_filt = 1:size(filters_int,2)
         cells_this = find(new_assignments==idx_filt);
-        if length(cells_this)==1 % not an overlapping cell
+        len = length(cells_this);
+        if len==1 % not an overlapping cell
             acc = acc+1;
             filters_out(:,acc) = filters_int(:,idx_filt);
-        elseif length(cells_this)>1 % overlapping cells, merge
-            merged_filter = sum(filters_in(:,cells_this),2);
+        elseif len>1 % overlapping cells, merge
+            idx_merged = [idx_merged,setdiff(cells_this,idx_filt)];
+            merged_filter = sum(filters_int(:,cells_this),2);
             merged_filter = merged_filter/norm(merged_filter);
-            [~,merged_filter,~] = cleanup_filters(merged_filter,filter_thresh);
+            [~,merged_filter,~,~] = cleanup_filters(merged_filter,filter_thresh);
             if sum(merged_filter)>0
                 acc = acc+1;
                 filters_out(:,acc) = merged_filter;
+            else
+                idx_merged(end+1) = idx_filt;
             end
-        end 
+        end
     end
+    fprintf('\t \t \t %d cells were merged into others \n',length(idx_merged))
     filters_out(:,acc+1:end) = []; % Remove the 0's in the end (if any)
+    idx_keep(idx_merged) = [];
 
 end
 
-function [masks,filters_out,cent_out] = cleanup_filters(filters_in,filter_thresh)
+function [masks,filters_out,cent_out,idx_out] = cleanup_filters(filters_in,filter_thresh)
     
     num_filters = size(filters_in,2);
     cent_out = zeros(2,num_filters);
@@ -213,9 +234,13 @@ function [masks,filters_out,cent_out] = cleanup_filters(filters_in,filter_thresh
     
     % Eliminate tiny blobs
     elim = unique(elim);
+    if ~isempty(elim)
+        fprintf('\t \t \t %d cells were eliminated due to minimum size requirement(<10 pixels)\n',length(elim));
+    end
     filters_out(:,elim) = [];
     masks(:,:,elim) = [];
     cent_out(:,elim) = [];
+    idx_out = setdiff(1:num_filters,elim);
 end
 
 function new_assignments = compute_reassignments(masks,cent)
@@ -241,14 +266,14 @@ function new_assignments = compute_reassignments(masks,cent)
         end
     end
     
-    % Merge cells that have a Jacard similarity above sim_thresh;
-    sim_thresh = 0.7;
+    % Merge cells that have similarity above a threshold;
+    sim_thresh = 0.8;
     new_assignments = (1:num_filters)';
     for idx_filt = 1:num_filters
         if ~isempty(J_sim{idx_filt}) 
             for j = 1:size(J_sim{idx_filt},1) % for all cells that overlap with this
                 this_sim = J_sim{idx_filt}(j,2);
-                if this_sim > sim_thresh % similarity is above sim_thresh
+                if this_sim > sim_thresh % similarity is above threshold
                     that_cell = J_sim{idx_filt}(j,1);
                     new_assignments(new_assignments==new_assignments(that_cell)) = idx_filt;
                     J_sim{that_cell} = [];
