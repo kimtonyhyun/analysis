@@ -1,4 +1,12 @@
 function browse_rasters(ds)
+% Tool for browsing single cell rasters of a single day (i.e. DaySummary)
+%
+% Usage:
+%     m3d15 = DaySummary(sources.maze, 'rec001', 'reconst', 'excludeprobe');
+%       14-Aug-2015 13:58:23: Loaded data from rec001/rec_150813-115003.mat
+%       14-Aug-2015 13:58:23: Loaded classification from rec001/class_150813-115320.txt
+%     browse_rasters(m3d15);
+%
 
 % By default, show rasters of classified cells
 cell_indices = find(ds.is_cell);
