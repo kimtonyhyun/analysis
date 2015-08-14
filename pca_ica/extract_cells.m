@@ -1,4 +1,4 @@
-function extract_cells(movie_source,pca_source,max_num)
+function inv_quality = extract_cells(movie_source,pca_source,max_num)
 
 %   Cell extraction method that is based on an algorithm that essentially
 %   solves the sparse source separation problem to find cell filters.
@@ -14,6 +14,16 @@ function extract_cells(movie_source,pca_source,max_num)
 %       
 %       max_num = Maximum estimated number of cells. Set to inf to get all
 %       that the algorithm can find in the movie.
+%
+%   Outputs:
+%
+%       Script saves the traces and filters in a .mat file.
+%
+%       inv_quality: Inverse quality metric that indicates how good each
+%       found potential is as far as the extraction algorithm is concerned.
+%       It is a [1 x # of extracted cells] array whose entries are
+%       normalized to [(1/# of pixels),1] range. This array is also plotted
+%       on the screen at the end of execution.
 %
 %   Hakan Inan (Aug 15)
 %
