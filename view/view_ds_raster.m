@@ -21,9 +21,16 @@ while (1)
     val = str2double(resp);
     if (~isnan(val)) % Is a number (cell index)
         if ismember(val, cell_indices)
-            idx = find(cell_indices==val,1);
-            page_idx2 = ceil(idx / num_cells_per_page);
+            fprintf('  Cell %d selected!\n', val);
+            
+            % Find the page that contains the cell
+            page_idx2 = ceil(find(cell_indices==val,1) / num_cells_per_page);
             if (page_idx2 == page_idx)
+                % The selected cell is already in the current page, examine
+                % the raster in further detail
+                display_cell(val);
+                fprintf('  Press any key to return to all cells...\n');
+                pause;
                 
             else % Else, jump to page that contains the cell
                 page_idx = page_idx2;
@@ -77,5 +84,42 @@ end
         end % get_cells_on_page
         
     end % display_page
+
+    function display_cell(cell_idx)
+        % Image of cell
+        subplot(3,4,[1 2]);
+        imagesc(ds.cells(cell_idx).im);
+        axis image;
+        title(sprintf('Cell %d (%s)', cell_idx, ds.cells(cell_idx).label));
+        
+        % Complete raster
+        subplot(3,4,[5 6 9 10]);
+        ds.plot_cell_raster(cell_idx);
+        title('All trials');
+        
+        % Divide rasters by correctness
+        subplot(3,4,3);
+        ds.plot_cell_raster(cell_idx, 'correct');
+        title('Correct');
+        subplot(3,4,4);
+        ds.plot_cell_raster(cell_idx, 'incorrect');
+        title('Incorrect');
+        
+        % Divide rasters by start location
+        subplot(3,4,7);
+        ds.plot_cell_raster(cell_idx, 'start', 'west');
+        title('West start');
+        subplot(3,4,8);
+        ds.plot_cell_raster(cell_idx, 'start', 'east');
+        title('East start');
+        
+        % Divide rasters by end location
+        subplot(3,4,11);
+        ds.plot_cell_raster(cell_idx, 'end', 'south');
+        title('South end');
+        subplot(3,4,12);
+        ds.plot_cell_raster(cell_idx, 'end', 'north');
+        title('North end');
+    end % display_cell
 
 end % view_ds_raster
