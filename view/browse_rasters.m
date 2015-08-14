@@ -1,4 +1,4 @@
-function view_ds_raster(ds)
+function browse_rasters(ds)
 
 % By default, show rasters of classified cells
 cell_indices = find(ds.is_cell);
