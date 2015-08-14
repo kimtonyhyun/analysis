@@ -92,10 +92,22 @@ end
         axis image;
         title(sprintf('Cell %d (%s)', cell_idx, ds.cells(cell_idx).label));
         
-        % Complete raster
+        % Raster of all trials, with correctness
         subplot(3,4,[5 6 9 10]);
         ds.plot_cell_raster(cell_idx);
         title('All trials');
+        
+        corr_width = 0.025;
+        xlim([0 1+corr_width]);
+        for i = 1:ds.num_trials
+            if ds.trials(i).correct
+                corr_color = 'g';
+            else
+                corr_color = 'r';
+            end
+            rectangle('Position', [1 i-0.5 corr_width 1],...
+                      'FaceColor', corr_color);
+        end
         
         % Divide rasters by correctness
         subplot(3,4,3);
