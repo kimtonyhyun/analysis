@@ -30,7 +30,7 @@ function inv_quality = extract_cells(movie_source,pca_source,max_num)
 
 % Some parameters
 maxsize_chunk_GPU = 500;
-maxsize_chunk_CPU = 1000;
+maxsize_chunk_CPU = 3000;
 corr_thresh = 0.1;
 filter_thresh = 0.25;
 
@@ -267,7 +267,7 @@ function new_assignments = compute_reassignments(masks,cent)
     num_filters = size(masks,3);
     
     % Calculate the matrix of centroid distances
-    NN = repmat(norms(cent,2,1).^2,num_filters,1);
+    NN = repmat(sum(cent.^2,1),num_filters,1);
     Dist = sqrt(max(NN+NN'-2*cent'*cent,0)); %#ok<MHERM>
     Dist(Dist<1e-3) = inf; % Set diagonals to infinity
     Dist = Dist < 15; % Retain only the closeby cells
