@@ -47,7 +47,7 @@ fprintf('%s : Extracting filters...\n',datestr(now));
 
 U = (pca_filters');
 [N,num_pcs] = size(U);
-norms_U = norms(U,2,2);
+norms_U = sqrt(sum(U.^2,2));
 U_norm = bsxfun(@times,U,1./norms_U);
 
 % Brute-force approach for 1-norm computation, use GPU if available
