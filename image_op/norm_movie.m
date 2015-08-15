@@ -6,8 +6,8 @@ function norm_movie(movie_in, movie_out, varargin)
 % If 'movie_out' is left as an empty string, then default name will be
 % provided.
 %
-% The cropping parameters will also be saved in the output HDF5 file under
-% the '/Norm' directory
+% The normalization parameters will also be saved in the output HDF5 file
+% under the '/Norm' directory
 %
 % Inputs:
 %   movie_in:  Name of incoming HDF5 movie
