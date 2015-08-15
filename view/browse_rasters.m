@@ -20,10 +20,10 @@ num_pages = ceil(num_cells / num_cells_per_page);
 page_idx = 1;
 while (1)
     clf;
-    display_page(page_idx);
+    draw_page(page_idx);
 
     % Ask user for command
-    prompt = sprintf('Raster viewer (page %d of %d) >> ', page_idx, num_pages);
+    prompt = sprintf('Raster browser (page %d of %d) >> ', page_idx, num_pages);
     resp = strtrim(input(prompt, 's'));
     
     val = str2double(resp);
@@ -36,9 +36,7 @@ while (1)
             if (page_idx2 == page_idx)
                 % The selected cell is already in the current page, examine
                 % the raster in further detail
-                display_cell(val);
-                fprintf('  Press any key to return to all cells...\n');
-                pause;
+                view_detailed_raster(ds, val);
                 
             else % Else, jump to page that contains the cell
                 page_idx = page_idx2;
@@ -49,7 +47,7 @@ while (1)
     else
         resp = lower(resp);
         switch (resp)
-            case {'f', 'n'} % Forward/next (page)
+            case {'f', 'n', ''} % Forward/next (page)
                 if (page_idx < num_pages)
                     page_idx = page_idx + 1;
                 else
@@ -75,7 +73,7 @@ end
 
     % Helper functions
     %------------------------------------------------------------
-    function display_page(page_idx)
+    function draw_page(page_idx)
         cells_on_page = get_cells_on_page(page_idx);
         for i = 1:length(cells_on_page)
             subplot(cells_per_page(1), cells_per_page(2), i);
@@ -91,55 +89,6 @@ end
             cells_on_page = cell_indices(index_to_cells(1):index_to_cells(2));
         end % get_cells_on_page
         
-    end % display_page
-
-    function display_cell(cell_idx)
-        % Image of cell
-        subplot(3,4,[1 2]);
-        imagesc(ds.cells(cell_idx).im);
-        axis image;
-        title(sprintf('Cell %d (%s)', cell_idx, ds.cells(cell_idx).label));
-        
-        % Raster of all trials, with correctness
-        subplot(3,4,[5 6 9 10]);
-        ds.plot_cell_raster(cell_idx);
-        title('All trials');
-        
-        corr_width = 0.025;
-        xlim([0 1+corr_width]);
-        for i = 1:ds.num_trials
-            if ds.trials(i).correct
-                corr_color = 'g';
-            else
-                corr_color = 'r';
-            end
-            rectangle('Position', [1 i-0.5 corr_width 1],...
-                      'FaceColor', corr_color);
-        end
-        
-        % Divide rasters by correctness
-        subplot(3,4,3);
-        ds.plot_cell_raster(cell_idx, 'correct');
-        title('Correct');
-        subplot(3,4,4);
-        ds.plot_cell_raster(cell_idx, 'incorrect');
-        title('Incorrect');
-        
-        % Divide rasters by start location
-        subplot(3,4,7);
-        ds.plot_cell_raster(cell_idx, 'start', 'west');
-        title('West start');
-        subplot(3,4,8);
-        ds.plot_cell_raster(cell_idx, 'start', 'east');
-        title('East start');
-        
-        % Divide rasters by end location
-        subplot(3,4,11);
-        ds.plot_cell_raster(cell_idx, 'end', 'south');
-        title('South end');
-        subplot(3,4,12);
-        ds.plot_cell_raster(cell_idx, 'end', 'north');
-        title('North end');
-    end % display_cell
+    end % draw_page
 
 end % view_ds_raster
