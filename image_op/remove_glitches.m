@@ -1,24 +1,25 @@
-function M = remove_glitches(M)
+function M = remove_glitches(movie_in)
 % Detect glitched frames by looking for anomalous minimum and maximum pixel
 % values of each frame. Prompts the user for confirmation before replacing
 % the movie frame.
 %
 % Usage:
-%   M = load_movie('c11m3d18.hdf5');
-%   M = remove_glitches(M);
+%   M_gfix = remove_glitches('c11m3d19.hdf5');
 %
 % Todo:
 %   - Interactive addition and removal of frames to be replaced
-%   - Doesn't actually perform in-place replacement
 
-fprintf('Computing fluorescence stats...\n');
+fprintf('%s: Loading movie...\n', datestr(now));
+M = load_movie(movie_in);
+
+fprintf('%s: Computing fluorescence stats...\n', datestr(now));
 F = compute_fluorescence_stats(M);
 
 z_thresh = 8;
-fprintf('Detect anomalous frames in the minimum trace...\n');
+fprintf('%s: Detect anomalous frames in the minimum trace...\n', datestr(now));
 min_anomalous_frames = detect_anomalous_frames(F(:,1), z_thresh);
 
-fprintf('Detect anomalous frames in the max trace...\n');
+fprintf('%s: Detect anomalous frames in the max trace...\n', datestr(now));
 max_anomalous_frames = detect_anomalous_frames(F(:,3), z_thresh);
 
 num_frames = size(M,3);
@@ -35,8 +36,8 @@ title('Red marker indicates frames to be replaced');
 frames_to_replace = union(min_anomalous_frames(:,1),...
                           max_anomalous_frames(:,1));
 
-fprintf('Replace %d frames? (Press any key to continue) >> ',...
-        length(frames_to_replace));
+fprintf('%s: Replace %d frames? (Press any key to continue) >> ',...
+        datestr(now), length(frames_to_replace));
 pause;
 
 % Perform frame replacement
