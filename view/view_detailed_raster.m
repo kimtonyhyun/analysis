@@ -47,22 +47,9 @@ end
         
         % Raster of all trials, with correctness
         subplot(3,4,[5 6 9 10]);
-        ds.plot_cell_raster(cell_idx);
+        ds.plot_cell_raster(cell_idx, 'draw_correct');
         raster_scale = get(gca, 'CLim'); % Scale that applies to all trials
-        
         title('All trials');
-        
-        corr_width = 0.025;
-        xlim([0 1+corr_width]);
-        for i = 1:ds.num_trials
-            if ds.trials(i).correct
-                corr_color = 'g';
-            else
-                corr_color = 'r';
-            end
-            rectangle('Position', [1 i-0.5 corr_width 1],...
-                      'FaceColor', corr_color);
-        end
         
         % Divide rasters by correctness
         subplot(3,4,3);
@@ -76,24 +63,24 @@ end
         
         % Divide rasters by start location
         subplot(3,4,7);
-        ds.plot_cell_raster(cell_idx, 'start', 'west');
+        ds.plot_cell_raster(cell_idx, 'draw_correct', 'start', 'west');
         set(gca, 'CLim', raster_scale);
-        title('West start');        
+        title('West start'); 
         subplot(3,4,8);
-        ds.plot_cell_raster(cell_idx, 'start', 'east');
+        ds.plot_cell_raster(cell_idx, 'draw_correct', 'start', 'east');
         set(gca, 'CLim', raster_scale);
         title('East start');
         
         % Divide rasters by end location
         subplot(3,4,11);
-        ds.plot_cell_raster(cell_idx, 'end', 'south');
+        ds.plot_cell_raster(cell_idx, 'draw_correct', 'end', 'south');
         set(gca, 'CLim', raster_scale);
         title('South end');
         subplot(3,4,12);
-        ds.plot_cell_raster(cell_idx, 'end', 'north');
+        ds.plot_cell_raster(cell_idx, 'draw_correct', 'end', 'north');
         set(gca, 'CLim', raster_scale);
         title('North end');
-        
+                
     end % draw_rasters
 
 end % view_cell_rasters
