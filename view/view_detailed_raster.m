@@ -63,21 +63,21 @@ end
         
         % Divide rasters by start location
         subplot(3,4,7);
-        ds.plot_cell_raster(cell_idx, 'draw_correct', 'start', 'west');
+        ds.plot_cell_raster(cell_idx, 'start', 'west');
         set(gca, 'CLim', raster_scale);
         title('West start'); 
         subplot(3,4,8);
-        ds.plot_cell_raster(cell_idx, 'draw_correct', 'start', 'east');
+        ds.plot_cell_raster(cell_idx, 'start', 'east');
         set(gca, 'CLim', raster_scale);
         title('East start');
         
         % Divide rasters by end location
         subplot(3,4,11);
-        ds.plot_cell_raster(cell_idx, 'draw_correct', 'end', 'south');
+        ds.plot_cell_raster(cell_idx, 'end', 'south');
         set(gca, 'CLim', raster_scale);
         title('South end');
         subplot(3,4,12);
-        ds.plot_cell_raster(cell_idx, 'draw_correct', 'end', 'north');
+        ds.plot_cell_raster(cell_idx, 'end', 'north');
         set(gca, 'CLim', raster_scale);
         title('North end');
                 
