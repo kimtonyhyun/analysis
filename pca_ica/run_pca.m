@@ -57,7 +57,7 @@ pca_info.movie_height = height;
 pca_info.movie_width  = width;
 pca_info.movie_frames = num_frames;
 pca_info.num_PCs = num_PCs; 
-pca_info.trimmed = do_trim; %#ok<STRNU>
+pca_info.is_trimmed = do_trim; %#ok<STRNU>
 
 if do_trim
     save(savename,'pca_info', 'pca_filters', 'pca_traces', 'S','idx_kept');
