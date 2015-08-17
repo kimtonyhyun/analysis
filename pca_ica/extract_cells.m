@@ -36,15 +36,15 @@ filter_thresh = 0.25;
 
 max_num = min(max_num,1000); % Internal control for max_num
 
-fprintf('%s : Loading movie and its singular vectors...\n',datestr(now));
-
-M = load_movie(movie_source);
-[h,w,t] = size(M);
+fprintf('%s : Loading movie singular vectors...\n',datestr(now));
 
 load(pca_source,'pca_info','pca_filters');
-trimmed = pca_info.trimmed;
+is_trimmed = pca_info.is_trimmed;
+h = pca_info.movie_height;
+w = pca_info.movie_width;
+t = pca_info.movie_frames;
 
-if trimmed
+if is_trimmed
     load(pca_source,'idx_kept');
 end
 
@@ -132,7 +132,7 @@ end
 F = F(:,1:acc);
 inv_quality = inv_quality(1:acc)/sqrt(N);
 
-if trimmed % untrim the pixels
+if is_trimmed % untrim the pixels
     F_temp = zeros(h*w,acc);
     F_temp(idx_kept,:) = F;
     F = F_temp;
@@ -149,6 +149,8 @@ title('Inverse quality metric for the extracted potential cells','Fontsize',16);
 xlabel('Cell index','Fontsize',16)
 ylabel('Inverse quality(normalized to 1)','Fontsize',16)
 
+fprintf('%s : Loading movie for trace extraction...\n',datestr(now));
+M = load_movie(movie_source);
 
 % Extract time traces
 fprintf('%s : Extracting traces...\n',datestr(now));
