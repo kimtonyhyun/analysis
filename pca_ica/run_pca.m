@@ -12,7 +12,7 @@ function run_pca(movie_source, num_PCs,varargin)
 %       values.
 %
 % Example usage:
-%   run_pca('c9m7d25_dff.hdf5', 500,1);
+%   run_pca('c9m7d25_dff.hdf5', 500,'trim');
 %
 
 % Defaults
@@ -58,10 +58,11 @@ pca_info.movie_width  = width;
 pca_info.movie_frames = num_frames;
 pca_info.num_PCs = num_PCs; 
 pca_info.trimmed = do_trim; %#ok<STRNU>
-save(savename, 'pca_info', 'pca_filters', 'pca_traces', 'S');
 
 if do_trim
-    save(savename,'idx_kept');
+    save(savename,'pca_info', 'pca_filters', 'pca_traces', 'S','idx_kept');
+else
+    save(savename, 'pca_info', 'pca_filters', 'pca_traces', 'S');
 end
 
 fprintf('%s: All done!\n', datestr(now));
