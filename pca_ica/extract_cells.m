@@ -25,7 +25,7 @@ function inv_quality = extract_cells(movie_source,pca_source,max_num)
 %       normalized to [(1/# of pixels),1] range. This array is also plotted
 %       on the screen at the end of execution.
 %
-%   Hakan Inan (Aug 15)
+%   Hakan Inan (Aug 2015)
 %
 
 % Some parameters
@@ -41,7 +41,12 @@ fprintf('%s : Loading movie and its singular vectors...\n',datestr(now));
 M = load_movie(movie_source);
 [h,w,t] = size(M);
 
-load(pca_source,'pca_filters');
+load(pca_source,'pca_info','pca_filters');
+trimmed = pca_info.trimmed;
+
+if trimmed
+    load(pca_source,'idx_kept');
+end
 
 fprintf('%s : Extracting filters...\n',datestr(now));
 
@@ -127,10 +132,16 @@ end
 F = F(:,1:acc);
 inv_quality = inv_quality(1:acc)/sqrt(N);
 
+if trimmed % untrim the pixels
+    F_temp = zeros(h*w,acc);
+    F_temp(idx_kept,:) = F;
+    F = F_temp;
+end
+
 fprintf('\t \t \t Extracted %d potential cells \n',acc);
 fprintf('%s : Cleaning filters and removing duplicates...\n',datestr(now));
-[F,idx_keep] = modify_filters(F,filter_thresh);
-inv_quality = inv_quality(idx_keep);
+[F,idx] = modify_filters(F,filter_thresh);
+inv_quality = inv_quality(idx);
 
 figure,
 plot(inv_quality,'LineWidth',1.5);
@@ -271,7 +282,7 @@ function new_assignments = compute_reassignments(masks,cent)
     Dist = sqrt(max(NN+NN'-2*cent'*cent,0)); %#ok<MHERM>
     Dist(Dist<1e-3) = inf; % Set diagonals to infinity
     Dist = Dist < 15; % Retain only the closeby cells
-
+    
     % Calculate overlap between closeby cells
     J_sim = cell(num_filters,1);
     for idx_filt = 1:num_filters
