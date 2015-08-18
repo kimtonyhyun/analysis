@@ -83,8 +83,13 @@ pca_info.movie_height = height;
 pca_info.movie_width  = width;
 pca_info.movie_frames = num_frames;
 pca_info.num_PCs = num_PCs; 
+
 pca_info.is_trimmed = do_trim; 
-pca_info.is_medianfiltered = do_medfilt; %#ok<STRNU>
+
+pca_info.is_medianfiltered = do_medfilt;  %#ok<*STRNU>
+if do_medfilt
+    pca_info.medfilt_halfwidth = medfilt_halfwidth;
+end
 
 if do_trim
     save(savename,'pca_info', 'pca_filters', 'pca_traces', 'S','idx_kept');
