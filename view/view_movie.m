@@ -26,17 +26,21 @@ end
 
 num_frames = size(M,3);
 
-if (rescale_each_frame || isa(M, 'uint16'))
-    % Every frame is rescaled for the raw movie
-    h = imagesc(M(:,:,1));
-    mask_val = 0; % FIXME
-else % Otherwise, use common CLim scaling
-    if isempty(movie_clim)
-        movie_clim = compute_movie_scale(M);
-    end
-    mask_val = movie_clim(1);
+if ~isempty(movie_clim) % If CLim is provided, use it
     h = imagesc(M(:,:,1), movie_clim);
+else
+    if (rescale_each_frame || isa(M, 'uint16'))
+        % Raw movies (e.g. uint16) are rescaled by default
+        h = imagesc(M(:,:,1));
+        mask_val = 0; % FIXME
+    else % Otherwise, use common CLim scaling
+        movie_clim = compute_movie_scale(M);
+        mask_val = movie_clim(1);
+        h = imagesc(M(:,:,1), movie_clim);
+    end
 end
+
+
 axis image;
 truesize;
 colormap gray;
