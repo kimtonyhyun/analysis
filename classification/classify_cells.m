@@ -1,29 +1,25 @@
-function M = classify_cells(sources, ic_dir, varargin)
+function M = classify_cells(sources, rec_dir, varargin)
 % Perform manual classification of candidate filter/trace pairs
 %
 % Usage:
-%   classify_ics(sources, 'ica001')
+%   classify_cells(sources, 'rec001')
 %
-% where sources is a struct with the following fields:
+% where sources is a struct with the following required fields:
 %   sources.maze: Output from the plus maze (TXT)
 %   sources.miniscope: Miniscope recording (TIF or HDF5)
 %   sources.fps:  Frame rate of the recording
 %
-% and 'ica001' is a directory that contains 'ica_*.mat' or 'rec_*.mat'
-%   depending on whether one is classifying ICA or reconstructed pairs.
+% and 'rec001' is a directory that contains a 'rec_*.mat' file which has
+%   the filters and traces to be classified.
 %
 % Optional arguments allow for:
-%   'reconst': Use reconstructed filter/trace pairs, rather than ICA
 %   'movie': Use provided movie, rather than loading from disk
 %
 
 movie_provided = 0;
-use_reconstruction = 0;
 for k = 1:length(varargin)
     if ischar(varargin{k})
         switch lower(varargin{k})
-            case 'reconst'
-                use_reconstruction = 1;
             case 'movie'
                 movie_provided = 1;
                 M = varargin{k+1}; % Note Matlab's lazy eval
@@ -46,13 +42,9 @@ fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
     datestr(now), movie_clim(1), movie_clim(2));
 
 % Load filter/trace pairs to be classified
-if use_reconstruction
-    ds = DaySummary(sources.maze, ic_dir, 'reconst');
-else
-    ds = DaySummary(sources.maze, ic_dir);
-end
+ds = DaySummary(sources.maze, rec_dir);
 num_candidates = ds.num_cells;
-fprintf('  %s: Loaded filters/traces from "%s"\n', datestr(now), ic_dir);
+fprintf('  %s: Loaded filters/traces from "%s"\n', datestr(now), rec_dir);
 
 trial_indices = ds.trial_indices(:, [1 end]); % [Start end]
 assert(size(M,3) == trial_indices(end,end),...
@@ -131,7 +123,7 @@ while (cell_idx <= num_candidates)
                 end
             case 't' % "Take" screenshot
                 screenshot_name = sprintf('ic%03d.png', cell_idx);
-                screenshot_name = fullfile(ic_dir, screenshot_name);
+                screenshot_name = fullfile(rec_dir, screenshot_name);
                 print('-dpng', screenshot_name);
                 fprintf('  Plot saved to %s\n', screenshot_name);
             otherwise
