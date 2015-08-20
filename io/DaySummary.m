@@ -3,8 +3,8 @@
 % Inputs:
 %   plusmaze_txt: Name of the PlusMaze output text file.
 %   rec_dir: Directory containing 
-%       - Filters and traces in a "rec_*.mat" file
-%       - Classification results in a "class_*.txt" file
+%       - Filters and traces in a "rec_*.mat" file (required)
+%       - Classification results in a "class_*.txt" file (optional)
 %
 % Output:
 %   DaySummary object
