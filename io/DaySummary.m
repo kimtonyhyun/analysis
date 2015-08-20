@@ -28,25 +28,18 @@ classdef DaySummary
         function obj = DaySummary(plusmaze_txt, ica_dir, varargin)
             % Handle optional input
             exclude_probe_trials = 0;
-            use_reconstruction = 0;
             for k = 1:length(varargin)
                 if ischar(varargin{k})
                     switch lower(varargin{k})
                         case 'excludeprobe'
                             exclude_probe_trials = 1;
-                        case 'reconst'
-                            use_reconstruction = 1;
                     end
                 end
             end
             
             % Load data
             %------------------------------------------------------------
-            if use_reconstruction
-                data_source = get_most_recent_file(ica_dir, 'rec_*.mat');
-            else
-                data_source = get_most_recent_file(ica_dir, 'ica_*.mat');
-            end
+            data_source = get_most_recent_file(ica_dir, 'rec_*.mat');
             data = load(data_source);
             obj.num_cells = data.info.num_pairs;
             fprintf('  %s: Loaded data from %s\n', datestr(now), data_source);

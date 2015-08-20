@@ -18,12 +18,9 @@ function M = classify_cells(sources, ic_dir, varargin)
 %
 
 movie_provided = 0;
-use_reconstruction = 0;
 for k = 1:length(varargin)
     if ischar(varargin{k})
         switch lower(varargin{k})
-            case 'reconst'
-                use_reconstruction = 1;
             case 'movie'
                 movie_provided = 1;
                 M = varargin{k+1}; % Note Matlab's lazy eval
@@ -46,11 +43,7 @@ fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
     datestr(now), movie_clim(1), movie_clim(2));
 
 % Load filter/trace pairs to be classified
-if use_reconstruction
-    ds = DaySummary(sources.maze, ic_dir, 'reconst');
-else
-    ds = DaySummary(sources.maze, ic_dir);
-end
+ds = DaySummary(sources.maze, ic_dir, 'reconst');
 num_candidates = ds.num_cells;
 fprintf('  %s: Loaded filters/traces from "%s"\n', datestr(now), ic_dir);
 
