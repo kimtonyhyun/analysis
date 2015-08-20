@@ -22,8 +22,7 @@ do_trim = 0;
 medfilt = 0;
 
 if ~isempty(varargin)
-    len = length(varargin);
-    for k = 1:len
+    for k = 1:length(varargin)
         switch varargin{k}
             case 'trim'
                 do_trim = 1;
