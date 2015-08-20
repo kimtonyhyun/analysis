@@ -215,8 +215,8 @@ classdef DaySummary
                 boundary = obj.cells(k).boundary;
 
                 plot(boundary(:,1), boundary(:,2), 'Color', color);
-                text(max(boundary(:,1)), min(boundary(:,2)),...
-                     sprintf('%d', k), 'Color', color);
+%                 text(max(boundary(:,1)), min(boundary(:,2)),...
+%                      sprintf('%d', k), 'Color', color);
             end
             hold off;
             
