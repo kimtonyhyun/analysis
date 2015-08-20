@@ -1,4 +1,4 @@
-function run_pca(movie_source, num_PCs,varargin)
+function run_pca(movie_source, num_PCs, varargin)
 % Runs PCA factorization of the movie provided in `movie_source`. Saves the
 % result to 'pca_(...).mat' file.
 %
@@ -11,8 +11,7 @@ function run_pca(movie_source, num_PCs,varargin)
 %       movie that do not cross above the median of the maximum pixel 
 %       values.
 %   'medfilt': Add it as an argument to perform median-filtering on the 
-%       movie on a per-frame basis before PCA. Highly recommended since
-%       especially the miniscope camera might have various artifacts.
+%       movie on a per-frame basis before PCA. 
 %
 % Example usage:
 %   run_pca('c9m7d25_dff.hdf5', 500,'trim','medfilt');
@@ -66,6 +65,7 @@ M = reshape(M, num_pixels, num_frames);
 mean_M = mean(M,1);
 M = bsxfun(@minus, M, mean_M);
 
+idx_kept = 1:num_pixels;
 if do_trim
     max_proj = max(M,[],2);
     idx_kept = find(max_proj>median(max_proj));
@@ -83,17 +83,18 @@ pca_info.movie_width  = width;
 pca_info.movie_frames = num_frames;
 pca_info.num_PCs = num_PCs; 
 
-pca_info.is_trimmed = do_trim; 
+pca_info.trim.enabled = do_trim; 
+pca_info.trim.idx_kept = idx_kept;
 
-pca_info.is_medianfiltered = do_medfilt;  %#ok<*STRNU>
+pca_info.medfilt.enabled = do_medfilt;  %#ok<*STRNU>
 if do_medfilt
-    pca_info.medfilt_halfwidth = medfilt_halfwidth;
+    pca_info.medfilt.halfwidth = medfilt_halfwidth;
 end
 
-if do_trim
-    save(savename,'pca_info', 'pca_filters', 'pca_traces', 'S','idx_kept');
-else
-    save(savename, 'pca_info', 'pca_filters', 'pca_traces', 'S');
-end
+% Save only the diagonal of S
+S = diag(S);
+
+save(savename, 'pca_info', 'pca_filters', 'pca_traces', 'S');
+
 
 fprintf('%s: All done!\n', datestr(now));
