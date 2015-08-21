@@ -27,6 +27,8 @@ function concatenateHDF5(tifDir,outputDir,hdf5Name,downsmpFactor,plusmazeName,tr
 startFrames = frame_indices(:,1);
 
 list = dir(fullfile(tifDir,'*.tif'));
+num_files = length(list);
+
 firstName = fullfile(tifDir,list(1).name);
 [rows,cols] = size(imread(firstName));
 
@@ -45,7 +47,7 @@ badTrial = 0;
 testFrames = startFrames(1,1);
 trialCount = 0;
 
-for i=1:length(list)
+for i=1:num_files
     if(i ~= 1)
         %%% Find if the start frame of the next recording matches one of
         %%% the start frame indicies
@@ -73,7 +75,9 @@ for i=1:length(list)
         end
     end
 
-    if(~badTrial)
+    if (badTrial)
+        fprintf('  %d: File "%s" skipped\n', i, list(i).name);
+    else
         %%% Add the good trial to the hdf5 file
         trialCount = trialCount+1;
         tifName = fullfile(tifDir,list(i).name);
@@ -151,7 +155,7 @@ for i=1:length(list)
         h5write(fullfile(outputDir,hdf5Name),'/TrialInfo/Locations',locData,[trialCount,1],[1,3]);
         h5write(fullfile(outputDir,hdf5Name),'/TrialInfo/Time',time(trialCount),[trialCount,1],[1,1]);
         
-        fprintf('File %d of %d stored\n',i,size(list,1));
+        fprintf('  %d: File "%s" stored\n', i, list(i).name);
         
         %%% Total frame count stored in hdf5 file
         totalFrames = totalFrames+numFrames;

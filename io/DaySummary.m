@@ -1,17 +1,16 @@
 % Summary of PlusMaze data for a single day.
 %
 % Inputs:
-%   plusmaze_txt: Name of the PlusMaze output text file. Frame indices of
-%       the text file needs to be consistent with the ICA traces!
-%   ica_dir: Directory containing 
-%       - ICA results in a "ica_*.mat" file
-%       - Classification results in a "class_*.txt" file
+%   plusmaze_txt: Name of the PlusMaze output text file.
+%   rec_dir: Directory containing 
+%       - Filters and traces in a "rec_*.mat" file (required)
+%       - Classification results in a "class_*.txt" file (optional)
 %
 % Output:
 %   DaySummary object
 %
 % Example usage:
-%   ds = DaySummary('c9m7d06_ti2.txt', 'ica001');
+%   ds = DaySummary('c11m1d12_ti2.txt', 'rec001');
 %
 classdef DaySummary
     properties
@@ -25,28 +24,21 @@ classdef DaySummary
     end
     
     methods
-        function obj = DaySummary(plusmaze_txt, ica_dir, varargin)
+        function obj = DaySummary(plusmaze_txt, rec_dir, varargin)
             % Handle optional input
             exclude_probe_trials = 0;
-            use_reconstruction = 0;
             for k = 1:length(varargin)
                 if ischar(varargin{k})
                     switch lower(varargin{k})
                         case 'excludeprobe'
                             exclude_probe_trials = 1;
-                        case 'reconst'
-                            use_reconstruction = 1;
                     end
                 end
             end
             
             % Load data
             %------------------------------------------------------------
-            if use_reconstruction
-                data_source = get_most_recent_file(ica_dir, 'rec_*.mat');
-            else
-                data_source = get_most_recent_file(ica_dir, 'ica_*.mat');
-            end
+            data_source = get_most_recent_file(rec_dir, 'rec_*.mat');
             data = load(data_source);
             obj.num_cells = data.info.num_pairs;
             fprintf('  %s: Loaded data from %s\n', datestr(now), data_source);
@@ -89,7 +81,7 @@ classdef DaySummary
             
             % Parse cell data
             %------------------------------------------------------------
-            class_source = get_most_recent_file(ica_dir, 'class_*.txt');
+            class_source = get_most_recent_file(rec_dir, 'class_*.txt');
             if ~isempty(class_source)
                 class = load_classification(class_source);
                 fprintf('  %s: Loaded classification from %s\n', datestr(now), class_source);
@@ -97,7 +89,7 @@ classdef DaySummary
                        sprintf('Number of labels in %s is not consistent with %s!',...
                                class_source, data_source));
             else % No classification file
-                fprintf('  %s: No classification file in %s!\n', datestr(now), ica_dir);
+                fprintf('  %s: No classification file in %s!\n', datestr(now), rec_dir);
                 class = cell(obj.num_cells,1); % Empty
             end
 
@@ -224,8 +216,8 @@ classdef DaySummary
                 boundary = obj.cells(k).boundary;
 
                 plot(boundary(:,1), boundary(:,2), 'Color', color);
-                text(max(boundary(:,1)), min(boundary(:,2)),...
-                     sprintf('%d', k), 'Color', color);
+%                 text(max(boundary(:,1)), min(boundary(:,2)),...
+%                      sprintf('%d', k), 'Color', color);
             end
             hold off;
             
