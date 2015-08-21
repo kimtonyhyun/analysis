@@ -39,7 +39,7 @@ max_num = min(max_num,1000); % Internal control for max_num
 fprintf('%s : Loading movie singular vectors...\n',datestr(now));
 
 load(pca_source,'pca_info','pca_filters');
-is_trimmed = pca_info.is_trimmed;
+is_trimmed = pca_info.trim.enabled;
 h = pca_info.movie_height;
 w = pca_info.movie_width;
 t = pca_info.movie_frames;
