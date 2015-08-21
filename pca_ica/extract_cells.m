@@ -47,7 +47,7 @@ idx_kept = pca_info.trim.idx_kept;
 fprintf('%s: Extracting filters...\n',datestr(now));
 
 if max_num>max_num_upper % Internal control for max_num
-    max_num = min(max_num,max_num_upper); 
+    max_num = max_num_upper;
     fprintf('\t \t \t  Maximum allowed number of cells is %d, overriding the variable ''max_num''...\n',...
         max_num_upper);
 end
