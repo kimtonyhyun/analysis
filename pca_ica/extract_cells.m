@@ -33,22 +33,24 @@ maxsize_chunk_GPU = 500;
 maxsize_chunk_CPU = 3000;
 corr_thresh = 0.1;
 filter_thresh = 0.25;
+max_num_upper = 1000;
 
-max_num = min(max_num,1000); % Internal control for max_num
-
-fprintf('%s : Loading movie singular vectors...\n',datestr(now));
+fprintf('%s: Loading movie singular vectors...\n',datestr(now));
 
 load(pca_source,'pca_info','pca_filters');
 is_trimmed = pca_info.trim.enabled;
 h = pca_info.movie_height;
 w = pca_info.movie_width;
 t = pca_info.movie_frames;
+idx_kept = pca_info.trim.idx_kept;
 
-if is_trimmed
-    load(pca_source,'idx_kept');
+fprintf('%s: Extracting filters...\n',datestr(now));
+
+if max_num>1000 % Internal control for max_num
+    max_num = min(max_num,max_num_upper); 
+    fprintf('\t \t \t  Maximum allowed number of cells is %d, overriding the variable ''max_num''...\n',...
+        max_num_upper);
 end
-
-fprintf('%s : Extracting filters...\n',datestr(now));
 
 U = (pca_filters');
 [N,num_pcs] = size(U);
@@ -149,11 +151,11 @@ title('Inverse quality metric for the extracted potential cells','Fontsize',16);
 xlabel('Cell index','Fontsize',16)
 ylabel('Inverse quality(normalized to 1)','Fontsize',16)
 
-fprintf('%s : Loading movie for trace extraction...\n',datestr(now));
+fprintf('%s: Loading movie for trace extraction...\n',datestr(now));
 M = load_movie(movie_source);
 
 % Extract time traces
-fprintf('%s : Extracting traces...\n',datestr(now));
+fprintf('%s: Extracting traces...\n',datestr(now));
 M = reshape(M,h*w,t);
 idx_nonzero = find(sum(F,2)>0);
 M_small = M(idx_nonzero,:);
@@ -183,7 +185,7 @@ fprintf('%s: Output will be saved in %s \n',datestr(now),rec_savename);
 
 save(rec_savename, 'info', 'filters', 'traces');
 
-fprintf('%s : All done! \n',datestr(now));
+fprintf('%s: All done! \n',datestr(now));
 
 
 
