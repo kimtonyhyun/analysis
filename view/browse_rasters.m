@@ -47,20 +47,24 @@ while (1)
     else
         resp = lower(resp);
         switch (resp)
-            case {'f', 'n', ''} % Forward/next (page)
+            case {'n', ''} % Next page
                 if (page_idx < num_pages)
                     page_idx = page_idx + 1;
                 else
                     fprintf('  Already at final page!\n');
                 end
 
-            case {'b', 'p'} % Backward/prev (page)
+            case 'p' % Previous page
                 if (page_idx > 1)
                     page_idx = page_idx - 1;
                 else
                     fprintf('  Already at first page!\n');
                 end
 
+                
+            case 'f' % First page
+                page_idx = 1;
+                
             case 'q' % Exit
                 break;
 
