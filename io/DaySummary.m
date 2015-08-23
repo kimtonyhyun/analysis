@@ -47,7 +47,12 @@ classdef DaySummary
             %   TODO: Bring in centroids corresponding to mouse position
             %------------------------------------------------------------
             [trial_indices, loc_info, trial_durations] =...
-                parse_plusmaze(plusmaze_txt);
+                parse_plusmaze(plusmaze_txt); %#ok<*PROP>
+            
+            % Check that the length of traces is consistent with the table
+            % of trial indices
+            assert(size(data.traces,1) == trial_indices(end,end),...
+                'Error: Length of traces does not match trial index table!');
             
             if (exclude_probe_trials)
                 is_probe = strcmp(loc_info(:,1), 'north') | ...
