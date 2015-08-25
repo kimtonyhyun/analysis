@@ -1,4 +1,4 @@
-function run_pca(movie_source, num_PCs, varargin)
+function run_pca(movie_source, varargin)
 % Runs PCA factorization of the movie provided in `movie_source`. Saves the
 % result to 'pca_(...).mat' file.
 %
@@ -21,6 +21,9 @@ function run_pca(movie_source, num_PCs, varargin)
 do_trim = 0;
 do_medfilt = 0;
 medfilt_halfwidth = 1;
+autoset_num_PCs = 1;
+max_num_PCs = 1000;
+
 
 if ~isempty(varargin)
     for k = 1:length(varargin)
@@ -29,6 +32,12 @@ if ~isempty(varargin)
                 do_trim = 1;
             case 'medfilt'
                 do_medfilt = 1;
+            case 'num_PCs'
+                num_PCs = varargin{k+1};
+                if ~isinteger(num_PCs)
+                    error('num_PCs must be an integer.');
+                end
+                autoset_num_PCs = 0;
         end
     end
 end
@@ -54,6 +63,18 @@ if do_medfilt
     fprintf('%s: Finished median filtering!\n', datestr(now));
 end
 
+% Detect local maxima in max-projection image to get an estimated maximum 
+%number of cells in the movie
+if autoset_num_PCs
+    max_proj = max(M,[],3);
+    cents = local_maxima_2D(max_proj);
+    num_PCs = size(cents,2);
+    if num_PCs>max_num_PCs
+        num_PCs = max_num_PCs;
+    end        
+    fprintf('%s: Extracting %d PCs...\n', datestr(now),num_PCs);
+end
+
 % Reshape movie into [space x time] matrix
 num_pixels = height * width;
 M = reshape(M, num_pixels, num_frames);
@@ -64,8 +85,7 @@ M = bsxfun(@minus, M, mean_M);
 
 idx_kept = 1:num_pixels;
 if do_trim
-    max_proj = max(M,[],2);
-    idx_kept = find(max_proj>median(max_proj));
+    idx_kept = find(max_proj(:)>median(max_proj(:)));
     M = M(idx_kept,:);
 end
 
