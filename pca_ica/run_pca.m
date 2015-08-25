@@ -1,4 +1,4 @@
-function run_pca(movie_source, num_PCs, varargin)
+function run_pca(movie_source, varargin)
 % Runs PCA factorization of the movie provided in `movie_source`. Saves the
 % result to 'pca_(...).mat' file.
 %
@@ -19,7 +19,9 @@ function run_pca(movie_source, num_PCs, varargin)
 
 % Defaults
 do_trim = 0;
-medfilt = 0;
+do_medfilt = 0;
+medfilt_halfwidth = 1;
+autoset_num_PCs = 1;
 
 if ~isempty(varargin)
     for k = 1:length(varargin)
@@ -28,6 +30,12 @@ if ~isempty(varargin)
                 do_trim = 1;
             case 'medfilt'
                 do_medfilt = 1;
+            case 'num_PCs'
+                num_PCs = varargin{k+1};
+                if ~isinteger(num_PCs)
+                    error('num_PCs must be an integer.');
+                end
+                autoset_num_PCs = 0;
         end
     end
 end
@@ -37,10 +45,8 @@ fprintf('%s: Loading %s...\n', datestr(now), movie_source);
 M = load_movie(movie_source);
 [height, width, num_frames] = size(M);
 
-% Median filter the movie
+% Median filter the movie (optional)
 if do_medfilt
-    
-    medfilt_halfwidth = 1;
     medfilt_neighborhood = (1+2*medfilt_halfwidth)*[1 1];
 
     for idx_frame = 1:num_frames
@@ -52,8 +58,16 @@ if do_medfilt
         end
     end
 
-    fprintf('%s: Finished median filtering! \n', datestr(now));
-    
+    fprintf('%s: Finished median filtering!\n', datestr(now));
+end
+
+% Detect local maxima in max-projection image to get an estimated maximum 
+%number of cells in the movie
+if autoset_num_PCs
+    max_proj = max(M,[],3);
+    cents = local_maxima_2D(max_proj);
+    num_PCs = size(cents,2);
+    fprintf('%s: Extracting %d PCs...\n', datestr(now),num_PCs);
 end
 
 % Reshape movie into [space x time] matrix
@@ -66,14 +80,14 @@ M = bsxfun(@minus, M, mean_M);
 
 idx_kept = 1:num_pixels;
 if do_trim
-    max_proj = max(M,[],2);
-    idx_kept = find(max_proj>median(max_proj));
-    M = M(idx_kept,:);  %#ok<FNDSB>
+    idx_kept = find(max_proj(:)>median(max_proj(:)));
+    M = M(idx_kept,:);
 end
 
 % PCA
 %------------------------------------------------------------
 [pca_filters, pca_traces, S] = compute_pca(M, num_PCs); %#ok<*NASGU,*ASGLU>
+S = diag(S); % Save only the diagonal of S
 
 savename = sprintf('pca_n%d.mat', num_PCs);
 
@@ -86,14 +100,8 @@ pca_info.trim.enabled = do_trim;
 pca_info.trim.idx_kept = idx_kept;
 
 pca_info.medfilt.enabled = do_medfilt;  %#ok<*STRNU>
-if do_medfilt
-    pca_info.medfilt.halfwidth = medfilt_halfwidth;
-end
-
-% Save only the diagonal of S
-S = diag(S);
+pca_info.medfilt.halfwidth = medfilt_halfwidth;
 
 save(savename, 'pca_info', 'pca_filters', 'pca_traces', 'S');
-
 
 fprintf('%s: All done!\n', datestr(now));
