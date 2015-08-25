@@ -21,8 +21,11 @@ function run_pca(movie_source, varargin)
 do_trim = 0;
 do_medfilt = 0;
 medfilt_halfwidth = 1;
+<<<<<<< HEAD
 autoset_num_PCs = 1;
 max_num_PCs = 1000;
+=======
+>>>>>>> master
 
 if ~isempty(varargin)
     for k = 1:length(varargin)
@@ -60,6 +63,7 @@ if do_medfilt
     end
 
     fprintf('%s: Finished median filtering!\n', datestr(now));
+<<<<<<< HEAD
 end
 
 % Detect local maxima in max-projection image to get an estimated maximum 
@@ -72,6 +76,8 @@ if autoset_num_PCs
         num_PCs = max_num_PCs;
     end        
     fprintf('%s: Extracting %d PCs...\n', datestr(now),num_PCs);
+=======
+>>>>>>> master
 end
 
 % Reshape movie into [space x time] matrix
@@ -84,7 +90,12 @@ M = bsxfun(@minus, M, mean_M);
 
 idx_kept = 1:num_pixels;
 if do_trim
+<<<<<<< HEAD
     idx_kept = find(max_proj(:)>median(max_proj(:)));
+=======
+    max_proj = max(M,[],2);
+    idx_kept = find(max_proj>median(max_proj));
+>>>>>>> master
     M = M(idx_kept,:);
 end
 
