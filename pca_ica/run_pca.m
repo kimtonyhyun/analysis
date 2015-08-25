@@ -22,6 +22,7 @@ do_trim = 0;
 do_medfilt = 0;
 medfilt_halfwidth = 1;
 autoset_num_PCs = 1;
+max_num_PCs = 1000;
 
 if ~isempty(varargin)
     for k = 1:length(varargin)
@@ -67,6 +68,9 @@ if autoset_num_PCs
     max_proj = max(M,[],3);
     cents = local_maxima_2D(max_proj);
     num_PCs = size(cents,2);
+    if num_PCs>max_num_PCs
+        num_PCs = max_num_PCs;
+    end        
     fprintf('%s: Extracting %d PCs...\n', datestr(now),num_PCs);
 end
 

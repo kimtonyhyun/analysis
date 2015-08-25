@@ -1,7 +1,14 @@
-function centroids = local_maxima_2D(d,varargin)
+function [centroids,varargout] = local_maxima_2D(d,varargin)
+
 % Adapted from Adi Natan's matlab script FastPeakFind
+%
 % Output centroids is a 2 x [# of centroids found] array with each column in
 % [horizontal coordinate,vertical coordinate] format.
+%
+% The time constants of the trends (decaying like power law) for 2 goodness 
+% metrics are output when asked as a second output argument. Refer to the 
+% code for details on the goodness metrics computed.
+%
 
 % Constants (not exposed to outside)
 size_gauss_filter = 7;
@@ -113,6 +120,10 @@ max_estim_objects = ceil(1/2*(tau_peakedness+tau_intensity)*4);
 [~,idx_sort] = sort(laplacian_vec);
 centroids = centroids(:,idx_sort(1:min(max_estim_objects,num_cent)));
 
+if nargout == 2
+    varargout{1} = [tau_peakedness,tau_intensity];
+end
+
 if do_plots    
     figure, % Image with centroids overlay
     imagesc(d);axis image;colormap gray;
@@ -121,6 +132,7 @@ if do_plots
     hold off
     xlim([100,400]);
     ylim([100,400]);
+    title('Input image with the found centroids overlaid (Red circles)')
     
     figure, % Intensity and peakedness values
     subplot(2,1,1)
