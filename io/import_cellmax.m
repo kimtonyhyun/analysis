@@ -3,28 +3,29 @@ function import_cellmax(cellmax_struct)
 % `classify_cells`, and saves it into a `rec_*.mat` file.
 %
 % Example usage:
-%     m7d07_output = 
+%     output = 
 % 
-%             dsMovieFilename: 'F:\c9m7d07\c9m7d07_cr_mc_cr_norm_dff_ti2.hdf5'
-%               movieFilename: []
-%                  cellImages: [499x500x507 double]
-%                dsCellTraces: [507x25462 double]
-%                   centroids: [507x2 double]
-%         dsScaledProbability: [507x25462 double]
-%                   EMoptions: [1x1 struct]
-%                dsFiltTraces: [507x25462 double]
-%                dsEventTimes: {507x1 cell}
-%                eventOptions: [1x1 struct]
+%             movieFilename: 'c11m1d14_gfix_cr_mc_cr_norm_dff_ti2.hdf5'
+%                cellImages: [484x568x451 double]
+%                cellTraces: [451x11878 double]
+%                 centroids: [451x2 double]
+%         scaledProbability: [451x11878 double]
+%            CELLMaxoptions: [1x1 struct]
+%                filtTraces: [451x11878 double]
+%                eventTimes: {451x1 cell}
+%              eventOptions: [1x1 struct]
+%                   runtime: 23127
 % 
-%     import_cellmax(m7d07_output);
+%     import_cellmax(output);
 
 info.type = 'cellmax';
-info.cellmax_source = inputname(1); % Workspace variable name of `cellmax_struct`
+info.cellmax.movie_source = cellmax_struct.movieFilename;
+info.cellmax.runtime = cellmax_struct.runtime; % Fingerprinting
 
 filters = cellmax_struct.cellImages; %#ok<*NASGU>
-traces = cellmax_struct.dsCellTraces';
+traces = cellmax_struct.cellTraces';
 
-info.num_pairs = size(filters, 3);
+info.num_pairs = size(filters, 3); %#ok<STRNU>
 
 % Save the CellMax traces & filters to a mat file
 timestamp = datestr(now, 'yymmdd-HHMMSS');
