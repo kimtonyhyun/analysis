@@ -19,7 +19,8 @@ function run_pca(movie_source, num_PCs, varargin)
 
 % Defaults
 do_trim = 0;
-medfilt = 0;
+do_medfilt = 0;
+medfilt_halfwidth = 1;
 
 if ~isempty(varargin)
     for k = 1:length(varargin)
@@ -37,10 +38,8 @@ fprintf('%s: Loading %s...\n', datestr(now), movie_source);
 M = load_movie(movie_source);
 [height, width, num_frames] = size(M);
 
-% Median filter the movie
+% Median filter the movie (optional)
 if do_medfilt
-    
-    medfilt_halfwidth = 1;
     medfilt_neighborhood = (1+2*medfilt_halfwidth)*[1 1];
 
     for idx_frame = 1:num_frames
@@ -52,8 +51,7 @@ if do_medfilt
         end
     end
 
-    fprintf('%s: Finished median filtering! \n', datestr(now));
-    
+    fprintf('%s: Finished median filtering!\n', datestr(now));
 end
 
 % Reshape movie into [space x time] matrix
@@ -68,12 +66,13 @@ idx_kept = 1:num_pixels;
 if do_trim
     max_proj = max(M,[],2);
     idx_kept = find(max_proj>median(max_proj));
-    M = M(idx_kept,:);  %#ok<FNDSB>
+    M = M(idx_kept,:);
 end
 
 % PCA
 %------------------------------------------------------------
 [pca_filters, pca_traces, S] = compute_pca(M, num_PCs); %#ok<*NASGU,*ASGLU>
+S = diag(S); % Save only the diagonal of S
 
 savename = sprintf('pca_n%d.mat', num_PCs);
 
@@ -86,14 +85,8 @@ pca_info.trim.enabled = do_trim;
 pca_info.trim.idx_kept = idx_kept;
 
 pca_info.medfilt.enabled = do_medfilt;  %#ok<*STRNU>
-if do_medfilt
-    pca_info.medfilt.halfwidth = medfilt_halfwidth;
-end
-
-% Save only the diagonal of S
-S = diag(S);
+pca_info.medfilt.halfwidth = medfilt_halfwidth;
 
 save(savename, 'pca_info', 'pca_filters', 'pca_traces', 'S');
-
 
 fprintf('%s: All done!\n', datestr(now));
