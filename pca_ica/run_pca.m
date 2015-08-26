@@ -63,10 +63,14 @@ if do_medfilt
     fprintf('%s: Finished median filtering!\n', datestr(now));
 end
 
+% Calculate max-projection (required for trimming and auto-setting #of PCs)
+if do_trim || autoset_num_PCs
+    max_proj = max(M,[],3);
+end
+
 % Detect local maxima in max-projection image to get an estimated maximum 
 %number of cells in the movie
 if autoset_num_PCs
-    max_proj = max(M,[],3);
     cents = local_maxima_2D(max_proj);
     num_PCs = size(cents,2);
     if num_PCs>max_num_PCs
