@@ -100,7 +100,7 @@ for k = 1:size(centroids,2)
     intensity_vec(k) = d(centroids(2,k),centroids(1,k));
 end
 
-% Estimate where sorted laplacian and intensity values plateau. Do this by 
+% Estimate where sorted laplacian and intensity values plateau. Do this by
 % fitting exponentials to them and extracting their time constants.
 
 pp = (-sort(laplacian_vec)'-quantile(-laplacian_vec,0.1));
