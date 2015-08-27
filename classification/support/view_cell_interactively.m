@@ -42,9 +42,9 @@ for n = 1:num_other_cells
     oc_idx = other_cells(n);
     boundary = ds.cells(oc_idx).boundary;
     other_cell_handles(n,1) = plot(boundary(:,1), boundary(:,2), 'y--');
-    other_cell_handles(n,2) = text(mean(boundary(:,1)), mean(boundary(:,2)),...
-                                    num2str(oc_idx), 'Color', 'y',...
-                                    'Clipping', 'on');
+%     other_cell_handles(n,2) = text(mean(boundary(:,1)), mean(boundary(:,2)),...
+%                                     num2str(oc_idx), 'Color', 'y',...
+%                                     'Clipping', 'on');
 end
 show_other_cells(false); % Turn off the boundaries of other cells
 
@@ -260,7 +260,7 @@ end
         
         for m = 1:num_other_cells
             set(other_cell_handles(m,1), 'Visible', vis_val);
-            set(other_cell_handles(m,2), 'Visible', vis_val);
+%             set(other_cell_handles(m,2), 'Visible', vis_val);
         end
     end % show_other_cells
 
