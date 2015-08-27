@@ -95,7 +95,7 @@ while (cell_idx <= num_candidates)
             case ''  % Increment cell idx, loop at end
                 cell_idx = mod(cell_idx, num_candidates) + 1;
             case 'm' % View cell map
-                display_map();
+                display_map(cell_idx);
                 pause;
             case 'q' % Exit
                 break;
@@ -140,9 +140,10 @@ save_classification(class, output_name);
         ds.plot_cell_raster(cell_idx);
     end % display_candidate
 
-    function display_map()
+    function display_map(cell_idx)
         clf;
-        ds.plot_cell_map();
+        color_mappings = {[cell_idx], 'y'};
+        ds.plot_cell_map(color_mappings);
     end
     
     function set_label(cell_idx, label)

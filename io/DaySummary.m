@@ -224,7 +224,7 @@ classdef DaySummary
             else % Color grouping provided, unpack into cell_linespec
                 for group = 1:size(color_grouping, 1)
                     for cell_idx = color_grouping{group,1}
-                        cell_linespec{cell_idx} = color_grouping(group,2);
+                        cell_linespec{cell_idx} = color_grouping{group,2};
                     end
                 end
             end
