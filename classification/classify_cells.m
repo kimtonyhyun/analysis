@@ -89,30 +89,13 @@ while (cell_idx <= num_candidates)
                                     M, sources.fps, movie_clim);
                 resp2 = input(sprintf('  Confirm classification ("%s") >> ', resp), 's');
                 resp2 = lower(strtrim(resp2));
-                if (strcmp(resp, resp2))
-                    switch (resp2)
-                        case 'p'
-                            class{cell_idx} = 'phase-sensitive cell';
-                        case 'c'
-                            class{cell_idx} = 'cell';
-                    end
-                    fprintf('  Trace %d classified as %s\n', cell_idx, class{cell_idx});
+                if (strcmp(resp, resp2)) % Confirmed
+                    set_label(cell_idx, resp2);
                     cell_idx = cell_idx + 1;
                 end
 
-            case {'p!', 'c!'} % Classify without viewing trace
-                switch resp(1)
-                    case 'p'
-                        class{cell_idx} = 'phase-sensitive cell';
-                    case 'c'
-                        class{cell_idx} = 'cell';
-                end
-                fprintf('  Trace %d classified as %s\n', cell_idx, class{cell_idx});
-                cell_idx = cell_idx + 1;
-                
-            case 'n' % Not a cell
-                class{cell_idx} = 'not a cell';
-                fprintf('  Trace %d classified as %s\n', cell_idx, class{cell_idx});
+            case {'p!', 'c!', 'n'} % Classify without viewing trace
+                set_label(cell_idx, resp(1));
                 cell_idx = cell_idx + 1;
                 
             % Application options
@@ -146,3 +129,18 @@ end
 
 % Save at end!
 save_classification(class, output_name);
+
+    % Auxiliary functions
+    %------------------------------------------------------------
+    function set_label(cell_idx, label)
+        switch label
+            case 'p'
+                class{cell_idx} = 'phase-sensitive cell';
+            case 'c'
+                class{cell_idx} = 'cell';
+            case 'n'
+                class{cell_idx} = 'not a cell';
+        end
+        fprintf('  Candidate %d classified as %s\n', cell_idx, class{cell_idx});
+    end % set_label
+end % classify_cells
