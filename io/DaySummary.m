@@ -195,7 +195,7 @@ classdef DaySummary
         % Built-in visualization functions
         % Note: Do NOT make use of subplots in the built-in plot methods
         %------------------------------------------------------------
-        function plot_cell_map(obj, color_grouping)
+        function plot_cell_map(obj, color_grouping, varargin)
             % Optional argument allows for specification of color used for
             % the cell in the cell map. The color specification is defined
             % as follows:
@@ -205,10 +205,26 @@ classdef DaySummary
             % means that cells [1, 2, 3, 4] will be displayed in white,
             % cells [5, 6] in red, and [10] in green.
             
+            enable_class_colors = 0;
+            for k = 1:length(varargin)
+                vararg = varargin{k};
+                if ischar(vararg)
+                    switch lower(vararg)
+                        % By default, if 'color_grouping' is provided, the
+                        % default boundary coloring by classification is
+                        % disabled. The following toggle enables the
+                        % class colors, which is then overridden by the
+                        % specified 'color_grouping'
+                        case 'enable_class_colors'
+                            enable_class_colors = 1;
+                    end
+                end
+            end
+            
             cell_linespec = cell(obj.num_cells, 1);
                         
             % By default, color the cells based on classification
-            if ~exist('color_grouping', 'var')
+            if ~exist('color_grouping', 'var') || enable_class_colors
                 for k = 1:obj.num_cells
                     % Note: Unlabeled cells remain white!
                     if isempty(obj.cells(k).label)
@@ -221,7 +237,10 @@ classdef DaySummary
                         end
                     end
                 end
-            else % Color grouping provided, unpack into cell_linespec
+            end
+            
+            % Color grouping provided, unpack into cell_linespec
+            if exist('color_grouping', 'var')
                 for group = 1:size(color_grouping, 1)
                     for cell_idx = color_grouping{group,1}
                         cell_linespec{cell_idx} = color_grouping{group,2};

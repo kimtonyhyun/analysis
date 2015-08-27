@@ -95,7 +95,7 @@ while (cell_idx <= num_candidates)
             case ''  % Increment cell idx, loop at end
                 cell_idx = mod(cell_idx, num_candidates) + 1;
             case 'm' % View cell map
-                display_map(cell_idx);
+                display_map();
                 pause;
             case 'q' % Exit
                 break;
@@ -140,10 +140,10 @@ save_classification(class, output_name);
         ds.plot_cell_raster(cell_idx);
     end % display_candidate
 
-    function display_map(cell_idx)
+    function display_map()
         clf;
-        color_mappings = {[cell_idx], 'y'};
-        ds.plot_cell_map(color_mappings);
+        color_mappings = {cell_idx, 'y'};
+        ds.plot_cell_map(color_mappings, 'enable_class_colors');
     end
     
     function set_label(cell_idx, label)
@@ -155,6 +155,7 @@ save_classification(class, output_name);
             case 'n'
                 class{cell_idx} = 'not a cell';
         end
+        ds.cells(cell_idx).label = class{cell_idx}; % Needed for display_map
         fprintf('  Candidate %d classified as %s\n', cell_idx, class{cell_idx});
     end % set_label
 end % classify_cells
