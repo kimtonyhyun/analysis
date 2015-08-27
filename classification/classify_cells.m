@@ -100,6 +100,16 @@ while (cell_idx <= num_candidates)
                     cell_idx = cell_idx + 1;
                 end
 
+            case {'p!', 'c!'} % Classify without viewing trace
+                switch resp(1)
+                    case 'p'
+                        class{cell_idx} = 'phase-sensitive cell';
+                    case 'c'
+                        class{cell_idx} = 'cell';
+                end
+                fprintf('  Trace %d classified as %s\n', cell_idx, class{cell_idx});
+                cell_idx = cell_idx + 1;
+                
             case 'n' % Not a cell
                 class{cell_idx} = 'not a cell';
                 fprintf('  Trace %d classified as %s\n', cell_idx, class{cell_idx});
@@ -107,6 +117,8 @@ while (cell_idx <= num_candidates)
                 
             % Application options
             %------------------------------------------------------------
+            case ''  % Increment cell idx, loop at end
+                cell_idx = mod(cell_idx, num_candidates) + 1;
             case 'q' % Exit
                 break;
             case 's' % Save classification
