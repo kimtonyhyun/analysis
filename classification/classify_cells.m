@@ -59,13 +59,13 @@ cell_idx = 1;
 while (cell_idx <= num_candidates)
     display_candidate(cell_idx);
     
-    % Ask the user to classify the IC
+    % Ask the user to classify the cell candidate
     prompt = sprintf('Classifier (%d/%d) >> ', ...
                         cell_idx, num_candidates);
     resp = strtrim(input(prompt, 's'));
     
     val = str2double(resp);
-    if (~isnan(val)) % Is a number. Check if it is a valid IC and jump to it
+    if (~isnan(val)) % Is a number. Check if it is a valid index and jump to it
         if ((1 <= val) && (val <= num_candidates))
             cell_idx = val;
         else
@@ -112,7 +112,7 @@ while (cell_idx <= num_candidates)
                     cell_idx = find(strcmp(class,''),1); % Go to first unlabeled pair
                 end
             case 't' % "Take" screenshot
-                screenshot_name = sprintf('ic%03d.png', cell_idx);
+                screenshot_name = sprintf('cell%03d.png', cell_idx);
                 screenshot_name = fullfile(rec_dir, screenshot_name);
                 print('-dpng', screenshot_name);
                 fprintf('  Plot saved to %s\n', screenshot_name);
