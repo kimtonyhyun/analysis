@@ -118,7 +118,7 @@ classdef DaySummary
         
         % Helper functions
         %------------------------------------------------------------
-        function turn = compute_turn(obj, start, final)
+        function turn = compute_turn(~, start, final)
             path = {start, final};
             if (all(strcmp(path, {'east', 'south'})) || ...
                 all(strcmp(path, {'south', 'west'})) || ...
@@ -186,19 +186,32 @@ classdef DaySummary
             % Optional argument allows for specification of color used for
             % the cell in the cell map. The color specification is defined
             % as follows:
-            %   color_grouping = {[1, 2, 3, 4], [5, 6], [10]}
-            % means that cells [1, 2, 3, 4] will be displayed in one color,
-            % cells [5, 6] in another color, and [10] in another.
+            %   color_grouping = {[1, 2, 3, 4], 'w';
+            %                     [5, 6], 'r';
+            %                     [10], 'g'}
+            % means that cells [1, 2, 3, 4] will be displayed in white,
+            % cells [5, 6] in red, and [10] in green.
+            
+            % By default, all boundaries are white
+            cell_colors = repmat('w', 1, obj.num_cells);
             
             % By default, color the cells based on classification
             if ~exist('color_grouping', 'var')
-                cell_colors = arrayfun(@num2color, obj.is_cell());
+                for k = 1:obj.num_cells
+                    % Note: Unlabeled cells remain white!
+                    if ~isempty(obj.cells(k).label)
+                        if obj.is_cell(k)
+                            cell_colors(k) = 'g';
+                        else
+                            cell_colors(k) = 'r';
+                        end
+                    end
+                end
             else
-                cell_colors = repmat('w', 1, obj.num_cells); % Ungrouped cells are white
                 % Unpack the colors
-                for k = 1:length(color_grouping)
-                    for cell_idx = color_grouping{k}
-                        cell_colors(cell_idx) = num2color(k);
+                for k = 1:size(color_grouping, 1)
+                    for cell_idx = color_grouping{k,1}
+                        cell_colors(cell_idx) = color_grouping(k,2);
                     end
                 end
             end
@@ -225,17 +238,6 @@ classdef DaySummary
 %                      sprintf('%d', k), 'Color', color);
             end
             hold off;
-            
-            function color = num2color(num)
-                switch num
-                    case 0
-                        color = 'r';
-                    case 1
-                        color = 'g';
-                    case 2
-                        color = 'm';
-                end
-            end
         end
         
         function plot_trace(obj, cell_idx)
