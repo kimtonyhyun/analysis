@@ -23,6 +23,10 @@ classdef DaySummary
         trial_indices
     end
     
+    properties (SetAccess = private, Hidden)
+        cell_map_ref_img
+    end
+        
     methods
         function obj = DaySummary(plusmaze_txt, rec_dir, varargin)
             % Handle optional input
@@ -30,7 +34,7 @@ classdef DaySummary
             for k = 1:length(varargin)
                 if ischar(varargin{k})
                     switch lower(varargin{k})
-                        case 'excludeprobe'
+                        case {'excludeprobe', 'noprobe'}
                             exclude_probe_trials = 1;
                     end
                 end
@@ -114,11 +118,20 @@ classdef DaySummary
                 'boundary', boundaries,...
                 'mask', masks,...
                 'label', class);
+            
+            % Precompute cell map image, to avoid doing it each time 
+            [height, width] = size(obj.cells(1).im);
+            ref_image = zeros(height, width);
+            for k = 1:obj.num_cells
+                ref_image = ref_image + obj.cells(k).im;
+            end
+            obj.cell_map_ref_img = ref_image;
         end
         
         % Helper functions
         %------------------------------------------------------------
         function turn = compute_turn(~, start, final)
+            % TODO: Turn into Static
             path = {start, final};
             if (all(strcmp(path, {'east', 'south'})) || ...
                 all(strcmp(path, {'south', 'west'})) || ...
@@ -216,17 +229,10 @@ classdef DaySummary
                 end
             end
             
-            % Background image to display
-            [height, width] = size(obj.cells(1).im);
-            ref_image = zeros(height, width);
-            for k = 1:obj.num_cells
-                ref_image = ref_image + obj.cells(k).im;
-            end
-            imagesc(ref_image);
+            % Display the cell map
+            imagesc(obj.cell_map_ref_img);
             colormap gray;
-            axis equal;
-            xlim([1 width]);
-            ylim([1 height]);
+            axis equal tight;
             
             hold on;
             for k = 1:obj.num_cells
