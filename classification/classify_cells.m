@@ -57,15 +57,7 @@ class = cell(num_candidates, 1);
 
 cell_idx = 1;
 while (cell_idx <= num_candidates)
-    subplot(3,2,[1 2]);
-    ds.plot_trace(cell_idx);
-    title(sprintf('Candidate %d of %d', cell_idx, num_candidates));
-    
-    subplot(3,2,[3 5]);
-    ds.plot_superposed_trials(cell_idx);
-    
-    subplot(3,2,[4 6]);
-    ds.plot_cell_raster(cell_idx);
+    display_candidate(cell_idx);
     
     % Ask the user to classify the IC
     prompt = sprintf('Classifier (%d/%d) >> ', ...
@@ -102,6 +94,9 @@ while (cell_idx <= num_candidates)
             %------------------------------------------------------------
             case ''  % Increment cell idx, loop at end
                 cell_idx = mod(cell_idx, num_candidates) + 1;
+            case 'm' % View cell map
+                display_map();
+                pause;
             case 'q' % Exit
                 break;
             case 's' % Save classification
@@ -132,6 +127,24 @@ save_classification(class, output_name);
 
     % Auxiliary functions
     %------------------------------------------------------------
+    function display_candidate(cell_idx)
+        clf;
+        subplot(3,2,[1 2]);
+        ds.plot_trace(cell_idx);
+        title(sprintf('Candidate %d of %d', cell_idx, num_candidates));
+
+        subplot(3,2,[3 5]);
+        ds.plot_superposed_trials(cell_idx);
+
+        subplot(3,2,[4 6]);
+        ds.plot_cell_raster(cell_idx);
+    end % display_candidate
+
+    function display_map()
+        clf;
+        ds.plot_cell_map();
+    end
+    
     function set_label(cell_idx, label)
         switch label
             case 'p'
