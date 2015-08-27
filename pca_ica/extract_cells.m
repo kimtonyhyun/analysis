@@ -54,7 +54,7 @@ idx_kept = pca.info.trim.idx_kept;
 
 fprintf('%s: Extracting filters...\n',datestr(now));
 
-U = (pca_filters');
+U = (pca.filters');
 [N,num_pcs] = size(U);
 norms_U = sqrt(sum(U.^2,2));
 U_norm = bsxfun(@times,U,1./norms_U);
