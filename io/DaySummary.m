@@ -205,26 +205,27 @@ classdef DaySummary
             % means that cells [1, 2, 3, 4] will be displayed in white,
             % cells [5, 6] in red, and [10] in green.
             
-            % By default, all boundaries are white
-            cell_colors = repmat('w', 1, obj.num_cells);
-            
+            cell_linespec = cell(obj.num_cells, 1);
+                        
             % By default, color the cells based on classification
             if ~exist('color_grouping', 'var')
                 for k = 1:obj.num_cells
                     % Note: Unlabeled cells remain white!
-                    if ~isempty(obj.cells(k).label)
+                    if isempty(obj.cells(k).label)
+                        cell_linespec{k} = 'w';
+                    else
                         if obj.is_cell(k)
-                            cell_colors(k) = 'g';
+                            cell_linespec{k} = 'g';
                         else
-                            cell_colors(k) = 'r';
+                            cell_linespec{k} = 'r';
                         end
                     end
                 end
             else
                 % Unpack the colors
-                for k = 1:size(color_grouping, 1)
-                    for cell_idx = color_grouping{k,1}
-                        cell_colors(cell_idx) = color_grouping(k,2);
+                for group = 1:size(color_grouping, 1)
+                    for cell_idx = color_grouping{group,1}
+                        cell_linespec{cell_idx} = color_grouping(group,2);
                     end
                 end
             end
@@ -236,12 +237,10 @@ classdef DaySummary
             
             hold on;
             for k = 1:obj.num_cells
-                color = cell_colors(k);
-                boundary = obj.cells(k).boundary;
-
-                plot(boundary(:,1), boundary(:,2), 'Color', color);
-%                 text(max(boundary(:,1)), min(boundary(:,2)),...
-%                      sprintf('%d', k), 'Color', color);
+                if ~isempty(cell_linespec{k})
+                    boundary = obj.cells(k).boundary;
+                    plot(boundary(:,1), boundary(:,2), cell_linespec{k});
+                end
             end
             hold off;
         end
