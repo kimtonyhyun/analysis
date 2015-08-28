@@ -64,7 +64,7 @@ while (cell_idx <= num_candidates)
     resp = strtrim(input(prompt, 's'));
     
     val = str2double(resp);
-    if (~isnan(val)) % Is a number. Ccheck if it is a valid index and jump to it
+    if (~isnan(val)) % Is a number. Check if it is a valid index and jump to it
         if ((1 <= val) && (val <= num_candidates))
             cell_idx = val;
         else
