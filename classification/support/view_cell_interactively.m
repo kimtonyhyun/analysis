@@ -29,22 +29,28 @@ hold on;
 [ic_boundaries, ic_mask] = compute_ic_boundary(filter, ic_filter_threshold);
 for i = 1:length(ic_boundaries)
     ic_boundary = ic_boundaries{i};
-    plot(ic_boundary(:,1), ic_boundary(:,2), 'r', 'LineWidth', 2);
+    plot(ic_boundary(:,1), ic_boundary(:,2), 'c', 'LineWidth', 2);
 end
 
 % Plot boundaries of other cells, and retrieve their handles so that
 %   we can toggle the boundaries on and off
 other_cells = setdiff(1:ds.num_cells, cell_idx);
 num_other_cells = length(other_cells);
-other_cell_handles = zeros(num_other_cells, 2);
+other_cell_handles = zeros(num_other_cells, 1);
 
 for n = 1:num_other_cells
     oc_idx = other_cells(n);
     boundary = ds.cells(oc_idx).boundary;
-    other_cell_handles(n,1) = plot(boundary(:,1), boundary(:,2), 'y--');
-%     other_cell_handles(n,2) = text(mean(boundary(:,1)), mean(boundary(:,2)),...
-%                                     num2str(oc_idx), 'Color', 'y',...
-%                                     'Clipping', 'on');
+    if isempty(ds.cells(oc_idx).label)
+        color = 'w';
+    else
+        if ds.is_cell(oc_idx)
+            color = 'g';
+        else
+            color = 'r';
+        end
+    end
+    other_cell_handles(n) = plot(boundary(:,1), boundary(:,2), color);
 end
 show_other_cells(false); % Turn off the boundaries of other cells
 
@@ -259,8 +265,7 @@ end
         end
         
         for m = 1:num_other_cells
-            set(other_cell_handles(m,1), 'Visible', vis_val);
-%             set(other_cell_handles(m,2), 'Visible', vis_val);
+            set(other_cell_handles(m), 'Visible', vis_val);
         end
     end % show_other_cells
 
