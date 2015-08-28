@@ -44,7 +44,6 @@ fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
 % Load filter/trace pairs to be classified
 ds = DaySummary(sources.maze, rec_dir);
 num_candidates = ds.num_cells;
-fprintf('  %s: Loaded filters/traces from "%s"\n', datestr(now), rec_dir);
 
 trial_indices = ds.trial_indices(:, [1 end]); % [Start end]
 assert(size(M,3) == trial_indices(end,end),...
@@ -53,19 +52,19 @@ assert(size(M,3) == trial_indices(end,end),...
 % Begin classification
 %------------------------------------------------------------
 output_name = sprintf('class_%s.txt', datestr(now, 'yymmdd-HHMMSS'));
-class = cell(num_candidates, 1);
+class = ds.get_class();
 
 cell_idx = 1;
 while (cell_idx <= num_candidates)
     display_candidate(cell_idx);
     
     % Ask the user to classify the cell candidate
-    prompt = sprintf('Classifier (%d/%d) >> ', ...
-                        cell_idx, num_candidates);
+    prompt = sprintf('Classifier (%d/%d, "%s") >> ', ...
+                        cell_idx, num_candidates, class{cell_idx});
     resp = strtrim(input(prompt, 's'));
     
     val = str2double(resp);
-    if (~isnan(val)) % Is a number. Check if it is a valid index and jump to it
+    if (~isnan(val)) % Is a number. Ccheck if it is a valid index and jump to it
         if ((1 <= val) && (val <= num_candidates))
             cell_idx = val;
         else
@@ -92,8 +91,15 @@ while (cell_idx <= num_candidates)
                 
             % Application options
             %------------------------------------------------------------
-            case ''  % Increment cell idx, loop at end
-                cell_idx = mod(cell_idx, num_candidates) + 1;
+            case ''  % Go to next unlabeled cell candidate, loop at end
+                unlabeled = strcmp(class, '');
+                unlabeled = circshift(unlabeled, -cell_idx);
+                search_offset = find(unlabeled, 1);
+                if isempty(search_offset)
+                    fprintf('  All cells have been classified!\n');
+                else
+                    cell_idx = mod(cell_idx+search_offset-1, num_candidates) + 1;
+                end
             case 'm' % View cell map
                 display_map();
             case 'q' % Exit
@@ -105,10 +111,18 @@ while (cell_idx <= num_candidates)
                 [file, path] = uigetfile('*.txt', 'Select existing classification');
                 if (file)
                     full_file = fullfile(path, file);
-                    class = load_classification(full_file);
-                    fprintf('  Loaded classification from "%s"\n', file);
+                    new_class = load_classification(full_file);
                     
-                    cell_idx = find(strcmp(class,''),1); % Go to first unlabeled pair
+                    % TODO: Consolidate DaySummary and classification
+                    if (length(new_class) == ds.num_cells)
+                        for k = 1:ds.num_cells
+                            ds.cells(k).label = new_class{k};
+                        end
+                        class = new_class;
+                    else
+                        fprintf(' Number of cells in classification file (%d) does not match number of filters and traces (%d)!\n',...
+                            length(new_class), ds.num_cells);
+                    end
                 end
             case 't' % "Take" screenshot
                 screenshot_name = sprintf('cell%03d.png', cell_idx);

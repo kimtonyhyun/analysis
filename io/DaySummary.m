@@ -45,7 +45,7 @@ classdef DaySummary
             data_source = get_most_recent_file(rec_dir, 'rec_*.mat');
             data = load(data_source);
             obj.num_cells = data.info.num_pairs;
-            fprintf('  %s: Loaded data from %s\n', datestr(now), data_source);
+            fprintf('  %s: Loaded filters/traces from %s\n', datestr(now), data_source);
             
             % Parse trial data
             %   TODO: Bring in centroids corresponding to mouse position
@@ -171,6 +171,10 @@ classdef DaySummary
             for cell_idx = cell_indices
                 mask = mask | obj.cells(cell_idx).mask;
             end
+        end
+        
+        function class = get_class(obj)
+            class = {obj.cells.label}'; % Column cell
         end
         
         function is_cell = is_cell(obj, cell_indices)
