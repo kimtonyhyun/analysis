@@ -181,15 +181,17 @@ if do_baseline_fix
 end
 
 % Sort cells wrt a metric that determines how good a trace looks
-inv_quality_traces = badness_trace(traces);
-[ss,idx] = sort(inv_quality_traces);
+quality_traces = goodness_trace(traces);
+[ss,idx] = sort(quality_traces,'descend');
 idx_stationary = sort(idx(ss>good_cell_limit));
 idx_move = idx(ss<=good_cell_limit);
 filters = filters(:,:,[idx_stationary,idx_move]);
 traces = traces(:,[idx_stationary,idx_move]);
-s1 = sprintf('First %d extracted cells are likely to be cells',sum(ss>good_cell_limit));
-s2 = sprintf('Last %d extracted cells are likely to be non-cell',sum(ss<bad_cell_limit));
-fprintf('%s: Cell Statistics:\n \t\t\t %s\n \t\t\t %s...\n',datestr(now),s1,s2);
+s1 = sprintf('First %d extracted cells are likely to be cells',...
+    sum(ss>good_cell_limit));
+s2 = sprintf('It is likely that there are few or no cells from  #%d onwards ',...
+    idx(find(ss<=bad_cell_limit,1)));
+fprintf('%s: Cell Statistics:\n \t\t\t %s\n \t\t\t %s\n',datestr(now),s1,s2);
 
 % Save the result to mat file
 %------------------------------------------------------------
@@ -369,7 +371,7 @@ function overlap = compute_overlap(mask1, mask2)
     overlap = intrsct / min(siz1,siz2);
 end
 
-function val = badness_trace(traces)
+function val = goodness_trace(traces)
 %Determine the "spiky-ness" by comparing distribution to gaussian  
 
     num_cells = size(traces,2);
