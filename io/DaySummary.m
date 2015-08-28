@@ -249,7 +249,7 @@ classdef DaySummary
             end
             
             % Display the cell map
-            imagesc(obj.cell_map_ref_img);
+            imagesc(obj.cell_map_ref_img, 'HitTest', 'off');
             colormap gray;
             axis equal tight;
             
@@ -257,16 +257,24 @@ classdef DaySummary
             for k = 1:obj.num_cells
                 if ~isempty(cell_linespec{k})
                     boundary = obj.cells(k).boundary;
-                    plot(boundary(:,1), boundary(:,2), cell_linespec{k});
-%                     text(mean(boundary(:,1)), mean(boundary(:,2)),...
-%                          num2str(k),...
-%                          'Color', cell_linespec{k},...
-%                          'Clipping', 'on',...
-%                          'HorizontalAlignment', 'center',...
-%                          'VerticalAlignment', 'middle');
+                    % Note: We are embedding the cell index in the
+                    %   z-dimension of the boundary plot (hack!)
+                    plot3(boundary(:,1), boundary(:,2),...
+                         k*ones(size(boundary,1),1),...
+                         cell_linespec{k});
                 end
             end
             hold off;
+            
+            dcm = datacursormode(gcf);
+            set(dcm, 'DisplayStyle', 'datatip');
+            set(dcm, 'UpdateFcn', @show_cellmap_id);
+            datacursormode on;
+            
+            function tooltip_txt = show_cellmap_id(~, event_obj)
+                pos = get(event_obj, 'Position');
+                tooltip_txt = sprintf('ID: %d', pos(3));
+            end
         end
         
         function plot_trace(obj, cell_idx)

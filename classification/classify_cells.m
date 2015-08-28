@@ -96,7 +96,6 @@ while (cell_idx <= num_candidates)
                 cell_idx = mod(cell_idx, num_candidates) + 1;
             case 'm' % View cell map
                 display_map();
-                pause;
             case 'q' % Exit
                 break;
             case 's' % Save classification
@@ -144,6 +143,10 @@ save_classification(class, output_name);
         clf;
         color_mappings = {cell_idx, 'y'};
         ds.plot_cell_map(color_mappings, 'enable_class_colors');
+        title(sprintf('Current cell (ID=%d) shown in yellow', cell_idx));
+        fprintf('  Showing cell map (press any key to return)\n');
+        pause;
+        datacursormode off;
     end
     
     function set_label(cell_idx, label)
