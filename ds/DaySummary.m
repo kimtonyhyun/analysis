@@ -12,7 +12,7 @@
 % Example usage:
 %   ds = DaySummary('c11m1d12_ti2.txt', 'rec001');
 %
-classdef DaySummary
+classdef DaySummary < handle
     properties
         cells
         trials
@@ -194,6 +194,15 @@ classdef DaySummary
         
         function is_correct = get_trial_correctness(obj)
             is_correct = cellfun(@strcmp, {obj.trials.goal}, {obj.trials.end});
+        end
+        
+        % Debug functions
+        %------------------------------------------------------------
+        function set_all_labels(obj, label)
+            % Overwrites the label of all cells in DaySummary
+            for k = 1:obj.num_cells
+                obj.cells(k).label = label;
+            end
         end
         
         % Built-in visualization functions
