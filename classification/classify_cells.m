@@ -141,9 +141,9 @@ save_classification(class, output_name);
 
     function display_map()
         clf;
-        color_mappings = {cell_idx, 'y'};
+        color_mappings = {cell_idx, 'c'};
         ds.plot_cell_map(color_mappings, 'enable_class_colors');
-        title(sprintf('Current cell (ID=%d) shown in yellow', cell_idx));
+        title(sprintf('Current cell (ID=%d) shown in cyan', cell_idx));
         fprintf('  Showing cell map (press any key to return)\n');
         pause;
         datacursormode off;
