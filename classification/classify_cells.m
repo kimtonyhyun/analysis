@@ -147,7 +147,7 @@ save_classification(class, output_name);
         fprintf('  Showing cell map (press any key to return)\n');
         pause;
         datacursormode off;
-    end
+    end % display_map
     
     function set_label(cell_idx, label)
         switch label
