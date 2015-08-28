@@ -139,7 +139,7 @@ end
 save_classification(class, output_name);
 
     % Auxiliary functions
-    %------------------------------------------------------------
+    %------------------------------------------------------------   
     function display_candidate(cell_idx)
         clf;
         subplot(3,2,[1 2]);
