@@ -284,13 +284,8 @@ classdef DaySummary
             
             dcm = datacursormode(gcf);
             set(dcm, 'DisplayStyle', 'datatip');
-            set(dcm, 'UpdateFcn', @show_cellmap_id);
+            set(dcm, 'UpdateFcn', @cellmap_tooltip);
             datacursormode on;
-            
-            function tooltip_txt = show_cellmap_id(~, event_obj)
-                pos = get(event_obj, 'Position');
-                tooltip_txt = sprintf('ID: %d', pos(3));
-            end
         end
         
         function plot_trace(obj, cell_idx)
