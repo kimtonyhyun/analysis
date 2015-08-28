@@ -1,4 +1,4 @@
-function inv_quality_filters = extract_cells(movie_source,pca_source,varargin)
+function extract_cells(movie_source,pca_source,varargin)
 
 %   Cell extraction method that is based on an algorithm that essentially
 %   solves the sparse source separation problem to find cell filters.
@@ -146,11 +146,6 @@ fprintf('%s: Cleaning filters and removing duplicates...\n',datestr(now));
 [F,idx] = modify_filters(F,filter_thresh);
 inv_quality_filters = inv_quality_filters(idx);
 
-% figure,
-% plot(inv_quality_filters,'LineWidth',1.5);
-% title('Inverse quality metric for the extracted potential cells','Fontsize',16);
-% xlabel('Cell index','Fontsize',16)
-% ylabel('Inverse quality(normalized to 1)','Fontsize',16)
 
 fprintf('%s: Loading movie for trace extraction...\n',datestr(now));
 M = load_movie(movie_source);
