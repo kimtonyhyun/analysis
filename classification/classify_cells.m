@@ -81,24 +81,17 @@ while (cell_idx <= num_candidates)
                 resp2 = lower(strtrim(resp2));
                 if (strcmp(resp, resp2)) % Confirmed
                     set_label(cell_idx, resp2);
-                    cell_idx = cell_idx + 1;
+                    go_to_next_unlabeled_cell();
                 end
 
             case {'p!', 'c!', 'n'} % Classify without viewing trace
                 set_label(cell_idx, resp(1));
-                cell_idx = cell_idx + 1;
+                go_to_next_unlabeled_cell();
                 
             % Application options
             %------------------------------------------------------------
             case ''  % Go to next unlabeled cell candidate, loop at end
-                unlabeled = strcmp(class, '');
-                unlabeled = circshift(unlabeled, -cell_idx);
-                search_offset = find(unlabeled, 1);
-                if isempty(search_offset)
-                    fprintf('  All cells have been classified!\n');
-                else
-                    cell_idx = mod(cell_idx+search_offset-1, num_candidates) + 1;
-                end
+                go_to_next_unlabeled_cell();
             case 'm' % View cell map
                 display_map();
             case 'q' % Exit
@@ -138,7 +131,7 @@ end
 save_classification(class, output_name);
 
     % Auxiliary functions
-    %------------------------------------------------------------   
+    %------------------------------------------------------------
     function display_candidate(cell_idx)
         clf;
         subplot(3,2,[1 2]);
@@ -162,6 +155,17 @@ save_classification(class, output_name);
         datacursormode off;
     end % display_map
     
+    function go_to_next_unlabeled_cell()
+        unlabeled = strcmp(class, '');
+        unlabeled = circshift(unlabeled, -cell_idx);
+        search_offset = find(unlabeled, 1);
+        if isempty(search_offset)
+            fprintf('  All cells have been classified!\n');
+        else
+            cell_idx = mod(cell_idx+search_offset-1, num_candidates) + 1;
+        end
+    end
+        
     function set_label(cell_idx, label)
         switch label
             case 'p'
