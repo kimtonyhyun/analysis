@@ -31,4 +31,4 @@ info.num_pairs = size(filters, 3); %#ok<STRNU>
 timestamp = datestr(now, 'yymmdd-HHMMSS');
 rec_savename = sprintf('rec_%s.mat', timestamp);
 
-save(rec_savename, 'info', 'filters', 'traces');
+save(rec_savename, 'info', 'filters', 'traces', '-v7.3');
