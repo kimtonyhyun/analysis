@@ -44,7 +44,6 @@ fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
 % Load filter/trace pairs to be classified
 ds = DaySummary(sources.maze, rec_dir);
 num_candidates = ds.num_cells;
-fprintf('  %s: Loaded filters/traces from "%s"\n', datestr(now), rec_dir);
 
 trial_indices = ds.trial_indices(:, [1 end]); % [Start end]
 assert(size(M,3) == trial_indices(end,end),...
@@ -53,27 +52,19 @@ assert(size(M,3) == trial_indices(end,end),...
 % Begin classification
 %------------------------------------------------------------
 output_name = sprintf('class_%s.txt', datestr(now, 'yymmdd-HHMMSS'));
-class = cell(num_candidates, 1);
+class = ds.get_class();
 
 cell_idx = 1;
 while (cell_idx <= num_candidates)
-    subplot(3,2,[1 2]);
-    ds.plot_trace(cell_idx);
-    title(sprintf('Candidate %d of %d', cell_idx, num_candidates));
+    display_candidate(cell_idx);
     
-    subplot(3,2,[3 5]);
-    ds.plot_superposed_trials(cell_idx);
-    
-    subplot(3,2,[4 6]);
-    ds.plot_cell_raster(cell_idx);
-    
-    % Ask the user to classify the IC
-    prompt = sprintf('Classifier (%d/%d) >> ', ...
-                        cell_idx, num_candidates);
+    % Ask the user to classify the cell candidate
+    prompt = sprintf('Classifier (%d/%d, "%s") >> ', ...
+                        cell_idx, num_candidates, class{cell_idx});
     resp = strtrim(input(prompt, 's'));
     
     val = str2double(resp);
-    if (~isnan(val)) % Is a number. Check if it is a valid IC and jump to it
+    if (~isnan(val)) % Is a number. Check if it is a valid index and jump to it
         if ((1 <= val) && (val <= num_candidates))
             cell_idx = val;
         else
@@ -100,8 +91,17 @@ while (cell_idx <= num_candidates)
                 
             % Application options
             %------------------------------------------------------------
-            case ''  % Increment cell idx, loop at end
-                cell_idx = mod(cell_idx, num_candidates) + 1;
+            case ''  % Go to next unlabeled cell candidate, loop at end
+                unlabeled = strcmp(class, '');
+                unlabeled = circshift(unlabeled, -cell_idx);
+                search_offset = find(unlabeled, 1);
+                if isempty(search_offset)
+                    fprintf('  All cells have been classified!\n');
+                else
+                    cell_idx = mod(cell_idx+search_offset-1, num_candidates) + 1;
+                end
+            case 'm' % View cell map
+                display_map();
             case 'q' % Exit
                 break;
             case 's' % Save classification
@@ -111,13 +111,21 @@ while (cell_idx <= num_candidates)
                 [file, path] = uigetfile('*.txt', 'Select existing classification');
                 if (file)
                     full_file = fullfile(path, file);
-                    class = load_classification(full_file);
-                    fprintf('  Loaded classification from "%s"\n', file);
+                    new_class = load_classification(full_file);
                     
-                    cell_idx = find(strcmp(class,''),1); % Go to first unlabeled pair
+                    % TODO: Consolidate DaySummary and classification
+                    if (length(new_class) == ds.num_cells)
+                        for k = 1:ds.num_cells
+                            ds.cells(k).label = new_class{k};
+                        end
+                        class = new_class;
+                    else
+                        fprintf(' Number of cells in classification file (%d) does not match number of filters and traces (%d)!\n',...
+                            length(new_class), ds.num_cells);
+                    end
                 end
             case 't' % "Take" screenshot
-                screenshot_name = sprintf('ic%03d.png', cell_idx);
+                screenshot_name = sprintf('cell%03d.png', cell_idx);
                 screenshot_name = fullfile(rec_dir, screenshot_name);
                 print('-dpng', screenshot_name);
                 fprintf('  Plot saved to %s\n', screenshot_name);
@@ -131,7 +139,30 @@ end
 save_classification(class, output_name);
 
     % Auxiliary functions
-    %------------------------------------------------------------
+    %------------------------------------------------------------   
+    function display_candidate(cell_idx)
+        clf;
+        subplot(3,2,[1 2]);
+        ds.plot_trace(cell_idx);
+        title(sprintf('Candidate %d of %d', cell_idx, num_candidates));
+
+        subplot(3,2,[3 5]);
+        ds.plot_superposed_trials(cell_idx);
+
+        subplot(3,2,[4 6]);
+        ds.plot_cell_raster(cell_idx);
+    end % display_candidate
+
+    function display_map()
+        clf;
+        color_mappings = {cell_idx, 'c'};
+        ds.plot_cell_map(color_mappings, 'enable_class_colors');
+        title(sprintf('Current cell (ID=%d) shown in cyan', cell_idx));
+        fprintf('  Showing cell map (press any key to return)\n');
+        pause;
+        datacursormode off;
+    end % display_map
+    
     function set_label(cell_idx, label)
         switch label
             case 'p'
@@ -141,6 +172,7 @@ save_classification(class, output_name);
             case 'n'
                 class{cell_idx} = 'not a cell';
         end
+        ds.cells(cell_idx).label = class{cell_idx}; % Needed for display_map
         fprintf('  Candidate %d classified as %s\n', cell_idx, class{cell_idx});
     end % set_label
 end % classify_cells

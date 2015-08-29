@@ -23,6 +23,10 @@ classdef DaySummary < handle
         trial_indices
     end
     
+    properties (SetAccess = private, Hidden)
+        cell_map_ref_img
+    end
+        
     methods
         function obj = DaySummary(plusmaze_txt, rec_dir, varargin)
             % Handle optional input
@@ -30,7 +34,7 @@ classdef DaySummary < handle
             for k = 1:length(varargin)
                 if ischar(varargin{k})
                     switch lower(varargin{k})
-                        case 'excludeprobe'
+                        case {'excludeprobe', 'noprobe'}
                             exclude_probe_trials = 1;
                     end
                 end
@@ -41,7 +45,7 @@ classdef DaySummary < handle
             data_source = get_most_recent_file(rec_dir, 'rec_*.mat');
             data = load(data_source);
             obj.num_cells = data.info.num_pairs;
-            fprintf('  %s: Loaded data from %s\n', datestr(now), data_source);
+            fprintf('  %s: Loaded filters/traces from %s\n', datestr(now), data_source);
             
             % Parse trial data
             %   TODO: Bring in centroids corresponding to mouse position
@@ -114,11 +118,20 @@ classdef DaySummary < handle
                 'boundary', boundaries,...
                 'mask', masks,...
                 'label', class);
+            
+            % Precompute cell map image, to avoid doing it each time 
+            [height, width] = size(obj.cells(1).im);
+            ref_image = zeros(height, width);
+            for k = 1:obj.num_cells
+                ref_image = ref_image + obj.cells(k).im;
+            end
+            obj.cell_map_ref_img = ref_image;
         end
         
         % Helper functions
         %------------------------------------------------------------
-        function turn = compute_turn(obj, start, final)
+        function turn = compute_turn(~, start, final)
+            % TODO: Turn into Static
             path = {start, final};
             if (all(strcmp(path, {'east', 'south'})) || ...
                 all(strcmp(path, {'south', 'west'})) || ...
@@ -160,6 +173,10 @@ classdef DaySummary < handle
             end
         end
         
+        function class = get_class(obj)
+            class = {obj.cells.label}'; % Column cell
+        end
+        
         function is_cell = is_cell(obj, cell_indices)
             % When 'cell_indices' is omitted, then return the label of all
             % cells
@@ -191,60 +208,93 @@ classdef DaySummary < handle
         % Built-in visualization functions
         % Note: Do NOT make use of subplots in the built-in plot methods
         %------------------------------------------------------------
-        function plot_cell_map(obj, color_grouping)
+        function plot_cell_map(obj, color_grouping, varargin)
             % Optional argument allows for specification of color used for
             % the cell in the cell map. The color specification is defined
             % as follows:
-            %   color_grouping = {[1, 2, 3, 4], [5, 6], [10]}
-            % means that cells [1, 2, 3, 4] will be displayed in one color,
-            % cells [5, 6] in another color, and [10] in another.
+            %   color_grouping = {[1, 2, 3, 4], 'w';
+            %                     [5, 6], 'r';
+            %                     [10], 'g'}
+            % means that cells [1, 2, 3, 4] will be displayed in white,
+            % cells [5, 6] in red, and [10] in green.
             
-            % By default, color the cells based on classification
-            if ~exist('color_grouping', 'var')
-                cell_colors = arrayfun(@num2color, obj.is_cell());
-            else
-                cell_colors = repmat('w', 1, obj.num_cells); % Ungrouped cells are white
-                % Unpack the colors
-                for k = 1:length(color_grouping)
-                    for cell_idx = color_grouping{k}
-                        cell_colors(cell_idx) = num2color(k);
+            enable_class_colors = 0;
+            for k = 1:length(varargin)
+                vararg = varargin{k};
+                if ischar(vararg)
+                    switch lower(vararg)
+                        % By default, if 'color_grouping' is provided, the
+                        % default boundary coloring by classification is
+                        % disabled. The following toggle enables the
+                        % class colors, which is then overridden by the
+                        % specified 'color_grouping'
+                        case 'enable_class_colors'
+                            enable_class_colors = 1;
                     end
                 end
             end
             
-            % Background image to display
-            [height, width] = size(obj.cells(1).im);
-            ref_image = zeros(height, width);
-            for k = 1:obj.num_cells
-                ref_image = ref_image + obj.cells(k).im;
+            cell_colors = cell(obj.num_cells, 1);
+                        
+            % By default, color the cells based on classification
+            if ~exist('color_grouping', 'var') || enable_class_colors
+                for k = 1:obj.num_cells
+                    % Note: Unlabeled cells remain white!
+                    if isempty(obj.cells(k).label)
+                        cell_colors{k} = 'w';
+                    else
+                        if obj.is_cell(k)
+                            cell_colors{k} = 'g';
+                        else
+                            cell_colors{k} = 'r';
+                        end
+                    end
+                end
             end
-            imagesc(ref_image);
+            
+            % Color grouping provided, unpack into cell_linespec
+            if exist('color_grouping', 'var')
+                for group = 1:size(color_grouping, 1)
+                    for cell_idx = color_grouping{group,1}
+                        cell_colors{cell_idx} = color_grouping{group,2};
+                    end
+                end
+            end
+            
+            % Display the cell map
+            imagesc(obj.cell_map_ref_img, 'HitTest', 'off');
             colormap gray;
-            axis equal;
-            xlim([1 width]);
-            ylim([1 height]);
+            axis equal tight;
             
             hold on;
             for k = 1:obj.num_cells
-                color = cell_colors(k);
-                boundary = obj.cells(k).boundary;
-
-                plot(boundary(:,1), boundary(:,2), 'Color', color);
-%                 text(max(boundary(:,1)), min(boundary(:,2)),...
-%                      sprintf('%d', k), 'Color', color);
+                if ~isempty(cell_colors{k})
+                    boundary = obj.cells(k).boundary;
+                    
+                    if strcmp(cell_colors{k}, 'w')
+                        linewidth = 0.25;
+                        alpha = 0.1; % Lower is more transparent
+                    else
+                        linewidth = 1.0;
+                        alpha = 0.3;
+                    end
+                    
+                    % Note: We are embedding the cell index in the
+                    %   z-dimension of the graphics object (hack!)
+                    fill3(boundary(:,1), boundary(:,2),...
+                         k*ones(size(boundary,1),1),...
+                         cell_colors{k},...
+                         'EdgeColor', cell_colors{k},...
+                         'LineWidth', linewidth,...
+                         'FaceAlpha', alpha);
+                end
             end
             hold off;
             
-            function color = num2color(num)
-                switch num
-                    case 0
-                        color = 'r';
-                    case 1
-                        color = 'g';
-                    case 2
-                        color = 'm';
-                end
-            end
+            dcm = datacursormode(gcf);
+            set(dcm, 'DisplayStyle', 'datatip');
+            set(dcm, 'UpdateFcn', @cellmap_tooltip);
+            datacursormode on;
         end
         
         function plot_trace(obj, cell_idx)
