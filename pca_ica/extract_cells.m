@@ -1,4 +1,4 @@
-function inv_quality = extract_cells(movie_source,pca_source,varargin)
+function extract_cells(movie_source,pca_source,varargin)
 
 %   Cell extraction method that is based on an algorithm that essentially
 %   solves the sparse source separation problem to find cell filters.
@@ -32,13 +32,18 @@ mem_occup_scale_GPU = 0.7; % Occupy this fraction of available memory on GPU
 corr_thresh = 0.1;
 filter_thresh = 0.25;
 max_num = 1000;
-do_baseline_fix = 0;
+do_baseline_fix = 1;
+good_cell_limit = 0.3; % threshold to call cell (wrt a custom metric, see code)
+bad_cell_limit = 0.2; % threshold to call non-cell
 
 if ~isempty(varargin)
     for k = 1:length(varargin)
         switch varargin{k}
             case 'fix_baseline'
-                do_baseline_fix = 1;
+                do_baseline_fix = varargin{k+1};
+                if do_baseline_fix~=0 || do_baseline_fix~=1
+                    error('fix_baseline must be 0 or 1');
+                end
         end
     end
 end
@@ -107,7 +112,7 @@ end
 % Extract filters recursively using the 1-norm criterion
 idx_possible = 1:N;
 F = zeros(N,max_num);
-inv_quality = zeros(1,max_num);
+inv_quality_filters = zeros(1,max_num);
 acc=0;
 
 while true
@@ -118,7 +123,7 @@ while true
     correl = sig_this.*(1./norms_U);
     idx_possible = intersect(find(abs(correl)<corr_thresh),idx_possible);
     F(:,acc) = sig_this;
-    inv_quality(:,acc) = val;
+    inv_quality_filters(:,acc) = val;
     % Termination condition
     if isempty(idx_possible) || acc==max_num
         break;
@@ -128,7 +133,7 @@ end
 
 % Truncate F in case there are less components than max_num
 F = F(:,1:acc);
-inv_quality = inv_quality(1:acc)/sqrt(N);
+inv_quality_filters = inv_quality_filters(1:acc)/sqrt(N);
 
 if is_trimmed % Untrim the pixels
     F_temp = zeros(h*w,acc);
@@ -139,13 +144,8 @@ end
 fprintf('\t \t \t Extracted %d potential cells \n',acc);
 fprintf('%s: Cleaning filters and removing duplicates...\n',datestr(now));
 [F,idx] = modify_filters(F,filter_thresh);
-inv_quality = inv_quality(idx);
+inv_quality_filters = inv_quality_filters(idx);
 
-figure,
-plot(inv_quality,'LineWidth',1.5);
-title('Inverse quality metric for the extracted potential cells','Fontsize',16);
-xlabel('Cell index','Fontsize',16)
-ylabel('Inverse quality(normalized to 1)','Fontsize',16)
 
 fprintf('%s: Loading movie for trace extraction...\n',datestr(now));
 M = load_movie(movie_source);
@@ -174,6 +174,19 @@ if do_baseline_fix
         traces(:,k) = fix_baseline(traces(:,k));
     end
 end
+
+% Sort cells wrt a metric that determines how good a trace looks
+quality_traces = goodness_trace(traces);
+[ss,idx] = sort(quality_traces,'descend');
+idx_stationary = sort(idx(ss>good_cell_limit));
+idx_move = idx(ss<=good_cell_limit);
+filters = filters(:,:,[idx_stationary,idx_move]);
+traces = traces(:,[idx_stationary,idx_move]);
+s1 = sprintf('First %d extracted cells are likely to be cells',...
+    sum(ss>good_cell_limit));
+s2 = sprintf('It is likely that there are few or no cells from  #%d onwards ',...
+    idx(find(ss<=bad_cell_limit,1)));
+fprintf('%s: Cell Statistics:\n \t\t\t %s\n \t\t\t %s\n',datestr(now),s1,s2);
 
 % Save the result to mat file
 %------------------------------------------------------------
@@ -353,5 +366,21 @@ function overlap = compute_overlap(mask1, mask2)
     overlap = intrsct / min(siz1,siz2);
 end
 
+function val = goodness_trace(traces)
+%Determine the "spiky-ness" by comparing distribution to gaussian  
+
+    num_cells = size(traces,2);
+    val = zeros(1,num_cells);
+    for idx_cell =1:num_cells
+        tr = traces(:,idx_cell);
+        tr(tr<0) = [];
+        tr = [tr;-tr]; %make distribution symmetric
+        tr = tr/std(tr); % standardize
+        [c,x] = hist(tr,100);
+        f_g = 1/sqrt(2*pi)*exp(-x.^2/2); % gaussian pdf
+        f_r = c/length(tr)/(x(2)-x(1)); % empirical pdf
+        val(idx_cell) = norm(f_g-f_r,2);
+    end
+end
 
 end
