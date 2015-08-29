@@ -297,7 +297,11 @@ function [filters_out,idx_keep] = modify_filters(filters_in,filter_thresh)
             end
         end
     end
-    fprintf('\t \t \t %d cells were merged into others \n',length(idx_merged))
+    
+    if ~isempty(idx_merged)
+        fprintf('\t \t \t %d cells were merged into others \n',length(idx_merged));
+    end
+    
     filters_out(:,acc+1:end) = []; % Remove the 0's in the end (if any)
     idx_keep(idx_merged) = [];
 
@@ -415,9 +419,9 @@ function cc = similar_traces(traces,cent_cells)
 % Outputs a cell array with indices to be merged
 
     % Mask for closeby cells
-    dist_thresh = max(h,w)/30;
-    Dist = compute_dist_matrix(cent_cells);
-    Dist = Dist < dist_thresh; % Retain only the closeby cells
+    dist_thresh = max(h,w)/40;
+    dist_centroids = compute_dist_matrix(cent_cells);
+    dist_centroids = dist_centroids < dist_thresh; % Retain only the closeby cells
     
     % Normalize traces
     [num_frames,num_cells] = size(traces);
@@ -425,17 +429,23 @@ function cc = similar_traces(traces,cent_cells)
     centered_traces = bsxfun(@minus,traces,mean_traces);
     normed_traces = bsxfun(@times,centered_traces,1./sqrt(sum(centered_traces.^2,1)) );
     
-    % Correlate traces
-    Corr = normed_traces'*normed_traces;
-    Corr = Corr>0.65;
-    Corr = sparse(double(Corr.*Dist)+eye(num_cells)); % Apply mask
+    %Smooth traces
+    normed_traces = medfilt1(double(normed_traces),5);
+    
+    % Find distance between traces
+    dist_traces = compute_dist_matrix(normed_traces);
+    dist_traces(dist_traces==inf)=0;
+    dist_traces = dist_traces<0.65;
+    
+    % Connectivity matrix
+    A = sparse(double(dist_traces.*dist_centroids)+eye(num_cells));
     
     % do multiple DFSs to get connected components
     cc = {};
     idx_visit = 1:num_cells;
     while true
         idx_this = idx_visit(1);
-        [d,~,~,~] = dfs(Corr,idx_this);
+        [d,~,~,~] = dfs(A,idx_this);
         cc_this = find(d'>-1);
         if length(cc_this)>1
             cc{end+1} = cc_this;          
