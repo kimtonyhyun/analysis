@@ -184,7 +184,7 @@ fprintf('\t\t\t Identified %d split cells (total of %d objects), merging now...\
 idx_elim = [];
 for i = 1:length(cc)
     idx_to_merge = cc{i};
-    merged_filter = sum(F(:,idx_to_merge),2)/3;
+    merged_filter = sum(F(:,idx_to_merge),2)/length(idx_to_merge);
     F(:,idx_to_merge(1)) = merged_filter;
     idx_elim = [idx_elim,idx_to_merge(2:end)];
 end
