@@ -1,4 +1,4 @@
-function M = classify_cells(sources, rec_dir, varargin)
+function M = classify_cells(sources, ds, varargin)
 % Perform manual classification of candidate filter/trace pairs
 %
 % Usage:
@@ -42,7 +42,6 @@ fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
     datestr(now), movie_clim(1), movie_clim(2));
 
 % Load filter/trace pairs to be classified
-ds = DaySummary(sources.maze, rec_dir);
 num_candidates = ds.num_cells;
 
 trial_indices = ds.trial_indices(:, [1 end]); % [Start end]
