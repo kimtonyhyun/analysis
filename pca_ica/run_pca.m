@@ -11,7 +11,9 @@ function run_pca(movie_source, varargin)
 %       movie that do not cross above the median of the maximum pixel 
 %       values.
 %   'medfilt': Add it as an argument to perform median-filtering on the 
-%       movie on a per-frame basis before PCA. 
+%       movie on a per-frame basis before PCA. Use input pair ('medfilt',X)
+%       to set the median filter halfwidth to X. X must be a positive 
+%       integer.
 %   num_PCs: ('num_PCs',X) input pair tells the script to manually
 %   extract X PCs.
 %
@@ -25,7 +27,7 @@ do_medfilt = 0;
 medfilt_halfwidth = 1;
 autoset_num_PCs = 1;
 max_num_PCs = 1000;
-min_num_PCs = 300;
+min_num_PCs = 300; 
 
 if ~isempty(varargin)
     for k = 1:length(varargin)
@@ -34,6 +36,12 @@ if ~isempty(varargin)
                 do_trim = 1;
             case 'medfilt'
                 do_medfilt = 1;
+                if k<length(varargin)
+                    dum = varargin{k+1};
+                    if isinteger(dum)
+                        medfilt_halfwidth = dum;
+                    end
+                end
             case 'num_PCs'
                 num_PCs = varargin{k+1};
                 if ~isinteger(num_PCs)
