@@ -171,7 +171,7 @@ while (1)
                 end
                 set(gca, 'CLim', movie_clim);
                 
-            case 'n' % Show "neighboring" cells
+            case {'n', 'm'} % Show "neighboring" cells
                 state.show_other_cells = ~state.show_other_cells;
                 show_other_cells(state.show_other_cells);
 
