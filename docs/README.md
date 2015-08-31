@@ -6,21 +6,21 @@ This document describes the expected contents of stored data files.
 
 Stores the results of PCA decomposition of the movie, used by a number of different cell extraction methods (e.g. ICA, SSS). File name should be `pca_*.mat`.
 
-Top level variables are: `pca_info`, `pca_filters`, `pca_traces`, `S`.
+Top level variables are: `info`, `filters`, `traces`, `S`.
 ```
-pca_info.movie_height
-pca_info.movie_width
-pca_info.movie_frames
-pca_info.num_PCs
+info.movie_height
+info.movie_width
+info.movie_frames
+info.num_PCs
 
-pca_info.trim.enabled: "Trim" removes certain (presumably non-cell) pixels from the PCA computation
-pca_info.trim.idx_kept: Indices to the "kept" pixels after the trim operation
+info.trim.enabled: "Trim" removes certain (presumably non-cell) pixels from the PCA computation
+info.trim.idx_kept: Indices to the "kept" pixels after the trim operation
 
-pca_info.medfilt.enabled
-pca_info.medfilt.halfwidth
+info.medfilt.enabled
+info.medfilt.halfwidth
 
-pca_filters: [num_PCs x num_pixels]
-pca_traces: [num_PCs x num_frames]
+filters: [num_PCs x num_pixels]
+traces: [num_PCs x num_frames]
 S: 1-D vector of singular values from the PCA decomposition
 ```
 
