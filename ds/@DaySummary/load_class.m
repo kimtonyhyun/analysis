@@ -1,4 +1,4 @@
-function load_classification(obj, source)
+function load_class(obj, source)
 
 fid = fopen(source, 'r');
 class = textscan(fid, '%d %s', 'Delimiter', ',');

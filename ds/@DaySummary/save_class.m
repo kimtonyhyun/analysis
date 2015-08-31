@@ -1,4 +1,4 @@
-function save_classification(obj, outfile)
+function save_class(obj, outfile)
 
 num_candidates = obj.num_cells;
 
