@@ -51,7 +51,7 @@ classdef DaySummary < handle
             data_source = get_most_recent_file(rec_dir, 'rec_*.mat');
             data = load(data_source);
             obj.num_cells = data.info.num_pairs;
-            fprintf('  %s: Loaded filters/traces from %s\n', datestr(now), data_source);
+            fprintf('  %s: Loaded filters and traces from %s\n', datestr(now), data_source);
             
             % Check that the length of traces is consistent with the table
             % of trial indices.
