@@ -23,10 +23,12 @@ ds{2} = ds2;
 figure;
 ax1 = subplot(121);
 ds1.plot_cell_boundaries;
+hold on;
 title('Dataset 1');
 
 ax2 = subplot(122);
 ds2.plot_cell_boundaries;
+hold on;
 title('Dataset 2');
 
 % Allow the user to select the ICs used in matching
@@ -82,46 +84,40 @@ tform = fitgeotrans(sel_ics_centers(:,:,2),... % Moving points
                     sel_ics_centers(:,:,1),... % Fixed points
                     'affine');
 
-figure;
-% subplot(121); % Pre-transform comparison
-plot_boundaries(ds1, 'b', 2, sel_ics(:,1), []);
-plot_boundaries(ds2, 'r', 1, sel_ics(:,2), []);
+figure; % Pre-transform comparison
+plot_boundaries_with_transform(ds1, 'b', 2, sel_ics(:,1), []);
+plot_boundaries_with_transform(ds2, 'r', 1, sel_ics(:,2), []);
 title('Pre-transform: Dataset1 (blue) vs. Dataset2 (red)');
 axis equal;
 set(gca, 'YDir', 'Reverse');
 
-figure;
-% subplot(122); % Post-transform comparison
-plot_boundaries(ds1, 'b', 2, sel_ics(:,1), []);
-plot_boundaries(ds2, c2, 'r', 1, sel_ics(:,2), tform);
+figure; % Post-transform comparison
+plot_boundaries_with_transform(ds1, 'b', 2, sel_ics(:,1), []);
+plot_boundaries_with_transform(ds2, 'r', 1, sel_ics(:,2), tform);
 title('Post-transform: Dataset1 (blue) vs. Dataset2 (red)');
 axis equal;
 set(gca, 'YDir', 'Reverse');
 
-% Transform Source2 masks for output
-
-mask1_ref = imref2d(size(masks{1}{1}));
-for ic_idx = 1:ds2.num_cells
-    masks{2}{ic_idx} = imwarp(masks{2}{ic_idx}, tform,...
-        'OutputView', mask1_ref);
-end
-
 % Prep output
 %------------------------------------------------------------
-masks1 = masks{1};
-masks2 = masks{2};
+masks1 = {ds1.cells.mask};
+masks2 = {ds2.cells.mask};
+
+mask1_ref = imref2d(size(masks1{1}));
+for k = 1:ds2.num_cells
+    masks2{k} = imwarp(masks2{k}, tform, 'OutputView', mask1_ref);
+end
 
 info.num_cells1 = ds1.num_cells;
 info.num_cells2 = ds2.num_cells;
 info.num_ics_for_alignment = num_ics_for_alignment;
-info.ic_filter_threshold = ic_filter_threshold;
 info.sel_ics = sel_ics;
 info.sel_ics_centers  = sel_ics_centers;
 info.tform = tform;
 
 end % compute_affine_transform
 
-function plot_boundaries(ds, linespec, linewidth, sel_ics, tform)
+function plot_boundaries_with_transform(ds, linespec, linewidth, sel_ics, tform)
     % Plot boundaries as a single color, with an optional transform
     for k = 1:ds.num_cells
         boundary = ds.cells(k).boundary;
