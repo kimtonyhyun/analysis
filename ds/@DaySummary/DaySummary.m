@@ -218,6 +218,20 @@ classdef DaySummary < handle
             is_correct = cellfun(@strcmp, {obj.trials.goal}, {obj.trials.end});
         end
         
+        function selected_idx = get_cell_by_xy(obj, xy)
+            % Returns the first cell index whose filter boundary encloses
+            % the XY position provided in 'xy'
+            
+            selected_idx = []; % If no hit, then return empty
+            for k = 1:obj.num_cells
+                boundary = obj.cells(k).boundary;
+                if inpolygon(xy(1), xy(2), boundary(:,1), boundary(:,2))
+                    selected_idx = k;
+                    break;
+                end
+            end
+        end
+        
         % Classification
         %------------------------------------------------------------
         function class = get_class(obj)

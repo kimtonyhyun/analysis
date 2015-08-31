@@ -49,11 +49,12 @@ while (~all(sel_ics_idx == num_ics_for_alignment))
     click_xy = round(ginput(1)); % Get user click
     if (gca == ax1) % Axis 1 was clicked
         source_idx = 1;
+        ic_idx = ds1.get_cell_by_xy(click_xy);
     elseif (gca == ax2)
         source_idx = 2;
+        ic_idx = ds2.get_cell_by_xy(click_xy);
     end
     
-    ic_idx = get_selected_ic_idx(bounds{source_idx}, click_xy);
     if ~isempty(ic_idx) % Hit
         sel_idx = sel_ics_idx(source_idx) + 1;
         if (sel_idx <= num_ics_for_alignment)
@@ -170,19 +171,5 @@ function plot_boundaries(boundaries, cl, linespec, linewidth, sel_ics, tform)
             end
         end
         hold on;
-    end
-end
-
-function selected_ic_idx = get_selected_ic_idx(boundaries, click_xy)
-    % Return the first IC index whose filter boundary encloses the
-    %   XY position provided in `click_xy`
-    num_ics = length(boundaries);
-    selected_ic_idx = []; % If no hit, then return empty
-    for ic_idx = 1:num_ics
-        bound = boundaries{ic_idx};
-        if inpolygon(click_xy(1), click_xy(2), bound(:,1), bound(:,2))
-            selected_ic_idx = ic_idx;
-            break;
-        end
     end
 end
