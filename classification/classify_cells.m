@@ -94,7 +94,7 @@ while (cell_idx <= num_candidates)
 end
 
 % Save at end!
-save_classification(class, output_name);
+ds.save_class(output_name);
 
     % Auxiliary functions
     %------------------------------------------------------------
@@ -122,7 +122,8 @@ save_classification(class, output_name);
     end % display_map
     
     function go_to_next_unlabeled_cell()
-        unlabeled = strcmp(class, '');
+        labels = ds.get_class;
+        unlabeled = strcmp(labels, '');
         unlabeled = circshift(unlabeled, -cell_idx);
         search_offset = find(unlabeled, 1);
         if isempty(search_offset)
@@ -135,13 +136,13 @@ save_classification(class, output_name);
     function set_label(cell_idx, label)
         switch label
             case 'p'
-                class{cell_idx} = 'phase-sensitive cell';
+                full_label = 'phase-sensitive cell';
             case 'c'
-                class{cell_idx} = 'cell';
+                full_label = 'cell';
             case 'n'
-                class{cell_idx} = 'not a cell';
+                full_label = 'not a cell';
         end
-        ds.cells(cell_idx).label = class{cell_idx}; % Needed for display_map
-        fprintf('  Candidate %d classified as %s\n', cell_idx, class{cell_idx});
+        ds.cells(cell_idx).label = full_label;
+        fprintf('  Candidate %d classified as %s\n', cell_idx, full_label);
     end % set_label
 end % classify_cells
