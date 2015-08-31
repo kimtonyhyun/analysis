@@ -18,6 +18,8 @@ assert(size(M,3) == ds.trial_indices(end,end),...
 %------------------------------------------------------------
 output_name = sprintf('class_%s.txt', datestr(now, 'yymmdd-HHMMSS'));
 
+hfig = figure;
+
 cell_idx = 1;
 while (cell_idx <= num_candidates)
     display_candidate(cell_idx);
@@ -60,6 +62,7 @@ while (cell_idx <= num_candidates)
             case 'm' % View cell map
                 display_map();
             case 'q' % Exit
+                close(hfig);
                 break;
             case 's' % Save classification
                 ds.save_class(output_name);
