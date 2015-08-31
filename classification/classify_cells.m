@@ -1,52 +1,18 @@
-function M = classify_cells(sources, ds, varargin)
+function classify_cells(ds, M)
 % Perform manual classification of candidate filter/trace pairs
-%
-% Usage:
-%   classify_cells(sources, 'rec001')
-%
-% where sources is a struct with the following required fields:
-%   sources.maze: Output from the plus maze (TXT)
-%   sources.miniscope: Miniscope recording (TIF or HDF5)
-%   sources.fps:  Frame rate of the recording
-%
-% and 'rec001' is a directory that contains a 'rec_*.mat' file which has
-%   the filters and traces to be classified.
-%
-% Optional arguments allow for:
-%   'movie': Use provided movie, rather than loading from disk
-%
-
-movie_provided = 0;
-for k = 1:length(varargin)
-    if ischar(varargin{k})
-        switch lower(varargin{k})
-            case 'movie'
-                movie_provided = 1;
-                M = varargin{k+1}; % Note Matlab's lazy eval
-        end
-    end
-end
-
-% Load movie
-if movie_provided
-    fprintf('  %s: Using provided movie matrix\n', datestr(now));
-else
-    fprintf('  %s: Loading "%s" to memory...\n', datestr(now), sources.miniscope);
-    M = load_movie(sources.miniscope);
-    fprintf('  %s: Done!\n', datestr(now));
-end
 
 % Compute a common scaling for the movie
 movie_clim = compute_movie_scale(M);
 fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
     datestr(now), movie_clim(1), movie_clim(2));
 
+fps = 10; % FIXME
+
 % Load filter/trace pairs to be classified
 num_candidates = ds.num_cells;
 
-trial_indices = ds.trial_indices(:, [1 end]); % [Start end]
-assert(size(M,3) == trial_indices(end,end),...
-       'Error: Number of frames in movie does not match trial index table!');
+assert(size(M,3) == ds.trial_indices(end,end),...
+       'Error: Number of frames in movie does not match that in DaySummary!');
 
 % Begin classification
 %------------------------------------------------------------
@@ -67,7 +33,7 @@ while (cell_idx <= num_candidates)
         if ((1 <= val) && (val <= num_candidates))
             cell_idx = val;
         else
-            fprintf('  Sorry, %d is not a valid trace index\n', val);
+            fprintf('  Sorry, %d is not a valid cell index\n', val);
         end
     else
         resp = lower(resp);
@@ -76,7 +42,7 @@ while (cell_idx <= num_candidates)
             %------------------------------------------------------------
             case {'p', 'c'} % Cell
                 [~, movie_clim] = view_cell_interactively(ds, cell_idx,...
-                                    M, sources.fps, movie_clim);
+                                    M, fps, movie_clim);
                 resp2 = input(sprintf('  Confirm classification ("%s") >> ', resp), 's');
                 resp2 = lower(strtrim(resp2));
                 if (strcmp(resp, resp2)) % Confirmed

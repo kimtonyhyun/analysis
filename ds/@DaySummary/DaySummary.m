@@ -92,7 +92,7 @@ classdef DaySummary < handle
             %------------------------------------------------------------
             class_source = get_most_recent_file(rec_dir, 'class_*.txt');
             if ~isempty(class_source)
-                class = load_classification(class_source);
+                class = obj.load_classification(class_source);
                 fprintf('  %s: Loaded classification from %s\n', datestr(now), class_source);
                 assert(length(class)==obj.num_cells,...
                        sprintf('Number of labels in %s is not consistent with %s!',...
@@ -173,10 +173,6 @@ classdef DaySummary < handle
             end
         end
         
-        function class = get_class(obj)
-            class = {obj.cells.label}'; % Column cell
-        end
-        
         function is_cell = is_cell(obj, cell_indices)
             % When 'cell_indices' is omitted, then return the label of all
             % cells
@@ -196,8 +192,12 @@ classdef DaySummary < handle
             is_correct = cellfun(@strcmp, {obj.trials.goal}, {obj.trials.end});
         end
         
-        % Debug functions
+        % Classification
         %------------------------------------------------------------
+        function class = get_class(obj)
+            class = {obj.cells.label}'; % Column cell
+        end
+        
         function set_all_labels(obj, label)
             % Overwrites the label of all cells in DaySummary
             for k = 1:obj.num_cells
