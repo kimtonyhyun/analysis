@@ -13,25 +13,20 @@ function [info, masks1, masks2] = compute_affine_transform(ds1, ds2)
 %
 
 num_ics_for_alignment = 3;
-ic_filter_threshold = 0.3;
 
-bounds = cell(1,2); % Boundaries of ICs
-masks  = cell(1,2); % BW image of thresholded ICs
-
-% Load data
-filters1 = cat(3, ds1.cells.im);
-filters2 = cat(3, ds2.cells.im);
-c1 = {ds1.cells.label};
-c2 = {ds2.cells.label};
+% To programmatically address either of the two DaySummary's
+ds = cell(1,2);
+ds{1} = ds1;
+ds{2} = ds2;
 
 % Display the two sets of ICs
 figure;
 ax1 = subplot(121);
-[bounds{1}, masks{1}] = plot_ic_filters(filters1, c1, ic_filter_threshold);
+ds1.plot_cell_boundaries;
 title('Dataset 1');
 
 ax2 = subplot(122);
-[bounds{2}, masks{2}] = plot_ic_filters(filters2, c2, ic_filter_threshold);
+ds2.plot_cell_boundaries;
 title('Dataset 2');
 
 % Allow the user to select the ICs used in matching
@@ -49,16 +44,15 @@ while (~all(sel_ics_idx == num_ics_for_alignment))
     click_xy = round(ginput(1)); % Get user click
     if (gca == ax1) % Axis 1 was clicked
         source_idx = 1;
-        ic_idx = ds1.get_cell_by_xy(click_xy);
     elseif (gca == ax2)
         source_idx = 2;
-        ic_idx = ds2.get_cell_by_xy(click_xy);
     end
     
+    ic_idx = ds{source_idx}.get_cell_by_xy(click_xy);
     if ~isempty(ic_idx) % Hit
         sel_idx = sel_ics_idx(source_idx) + 1;
         if (sel_idx <= num_ics_for_alignment)
-            boundary = bounds{source_idx}{ic_idx};
+            boundary = ds{source_idx}.cells(ic_idx).boundary;
             fill(boundary(:,1),...
                  boundary(:,2),...
                  sel_colors(mod(sel_idx,length(sel_colors))+1));
@@ -90,21 +84,22 @@ tform = fitgeotrans(sel_ics_centers(:,:,2),... % Moving points
 
 figure;
 % subplot(121); % Pre-transform comparison
-plot_boundaries(bounds{1}, c1, 'b', 2, sel_ics(:,1), []);
-plot_boundaries(bounds{2}, c2, 'r', 1, sel_ics(:,2), []);
+plot_boundaries(ds1, 'b', 2, sel_ics(:,1), []);
+plot_boundaries(ds2, 'r', 1, sel_ics(:,2), []);
 title('Pre-transform: Dataset1 (blue) vs. Dataset2 (red)');
 axis equal;
 set(gca, 'YDir', 'Reverse');
 
 figure;
 % subplot(122); % Post-transform comparison
-plot_boundaries(bounds{1}, c1, 'b', 2, sel_ics(:,1), []);
-plot_boundaries(bounds{2}, c2, 'r', 1, sel_ics(:,2), tform);
+plot_boundaries(ds1, 'b', 2, sel_ics(:,1), []);
+plot_boundaries(ds2, c2, 'r', 1, sel_ics(:,2), tform);
 title('Post-transform: Dataset1 (blue) vs. Dataset2 (red)');
 axis equal;
 set(gca, 'YDir', 'Reverse');
 
 % Transform Source2 masks for output
+
 mask1_ref = imref2d(size(masks{1}{1}));
 for ic_idx = 1:ds2.num_cells
     masks{2}{ic_idx} = imwarp(masks{2}{ic_idx}, tform,...
@@ -126,49 +121,17 @@ info.tform = tform;
 
 end % compute_affine_transform
 
-function [boundaries, masks, ic_map] = plot_ic_filters(ica_filters, cl, ic_filter_threshold)
-    % Plot grayscale image of IC filters along with their boundaries
-    num_ics = size(ica_filters,3);
-    boundaries = cell(num_ics, 1);
-    masks = cell(num_ics, 1);
-    
-%     ic_map = sum(ica_filters,3);
-    ic_map = max(ica_filters, [], 3);
-    imagesc(ic_map);
-    colormap gray;
-    axis equal;
-    hold on;
-    
-    for ic_idx = 1:num_ics
-        ic_filter = ica_filters(:,:,ic_idx);
-        [ic_boundaries, mask] = compute_ic_boundary(ic_filter, ic_filter_threshold);
-        ic_boundary = ic_boundaries{1}; % Longest boundary
-        if any(strcmp(cl{ic_idx}, {'phase-sensitive cell', 'cell'}))
-            color = 'g';
-        else
-            color = 'r';
-        end
-        plot(ic_boundary(:,1), ic_boundary(:,2), color);
-        
-        boundaries{ic_idx} = ic_boundary;
-        masks{ic_idx} = mask;
-    end
-end
-
-function plot_boundaries(boundaries, cl, linespec, linewidth, sel_ics, tform)
+function plot_boundaries(ds, linespec, linewidth, sel_ics, tform)
     % Plot boundaries as a single color, with an optional transform
-    num_ics = length(cl);
-    for ic_idx = 1:num_ics
-        boundary = boundaries{ic_idx};
+    for k = 1:ds.num_cells
+        boundary = ds.cells(k).boundary;
         if ~isempty(tform) % Optional spatial transform
             boundary = transformPointsForward(tform, boundary);
         end
-        if ismember(ic_idx, sel_ics) % One of the user-selected ICs
+        if ismember(k, sel_ics) % One of the user-selected ICs
             fill(boundary(:,1), boundary(:,2), linespec, 'LineWidth', linewidth);
-        else
-            if any(strcmp(cl{ic_idx}, {'phase-sensitive cell', 'cell'}))
-                plot(boundary(:,1), boundary(:,2), linespec, 'LineWidth', linewidth);
-            end
+        elseif ds.is_cell(k)
+            plot(boundary(:,1), boundary(:,2), linespec, 'LineWidth', linewidth);
         end
         hold on;
     end
