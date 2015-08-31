@@ -17,7 +17,6 @@ assert(size(M,3) == ds.trial_indices(end,end),...
 % Begin classification
 %------------------------------------------------------------
 output_name = sprintf('class_%s.txt', datestr(now, 'yymmdd-HHMMSS'));
-class = ds.get_class();
 
 cell_idx = 1;
 while (cell_idx <= num_candidates)
@@ -25,7 +24,7 @@ while (cell_idx <= num_candidates)
     
     % Ask the user to classify the cell candidate
     prompt = sprintf('Classifier (%d/%d, "%s") >> ', ...
-                        cell_idx, num_candidates, class{cell_idx});
+                        cell_idx, num_candidates, ds.cells(cell_idx).label);
     resp = strtrim(input(prompt, 's'));
     
     val = str2double(resp);
@@ -63,24 +62,13 @@ while (cell_idx <= num_candidates)
             case 'q' % Exit
                 break;
             case 's' % Save classification
-                save_classification(class, output_name);
+                ds.save_class(output_name);
                 fprintf('  Saved classification result to %s\n', output_name);
             case 'l' % Load previous classification
                 [file, path] = uigetfile('*.txt', 'Select existing classification');
                 if (file)
                     full_file = fullfile(path, file);
-                    new_class = load_classification(full_file);
-                    
-                    % TODO: Consolidate DaySummary and classification
-                    if (length(new_class) == ds.num_cells)
-                        for k = 1:ds.num_cells
-                            ds.cells(k).label = new_class{k};
-                        end
-                        class = new_class;
-                    else
-                        fprintf(' Number of cells in classification file (%d) does not match number of filters and traces (%d)!\n',...
-                            length(new_class), ds.num_cells);
-                    end
+                    ds.load_class(full_file);
                 end
             case 't' % "Take" screenshot
                 screenshot_name = sprintf('cell%03d.png', cell_idx);
@@ -123,7 +111,7 @@ ds.save_class(output_name);
     
     function go_to_next_unlabeled_cell()
         labels = ds.get_class;
-        unlabeled = strcmp(labels, '');
+        unlabeled = cellfun(@isempty, labels);
         unlabeled = circshift(unlabeled, -cell_idx);
         search_offset = find(unlabeled, 1);
         if isempty(search_offset)
