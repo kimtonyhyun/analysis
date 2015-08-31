@@ -29,11 +29,11 @@ function extract_cells(movie_source,pca_source,varargin)
 % Some parameters
 mem_occup_scale_CPU = 0.5; % Occupy this fraction of available memory on RAM
 mem_occup_scale_GPU = 0.7; % Occupy this fraction of available memory on GPU
-corr_thresh = 0.1;
+corr_thresh = 0.2;
 filter_thresh = 0.25;
 max_num = 1000;
 do_baseline_fix = 1;
-good_cell_limit = 0.3; % threshold to call cell (wrt a custom metric, see code)
+good_cell_limit = 0.4; % threshold to call cell (wrt a custom metric, see code)
 bad_cell_limit = 0.2; % threshold to call non-cell
 
 if ~isempty(varargin)
@@ -113,17 +113,19 @@ end
 idx_possible = 1:N;
 F = zeros(N,max_num);
 inv_quality_filters = zeros(1,max_num);
+idx_cells = zeros(1,max_num);
 acc=0;
 
 while true
     acc = acc+1;
     [val,idx_this] = min(one_norms(idx_possible));
     idx_this = idx_possible(idx_this);
-    sig_this = U*U_norm(idx_this,:)';    
+    sig_this = U*U_norm(idx_this,:)';
     correl = sig_this.*(1./norms_U);
     idx_possible = intersect(find(abs(correl)<corr_thresh),idx_possible);
     F(:,acc) = sig_this;
-    inv_quality_filters(:,acc) = val;
+    inv_quality_filters(acc) = val;
+    idx_cells(acc) = idx_this;
     % Termination condition
     if isempty(idx_possible) || acc==max_num
         break;
@@ -134,17 +136,27 @@ end
 % Truncate F in case there are less components than max_num
 F = F(:,1:acc);
 inv_quality_filters = inv_quality_filters(1:acc)/sqrt(N);
+idx_cells = idx_cells(1:acc);
 
 if is_trimmed % Untrim the pixels
     F_temp = zeros(h*w,acc);
     F_temp(idx_kept,:) = F;
     F = F_temp;
+    clear F_temp;
+    
+    idx_cells = idx_kept(idx_cells);
 end
+
+% Cell centroids
+cent_cells = zeros(2,acc);
+[cent_cells(1,:),cent_cells(2,:)] = ind2sub([h,w],idx_cells); % [vert;horiz] format
 
 fprintf('\t \t \t Extracted %d potential cells \n',acc);
 fprintf('%s: Cleaning filters and removing duplicates...\n',datestr(now));
 [F,idx] = modify_filters(F,filter_thresh);
+F = bsxfun(@times,F,1./sum(F,1)); % Make each filter sum up to 1
 inv_quality_filters = inv_quality_filters(idx);
+cent_cells = cent_cells(:,idx);
 
 
 fprintf('%s: Loading movie for trace extraction...\n',datestr(now));
@@ -153,20 +165,7 @@ M = load_movie(movie_source);
 % Extract time traces
 fprintf('%s: Extracting traces...\n',datestr(now));
 M = reshape(M,h*w,t);
-idx_nonzero = find(sum(F,2)>0);
-M_small = M(idx_nonzero,:);
-F_small = F(idx_nonzero,:);
-T = (F_small'*F_small+0*eye(size(F,2))) \  (F_small'*M_small);
-clear M;
-
-% Reconstruction settings
-info.type = 'PCA+SSS';
-info.num_pairs = size(F,2);
-info.movie_source = movie_source;
-info.pca_source = pca_source; %#ok<*STRNU>
-
-filters = reshape(F,h,w,size(F,2)); %#ok<*NASGU>
-traces = T';
+traces = extract_traces(M,F);
 
 % Remove baseline from the traces
 if do_baseline_fix
@@ -175,6 +174,29 @@ if do_baseline_fix
     end
 end
 
+% Identify split cells by looking at traces
+fprintf('%s: Identifying possible split cells...\n',datestr(now));
+cc = similar_traces(traces,cent_cells);
+
+fprintf('\t\t\t Identified %d split cells (total of %d objects), merging now...\n',...
+    length(cc),length(cell2mat(cc)));
+% Merge filters for split cells
+idx_elim = [];
+for i = 1:length(cc)
+    idx_to_merge = cc{i};
+    merged_filter = sum(F(:,idx_to_merge),2)/length(idx_to_merge);
+    F(:,idx_to_merge(1)) = merged_filter;
+    idx_elim = [idx_elim,idx_to_merge(2:end)];
+end
+F(:,idx_elim) = [];
+
+% Extract traces again
+fprintf('%s: Extracting traces with updated filters...\n',datestr(now));
+traces = extract_traces(M,F);
+clear M;
+
+filters = reshape(F,h,w,size(F,2)); %#ok<*NASGU>
+
 % Sort cells wrt a metric that determines how good a trace looks
 quality_traces = goodness_trace(traces);
 [ss,idx] = sort(quality_traces,'descend');
@@ -182,11 +204,20 @@ idx_stationary = sort(idx(ss>good_cell_limit));
 idx_move = idx(ss<=good_cell_limit);
 filters = filters(:,:,[idx_stationary,idx_move]);
 traces = traces(:,[idx_stationary,idx_move]);
-s1 = sprintf('First %d extracted cells are likely to be cells',...
+s1 = sprintf('Total of %d potential cells are extracted.',...
+    length(ss));
+s2 = sprintf('First %d extracted cells are likely to be cells.',...
     sum(ss>good_cell_limit));
-s2 = sprintf('It is likely that there are few or no cells from  #%d onwards ',...
+s3 = sprintf('It is likely that there are few or no cells from  #%d onwards. ',...
     idx(find(ss<=bad_cell_limit,1)));
-fprintf('%s: Cell Statistics:\n \t\t\t %s\n \t\t\t %s\n',datestr(now),s1,s2);
+fprintf('%s: Cell Statistics:\n \t\t\t %s\n \t\t\t %s\n \t\t\t %s\n',...
+    datestr(now),s1,s2,s3);
+
+% Reconstruction settings
+info.type = 'PCA+SSS';
+info.num_pairs = size(F,2);
+info.movie_source = movie_source;
+info.pca_source = pca_source; %#ok<*STRNU>
 
 % Save the result to mat file
 %------------------------------------------------------------
@@ -266,7 +297,11 @@ function [filters_out,idx_keep] = modify_filters(filters_in,filter_thresh)
             end
         end
     end
-    fprintf('\t \t \t %d cells were merged into others \n',length(idx_merged))
+    
+    if ~isempty(idx_merged)
+        fprintf('\t \t \t %d cells were merged into others \n',length(idx_merged));
+    end
+    
     filters_out(:,acc+1:end) = []; % Remove the 0's in the end (if any)
     idx_keep(idx_merged) = [];
 
@@ -322,12 +357,9 @@ end
 function new_assignments = compute_reassignments(masks,cent)
     
     num_filters = size(masks,3);
-    
-    % Calculate the matrix of centroid distances
-    NN = repmat(sum(cent.^2,1),num_filters,1);
-    Dist = sqrt(max(NN+NN'-2*cent'*cent,0)); %#ok<MHERM>
-    Dist(Dist<1e-3) = inf; % Set diagonals to infinity
-    Dist = Dist < 15; % Retain only the closeby cells
+    dist_thresh = max(h,w)/30;
+    Dist = compute_dist_matrix(cent);
+    Dist = Dist < dist_thresh; % Retain only the closeby cells
     
     % Calculate overlap between closeby cells
     J_sim = cell(num_filters,1);
@@ -381,6 +413,58 @@ function val = goodness_trace(traces)
         f_r = c/length(tr)/(x(2)-x(1)); % empirical pdf
         val(idx_cell) = norm(f_g-f_r,2);
     end
+end
+
+function cc = similar_traces(traces,cent_cells)
+% Outputs a cell array with indices to be merged
+
+    % Mask for closeby cells
+    dist_thresh = max(h,w)/40;
+    dist_centroids = compute_dist_matrix(cent_cells);
+    dist_centroids = dist_centroids < dist_thresh; % Retain only the closeby cells
+    
+    % Normalize traces
+    [num_frames,num_cells] = size(traces);
+    mean_traces = sum(traces,1)/num_frames;
+    centered_traces = bsxfun(@minus,traces,mean_traces);
+    normed_traces = bsxfun(@times,centered_traces,1./sqrt(sum(centered_traces.^2,1)) );
+    
+    %Smooth traces
+    normed_traces = medfilt1(double(normed_traces),5);
+    
+    % Find distance between traces
+    dist_traces = compute_dist_matrix(normed_traces);
+    dist_traces(dist_traces==inf)=0;
+    dist_traces = dist_traces<0.65;
+    
+    % Connectivity matrix
+    A = sparse(double(dist_traces.*dist_centroids)+eye(num_cells));
+    
+    % do multiple DFSs to get connected components
+    cc = {};
+    idx_visit = 1:num_cells;
+    while true
+        idx_this = idx_visit(1);
+        [d,~,~,~] = dfs(A,idx_this);
+        cc_this = find(d'>-1);
+        if length(cc_this)>1
+            cc{end+1} = cc_this;          
+        end
+        idx_visit = setdiff(idx_visit,cc_this);
+        if isempty(idx_visit)
+            break;
+        end
+    end
+end
+
+function Dist = compute_dist_matrix(centroids)
+% Calculate the matrix of centroid distances
+
+    num_comp = size(centroids,2);
+    NN = repmat(sum(centroids.^2,1),num_comp,1);
+    Dist = sqrt(max(NN+NN'-2*centroids'*centroids,0));  %#ok<MHERM>
+    Dist(Dist<1e-3) = inf; % Set diagonals to infinity
+    
 end
 
 end
