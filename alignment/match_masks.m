@@ -18,7 +18,7 @@ for i = 1:num_masks(1)
         M(i,j) = compute_mask_overlap(masks1{i}, masks2{j});
     end
 end
-fprinft('%s: Overlap matrix completed!\n', datestr(now));
+fprintf('%s: Overlap matrix completed!\n', datestr(now));
 
 % Find the nonzero elements of the mask overlap matrix
 %------------------------------------------------------------

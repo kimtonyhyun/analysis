@@ -37,8 +37,6 @@ fprintf('run_alignment: Beginning alignment...\n');
 [affine_info, masks1, masks2_tform] = compute_affine_transform(ds1, ds2);
 
 input('run_alignment: Press any key to continue with mask matching >> ');
-
-% Compute matrix of mask overlaps
 [match_1to2, match_2to1, M] = match_masks(masks1, masks2_tform);
 
 % Set up auxiliary output
