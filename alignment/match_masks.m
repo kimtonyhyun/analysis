@@ -1,8 +1,7 @@
 function [match_1to2, match_2to1, M] = match_masks(masks1, masks2)
-% Computes the overlaps between masks1 and masks2.
+% Computes the overlaps between two sets of logical masks.
 
 % Matching parameters
-%------------------------------------------------------------
 min_overlap_threshold = 1/3;
 
 % Compute the matrix of mask overlaps
