@@ -1,4 +1,4 @@
-function [match_1to2, match_2to1, M] = match_masks(masks1, masks2)
+function [match_1to2, match_2to1, M] = match_masks(masks1, masks2, varargin)
 % Computes the overlaps between two sets of logical masks. Output format is
 % as follows:
 %
@@ -8,26 +8,52 @@ function [match_1to2, match_2to1, M] = match_masks(masks1, masks2)
 %   second column the overlap measure between the two masks.
 %
 
-% Matching parameters
-min_overlap_threshold = 1/3;
+use_fast_matching = 0;
+fast_overlap_threshold = 0.7;
 
-% Compute the matrix of mask overlaps
+for k = 1:length(varargin)
+    vararg = varargin{k};
+    if ischar(vararg)
+        switch lower(vararg)
+            case 'fast'
+                % "Fast matching" mode uses two shortcuts. Given a mask i
+                % from masks1, if a mask is found in masks2 that exceeds a
+                % certain threshold, then:
+                % 1) Don't perform exhaustive search of all masks2;
+                % 2) The mask in masks2 is now unavailable for matching
+                %    for against remaining masks1.
+                fprintf('%s: Using fast matching!\n', datestr(now));
+                use_fast_matching = 1;
+        end
+    end
+end
+
+% Compute the matrix M of mask overlaps
 %------------------------------------------------------------
 num_masks = [length(masks1) length(masks2)];
 M = zeros(num_masks);
+
+available_for_match = ones(num_masks(2),1);
 for i = 1:num_masks(1)
     if (mod(i,20)==0)
         fprintf('%s: Computing overlaps (%.1f%%)...\n',...
             datestr(now), 100*i/num_masks(1));
     end
     for j = 1:num_masks(2)
-        M(i,j) = compute_mask_overlap(masks1{i}, masks2{j});
+        if available_for_match(j)
+            M(i,j) = compute_mask_overlap(masks1{i}, masks2{j});
+            if use_fast_matching && (M(i,j) > fast_overlap_threshold)
+                available_for_match(j) = 0;
+                break;
+            end
+        end
     end
 end
 fprintf('%s: Overlap matrix completed!\n', datestr(now));
 
 % Find the nonzero elements of the mask overlap matrix
 %------------------------------------------------------------
+min_overlap_threshold = 1/3;
 match_1to2 = find_nonzero_overlaps(M, min_overlap_threshold);
 match_2to1 = find_nonzero_overlaps(M', min_overlap_threshold);  
 
