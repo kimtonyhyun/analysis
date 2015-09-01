@@ -21,9 +21,12 @@ function [match_1to2, match_2to1] = run_alignment(ds1, ds2, varargin)
 %   [m1to2, m2to1] = run_alignment('c9m7d07_ica001', 'c9m7d08_ica001');
 %
 
+% Default alignment options
+%------------------------------------------------------------
 use_transform = 1;
 fast_matching = 0;
-bijective_matching = 0;
+bijective_matching = 1;
+
 for k = 1:length(varargin)
     if ischar(varargin{k})
         switch varargin{k}
@@ -38,8 +41,8 @@ for k = 1:length(varargin)
                 assert(all(size(ds1.cells(1).mask)==size(ds2.cells(1).mask)),...
                     'notrans option requires cell image dimensions to be identical!');
                 use_transform = 0;
-            case {'one-to-one', 'bijective'}
-                bijective_matching = 1;
+            case 'keepall' % Keep all matches
+                bijective_matching = 0;
         end
     end
 end
