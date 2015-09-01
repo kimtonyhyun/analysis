@@ -1,5 +1,5 @@
 function [match_1to2, match_2to1, info] = run_alignment(ds1, ds2, varargin)
-% Align two sets of IC filters.
+% Align two sets of cell filters.
 %
 % Inputs:
 %   ds1/2: DaySummary object containing cell maps to be aligned
@@ -13,9 +13,9 @@ function [match_1to2, match_2to1, info] = run_alignment(ds1, ds2, varargin)
 %       source Y.
 %
 %       For example, match_1to2{k} is a [Nx2] matrix where N is the number
-%       of ICs from source 2 that match IC k of source 1. The first column
-%       of the matrix is the index of the matching IC in source 2; the
-%       second column is the overlap score between the IC pairs.
+%       of ICs from source 2 that match cell k of source 1. The first column
+%       of the matrix is the index of the matching cell in source 2; the
+%       second column is the overlap score between the cell pairs.
 %
 % Example usage:
 %   [m1to2, m2to1] = run_alignment('c9m7d07_ica001', 'c9m7d08_ica001');
