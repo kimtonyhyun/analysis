@@ -238,11 +238,19 @@ classdef DaySummary < handle
             class = {obj.cells.label}'; % Column cell
         end
         
-        function set_all_labels(obj, label)
+        function set_all_labels_to(obj, label)
             % Overwrites the label of all cells in DaySummary
             for k = 1:obj.num_cells
                 obj.cells(k).label = label;
             end
+        end
+        
+        function set_labels(obj)
+            obj.set_all_labels_to('cell');
+        end
+        
+        function reset_labels(obj)
+            obj.set_all_labels_to([]);
         end
     end
 end
