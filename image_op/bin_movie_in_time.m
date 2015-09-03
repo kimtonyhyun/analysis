@@ -44,7 +44,7 @@ assert(num_frames == trial_indices(end,end),...
 %------------------------------------------------------------
 
 % Get the binned indices
-binned_indices = bin_frame_indices2(trial_indices, bin_factor);
+binned_indices = bin_frame_indices(trial_indices, bin_factor);
 binned_frames_per_trial = binned_indices(:,end) - binned_indices(:,1) + 1;
 num_binned_frames = sum(binned_frames_per_trial);
 num_trials = size(binned_frames_per_trial,1);
