@@ -261,7 +261,8 @@ classdef DaySummary < handle
         %------------------------------------------------------------
         function load_behavior_movie(obj, behavior_source)
             obj.behavior_vid = VideoReader(behavior_source);
-            fprintf('%s: Loaded behavior video from "%s"\n', behavior_source);
+            fprintf('%s: Loaded behavior video from "%s"\n',...
+                datestr(now), behavior_source);
             if (obj.behavior_vid.NumberOfFrames ~= obj.trial_indices(end,end))
                 fprintf('  Warning! Number of frames in behavior video (%d) does not match the trial frame table (%d)!\n',...
                     obj.behavior_vid.NumberOfFrames, obj.trial_indices(end,end));
