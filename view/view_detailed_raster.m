@@ -10,7 +10,7 @@ function view_detailed_raster(ds, cell_idx)
 
 while (1)
     clf;
-    draw_rasters();
+    draw_rasters(); 
     
     % Ask user for command
     prompt = sprintf('Cell %d raster >> ', cell_idx);
@@ -18,7 +18,16 @@ while (1)
     
     val = str2double(resp);
     if (~isnan(val)) % Is a number (trial index)
-        
+        if ~ds.is_behavior_loaded
+            fprintf('  Behavior video not loaded into DaySummary!\n');
+        else
+            if ((1 <= val) && (val <= ds.num_trials))
+                fprintf('  Showing trial %d. Press any key to return >> \n', val);
+                draw_trial(val);
+            else
+                fprintf('  Error, %d is not a valid trial index!\n', val);
+            end
+        end
     else
         resp = lower(resp);
         switch (resp)
@@ -44,12 +53,14 @@ end
         imagesc(ds.cells(cell_idx).im);
         axis image;
         title(sprintf('Cell %d (%s)', cell_idx, ds.cells(cell_idx).label));
+        colormap jet; freezeColors;
         
         % Raster of all trials, with correctness
         subplot(3,4,[5 6 9 10]);
         ds.plot_cell_raster(cell_idx, 'draw_correct');
         raster_scale = get(gca, 'CLim'); % Scale that applies to all trials
         title('All trials');
+        colormap jet; freezeColors;
         
         % Divide rasters by correctness
         subplot(3,4,3);
@@ -79,8 +90,31 @@ end
         subplot(3,4,12);
         ds.plot_cell_raster(cell_idx, 'end', 'north');
         set(gca, 'CLim', raster_scale);
-        title('North end');
-                
+        title('North end'); 
     end % draw_rasters
 
+    function draw_trial(trial_idx)
+        Mb = ds.get_behavior_trial(trial_idx); % Behavior movie
+        tr = ds.trials(trial_idx).traces(cell_idx,:);
+        num_frames_in_trial = length(tr);
+        
+        % Show trace
+        subplot(3,4,[3 4]);
+        plot(1:num_frames_in_trial, tr);
+        xlim([1 num_frames_in_trial]);
+        y_min = min(tr);
+        y_max = max(tr);
+        y_range = y_max - y_min;
+        ylim([y_min y_max] + 0.1*y_range*[-1 1]);
+        grid on;
+        title(sprintf('Trial %d', trial_idx));
+        
+        % Show behavior movie
+        subplot(3,4,[7 8 11 12]);
+        hb = imagesc(Mb(:,:,1));
+        set(hb, 'XTicks', []);
+        set(hb, 'YTicks', []);
+        colormap gray;
+        pause;
+    end % draw_trial
 end % view_cell_rasters
