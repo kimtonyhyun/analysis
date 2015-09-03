@@ -17,6 +17,8 @@ cells_per_page = [2 4];
 num_cells_per_page = prod(cells_per_page);
 num_pages = ceil(num_cells / num_cells_per_page);
 
+h = figure;
+
 page_idx = 1;
 while (1)
     clf;
@@ -66,6 +68,7 @@ while (1)
                 page_idx = 1;
                 
             case 'q' % Exit
+                close(h);
                 break;
 
             otherwise
