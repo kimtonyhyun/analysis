@@ -25,6 +25,7 @@ classdef DaySummary < handle
     
     properties (SetAccess = private, Hidden)
         cell_map_ref_img
+        behavior_vid
     end
         
     methods
@@ -44,14 +45,14 @@ classdef DaySummary < handle
             %------------------------------------------------------------
             [trial_indices, loc_info, trial_durations] =...
                 parse_plusmaze(plusmaze_txt); %#ok<*PROP>
-            fprintf('  %s: Loaded trial metadata from %s\n', datestr(now), plusmaze_txt);
+            fprintf('%s: Loaded trial metadata from %s\n', datestr(now), plusmaze_txt);
             
             % Load data
             %------------------------------------------------------------
             data_source = get_most_recent_file(rec_dir, 'rec_*.mat');
             data = load(data_source);
             obj.num_cells = data.info.num_pairs;
-            fprintf('  %s: Loaded filters and traces from %s\n', datestr(now), data_source);
+            fprintf('%s: Loaded filters and traces from %s\n', datestr(now), data_source);
             
             % Check that the length of traces is consistent with the table
             % of trial indices.
@@ -114,8 +115,11 @@ classdef DaySummary < handle
             class_source = get_most_recent_file(rec_dir, 'class_*.txt');
             if ~isempty(class_source)
                 obj.load_class(class_source);
-                fprintf('  %s: Loaded classification from %s\n', datestr(now), class_source);
+                fprintf('%s: Loaded classification from %s\n', datestr(now), class_source);
             end
+            
+            % Other initialization
+            obj.behavior_vid = [];
             
             % Precompute cell map image, to avoid doing it each time
             %------------------------------------------------------------
@@ -251,6 +255,17 @@ classdef DaySummary < handle
         
         function reset_labels(obj)
             obj.set_all_labels_to([]);
+        end
+        
+        % Load behavior movie
+        %------------------------------------------------------------
+        function load_behavior_movie(obj, behavior_source)
+            obj.behavior_vid = VideoReader(behavior_source);
+            fprintf('%s: Loaded behavior video from "%s"\n', behavior_source);
+            if (obj.behavior_vid.NumberOfFrames ~= obj.trial_indices(end,end))
+                fprintf('  Warning! Number of frames in behavior video (%d) does not match the trial frame table (%d)!\n',...
+                    obj.behavior_vid.NumberOfFrames, obj.trial_indices(end,end));
+            end
         end
     end
 end
