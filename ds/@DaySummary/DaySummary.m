@@ -272,5 +272,11 @@ classdef DaySummary < handle
                     obj.behavior_vid.NumberOfFrames, obj.trial_indices(end,end));
             end
         end
+        
+        function Mb = get_behavior_trial(obj, trial_idx)
+            trial_frames = obj.trial_indices(trial_idx, [1 end]); % [Start end]
+            Mb = obj.behavior_vid.read(trial_frames);
+            Mb = squeeze(Mb(:,:,1,:)); % Movie is actually grayscale!
+        end
     end
 end
