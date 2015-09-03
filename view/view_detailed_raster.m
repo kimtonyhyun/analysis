@@ -10,7 +10,7 @@ function view_detailed_raster(ds, cell_idx)
 
 while (1)
     clf;
-    draw_rasters(); 
+    scale = draw_rasters(); 
     
     % Ask user for command
     prompt = sprintf('Cell %d raster >> ', cell_idx);
@@ -47,7 +47,7 @@ end
 
     % Helper functions
     %------------------------------------------------------------
-    function draw_rasters()
+    function raster_scale = draw_rasters()
         % Image of cell
         subplot(3,4,[1 2]);
         imagesc(ds.cells(cell_idx).im);
@@ -95,23 +95,22 @@ end
 
     function draw_trial(trial_idx)
         Mb = ds.get_behavior_trial(trial_idx); % Behavior movie
-        tr = ds.trials(trial_idx).traces(cell_idx,:);
-        num_frames_in_trial = length(tr);
+        trace = ds.trials(trial_idx).traces(cell_idx,:);
+        num_frames_in_trial = length(trace);
         
         % Show trace
         subplot(3,4,[3 4]);
-        plot(1:num_frames_in_trial, tr);
-        xlim([1 num_frames_in_trial]);
-        y_min = min(tr);
-        y_max = max(tr);
-        y_range = [y_min y_max] + 0.1*(y_max-y_min)*[-1 1];
-        ylim(y_range);
+        trial_phase = linspace(0, 1, num_frames_in_trial);
+        plot(trial_phase, trace,...
+             'HitTest', 'off');
+        xlim([0 1]);
+        ylim(scale);
         grid on;
         title(sprintf('Trial %d', trial_idx));
-        xlabel('Frames');
+        xlabel('Trial phase [a.u.]');
         ylabel('Signal [a.u.]');
         hold on;
-        t = plot(1*[1 1], y_range, 'k');
+        t = plot(0*[1 1], scale, 'k--');
         set(gca, 'ButtonDownFcn', @update_frame);
         
         % Show behavior movie
@@ -124,10 +123,12 @@ end
         
         function update_frame(h, ~)
             cp = get(h, 'CurrentPoint');
-            sel_frame = round(cp(1)); % X point of click
-            sel_frame = max(sel_frame, 1);
-            sel_frame = min(sel_frame, num_frames_in_trial);
-            set(t, 'XData', sel_frame*[1 1]);
+            sel_phase = cp(1); % X point of click
+            sel_phase = max(sel_phase, 0);
+            sel_phase = min(sel_phase, 1);
+            
+            sel_frame = round(num_frames_in_trial * sel_phase);
+            set(t, 'XData', sel_phase*[1 1]);
             set(hb, 'CData', Mb(:,:,sel_frame));
         end % update_frame
     end % draw_trial
