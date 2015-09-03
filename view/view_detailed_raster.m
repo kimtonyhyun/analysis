@@ -104,19 +104,31 @@ end
         xlim([1 num_frames_in_trial]);
         y_min = min(tr);
         y_max = max(tr);
-        y_range = y_max - y_min;
-        ylim([y_min y_max] + 0.1*y_range*[-1 1]);
+        y_range = [y_min y_max] + 0.1*(y_max-y_min)*[-1 1];
+        ylim(y_range);
         grid on;
         title(sprintf('Trial %d', trial_idx));
         xlabel('Frames');
         ylabel('Signal [a.u.]');
+        hold on;
+        t = plot(1*[1 1], y_range, 'k');
+        set(gca, 'ButtonDownFcn', @update_frame);
         
         % Show behavior movie
         subplot(3,4,[7 8 11 12]);
-        imagesc(Mb(:,:,1));
+        hb = imagesc(Mb(:,:,1));
         set(gca, 'XTick', []);
         set(gca, 'YTick', []);
         colormap gray;
         pause;
+        
+        function update_frame(h, ~)
+            cp = get(h, 'CurrentPoint');
+            sel_frame = round(cp(1)); % X point of click
+            sel_frame = max(sel_frame, 1);
+            sel_frame = min(sel_frame, num_frames_in_trial);
+            set(t, 'XData', sel_frame*[1 1]);
+            set(hb, 'CData', Mb(:,:,sel_frame));
+        end % update_frame
     end % draw_trial
 end % view_cell_rasters
