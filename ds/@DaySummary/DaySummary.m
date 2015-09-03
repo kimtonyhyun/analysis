@@ -259,6 +259,10 @@ classdef DaySummary < handle
         
         % Load behavior movie
         %------------------------------------------------------------
+        function loaded = is_behavior_loaded(obj)
+            loaded = ~isempty(obj.behavior_vid);
+        end
+        
         function load_behavior_movie(obj, behavior_source)
             obj.behavior_vid = VideoReader(behavior_source);
             fprintf('%s: Loaded behavior video from "%s"\n',...
