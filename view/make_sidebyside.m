@@ -1,4 +1,14 @@
 function make_sidebyside(maze_source, behavior_source, miniscope_source, trials_to_record)
+% Generate a side-by-side AVI file of the specified trials.
+%
+% Example usage:
+%   make_sidebyside('c11m5d10.txt',...
+%                   'c11m5d10.mp4',...
+%                   'c11m5d10_gfix_cr_rm_mc_cr_norm_dff.hdf5',...
+%                   [35 45 66]);
+%
+% NOTE: `miniscope_source` must be a HDF5 file
+%
 
 % Get the table of frame indices
 %------------------------------------------------------------
@@ -43,7 +53,8 @@ truesize;
 output_name = sprintf('%s_sbs.avi', behavior_base_name);
 fprintf('%s: Side-by-side video will be saved to "%s"...\n', datestr(now), output_name);
 
-writerObj = VideoWriter(output_name, 'Grayscale AVI');
+writerObj = VideoWriter(output_name, 'Motion JPEG AVI');
+writerObj.Quality = 100;
 writerObj.FrameRate = 20; % FIXME
 open(writerObj);
 
@@ -72,3 +83,4 @@ for trial_idx = trials_to_record
     end
 end
 close(writerObj);
+fprintf('%s: Done!\n', datestr(now));
