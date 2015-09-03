@@ -22,7 +22,7 @@ while (1)
             fprintf('  Behavior video not loaded into DaySummary!\n');
         else
             if ((1 <= val) && (val <= ds.num_trials))
-                fprintf('  Showing trial %d. Press any key to return >> \n', val);
+                fprintf('  Showing trial %d. Press any key to return.\n', val);
                 draw_trial(val);
             else
                 fprintf('  Error, %d is not a valid trial index!\n', val);
@@ -108,12 +108,14 @@ end
         ylim([y_min y_max] + 0.1*y_range*[-1 1]);
         grid on;
         title(sprintf('Trial %d', trial_idx));
+        xlabel('Frames');
+        ylabel('Signal [a.u.]');
         
         % Show behavior movie
         subplot(3,4,[7 8 11 12]);
-        hb = imagesc(Mb(:,:,1));
-        set(hb, 'XTicks', []);
-        set(hb, 'YTicks', []);
+        imagesc(Mb(:,:,1));
+        set(gca, 'XTick', []);
+        set(gca, 'YTick', []);
         colormap gray;
         pause;
     end % draw_trial
