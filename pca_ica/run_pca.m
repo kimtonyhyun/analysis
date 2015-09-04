@@ -38,7 +38,7 @@ if ~isempty(varargin)
                 do_medfilt = 1;
                 if k<length(varargin)
                     dum = varargin{k+1};
-                    if isinteger(dum)
+                    if mod(dum,1) == 0 % Check if integer
                         medfilt_halfwidth = dum;
                     end
                 end
@@ -108,7 +108,7 @@ M = bsxfun(@minus, M, mean_M);
 
 idx_kept = 1:num_pixels;
 if do_trim
-    idx_kept = find(max_proj(:)>median(max_proj(:)));
+    idx_kept = find(max_proj(:)>quantile(max_proj(:),0.2));
     M = M(idx_kept,:);
 end
 
@@ -129,6 +129,8 @@ info.trim.idx_kept = idx_kept;
 
 info.medfilt.enabled = do_medfilt;  %#ok<*STRNU>
 info.medfilt.halfwidth = medfilt_halfwidth;
+
+info.cents = cents;
 
 save(savename, 'info', 'filters', 'traces', 'S');
 

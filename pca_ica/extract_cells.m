@@ -31,7 +31,7 @@ mem_occup_scale_CPU = 0.5; % Occupy this fraction of available memory on RAM
 mem_occup_scale_GPU = 0.7; % Occupy this fraction of available memory on GPU
 corr_thresh = 0.2;
 filter_thresh = 0.25;
-max_num = 1000;
+max_num = 1500;
 do_baseline_fix = 1;
 good_cell_limit = 0.4; % threshold to call cell (wrt a custom metric, see code)
 bad_cell_limit = 0.2; % threshold to call non-cell
@@ -143,7 +143,7 @@ if is_trimmed % Untrim the pixels
     F_temp(idx_kept,:) = F;
     F = F_temp;
     clear F_temp;
-    
+    idx_cells_trimmed = idx_cells;
     idx_cells = idx_kept(idx_cells);
 end
 
@@ -157,7 +157,7 @@ fprintf('%s: Cleaning filters and removing duplicates...\n',datestr(now));
 F = bsxfun(@times,F,1./sum(F,1)); % Make each filter sum up to 1
 inv_quality_filters = inv_quality_filters(idx);
 cent_cells = cent_cells(:,idx);
-
+idx_cells = idx_cells(idx);
 
 fprintf('%s: Loading movie for trace extraction...\n',datestr(now));
 M = load_movie(movie_source);
@@ -177,6 +177,7 @@ end
 % Identify split cells by looking at traces
 fprintf('%s: Identifying possible split cells...\n',datestr(now));
 cc = similar_traces(traces,cent_cells);
+save('cent_cells','cent_cells');
 
 fprintf('\t\t\t Identified %d split cells (total of %d objects), merging now...\n',...
     length(cc),length(cell2mat(cc)));
@@ -184,7 +185,20 @@ fprintf('\t\t\t Identified %d split cells (total of %d objects), merging now...\
 idx_elim = [];
 for i = 1:length(cc)
     idx_to_merge = cc{i};
-    merged_filter = sum(F(:,idx_to_merge),2)/length(idx_to_merge);
+    
+    if is_trimmed
+        filters_to_merge = U*U_norm(idx_cells_trimmed(idx_to_merge),:)';
+        F_temp = zeros(h*w,length(idx_to_merge));
+        F_temp(idx_kept,:) = filters_to_merge;
+        filters_to_merge = F_temp;
+        clear F_temp;
+    else
+        filters_to_merge = U*U_norm(idx_cells(idx_to_merge),:)';
+    end
+    
+    [~,merged_filter,~,~] = cleanup_filters(sum(filters_to_merge,2),filter_thresh);
+    merged_filter = merged_filter / sum(merged_filter);
+%     merged_filter = sum(F(:,idx_to_merge),2)/length(idx_to_merge);
     F(:,idx_to_merge(1)) = merged_filter;
     idx_elim = [idx_elim,idx_to_merge(2:end)];
 end
@@ -285,7 +299,7 @@ function [filters_out,idx_keep] = modify_filters(filters_in,filter_thresh)
             acc = acc+1;
             filters_out(:,acc) = filters_int(:,idx_filt);
         elseif len>1 % overlapping cells, merge
-            idx_merged = [idx_merged,setdiff(cells_this,idx_filt)];
+            idx_merged = [idx_merged;setdiff(cells_this,idx_filt)];
             merged_filter = sum(filters_int(:,cells_this),2);
             merged_filter = merged_filter/norm(merged_filter);
             [~,merged_filter,~,~] = cleanup_filters(merged_filter,filter_thresh);
@@ -423,19 +437,22 @@ function cc = similar_traces(traces,cent_cells)
     dist_centroids = compute_dist_matrix(cent_cells);
     dist_centroids = dist_centroids < dist_thresh; % Retain only the closeby cells
     
+    % Smooth traces
+    traces = medfilt1(double(traces),5);
+    
     % Normalize traces
     [num_frames,num_cells] = size(traces);
     mean_traces = sum(traces,1)/num_frames;
     centered_traces = bsxfun(@minus,traces,mean_traces);
     normed_traces = bsxfun(@times,centered_traces,1./sqrt(sum(centered_traces.^2,1)) );
     
-    %Smooth traces
-    normed_traces = medfilt1(double(normed_traces),5);
+%     %Smooth traces
+%     normed_traces = medfilt1(double(normed_traces),5);
     
     % Find distance between traces
     dist_traces = compute_dist_matrix(normed_traces);
     dist_traces(dist_traces==inf)=0;
-    dist_traces = dist_traces<0.65;
+    dist_traces = dist_traces<0.8;
     
     % Connectivity matrix
     A = sparse(double(dist_traces.*dist_centroids)+eye(num_cells));
