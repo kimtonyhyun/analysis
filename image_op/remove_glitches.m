@@ -12,7 +12,7 @@ function remove_glitches(movie_in, movie_out)
 
 if isempty(movie_out)
     [~, name] = fileparts(movie_in);
-    movie_out = sprintf('%s_cr.hdf5', name);
+    movie_out = sprintf('%s_gfix.hdf5', name);
     fprintf('remove_glitches: Output movie will be saved as "%s"\n', movie_out);
 end
 
