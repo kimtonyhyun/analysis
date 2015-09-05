@@ -1,4 +1,4 @@
-function M = remove_glitches(movie_in)
+function remove_glitches(movie_in, movie_out)
 % Detect glitched frames by looking for anomalous minimum and maximum pixel
 % values of each frame. Prompts the user for confirmation before replacing
 % the movie frame.
@@ -8,10 +8,18 @@ function M = remove_glitches(movie_in)
 %
 % Todo:
 %   - Interactive addition and removal of frames to be replaced
+%   - Load movie in chunks
+
+if isempty(movie_out)
+    [~, name] = fileparts(movie_in);
+    movie_out = sprintf('%s_cr.hdf5', name);
+    fprintf('remove_glitches: Output movie will be saved as "%s"\n', movie_out);
+end
 
 fprintf('%s: Loading movie...\n', datestr(now));
 M = load_movie(movie_in);
 
+% Compute fluorescence stats for anomalous frame detection
 fprintf('%s: Computing fluorescence stats...\n', datestr(now));
 F = compute_fluorescence_stats(M);
 
@@ -55,6 +63,11 @@ for frame = frames_to_replace
     fprintf('  Frame %d replaced by frame %d\n',...
         frame, source_frame);
 end
+
+% Write to output movie
+%------------------------------------------------------------
+save_movie_to_hdf5(M, movie_out);
+copy_hdf5_params(movie_in, movie_out);
 
 end % remove_glitches
 
