@@ -38,6 +38,7 @@ num_frames = movie_size(3);
 
 % Begin crop processing
 %------------------------------------------------------------
+use_min_projection = 0;
 
 % Optional specification of the cropping ROI
 x_bounds = [];
@@ -54,13 +55,36 @@ if ~isempty(varargin)
                     bounds = varargin{k+1};
                     x_bounds = bounds(1:2);
                     y_bounds = bounds(3:4);
+                case 'min' % Compute minimum projection
+                    use_min_projection = 1;
             end
         end
     end
 end
 
-ref_idx = 1;
-ref_frame = h5read(movie_in, movie_dataset, [1 1 ref_idx], [height width 1]);
+frame_chunk_size = 2500;
+[frame_chunks, num_chunks] = make_frame_chunks(num_frames, frame_chunk_size);
+
+if use_min_projection
+    ref_frame = Inf*ones(height, width);
+    for i = 1:num_chunks
+        fprintf('%s: Reading frames %d to %d for minimum projection (out of %d)...\n',...
+            datestr(now), frame_chunks(i,1), frame_chunks(i,2), num_frames);
+        
+        chunk_start = frame_chunks(i,1);
+        chunk_count = frame_chunks(i,2) - frame_chunks(i,1) + 1;
+        
+        movie_chunk = h5read(movie_in, movie_dataset,...
+                             [1 1 chunk_start],...
+                             [height width chunk_count]);
+                         
+        movie_chunk_min = min(movie_chunk, [], 3);
+        ref_frame = min(ref_frame, movie_chunk_min);
+    end
+else % Just display the first frame
+    ref_idx = 1;
+    ref_frame = h5read(movie_in, movie_dataset, [1 1 ref_idx], [height width 1]);
+end
 
 if isempty(x_bounds) % Cropping region was not specified programmatically
     imagesc(ref_frame);
@@ -100,10 +124,6 @@ h5create(movie_out, '/Crop/XBounds', [1 2], 'Datatype', 'double');
 h5write(movie_out, '/Crop/XBounds', x_bounds);
 h5create(movie_out, '/Crop/YBounds', [1 2], 'Datatype', 'double');
 h5write(movie_out, '/Crop/YBounds', y_bounds);
-
-% Process the remainder of the movie
-frame_chunk_size = 2500;
-[frame_chunks, num_chunks] = make_frame_chunks(num_frames, frame_chunk_size);
 
 for i = 1:num_chunks
     fprintf('%s: Cropping frames %d to %d (out of %d)...\n',...
