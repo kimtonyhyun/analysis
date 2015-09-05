@@ -23,7 +23,7 @@ classdef DaySummary < handle
         trial_indices
     end
     
-    properties (SetAccess = private, Hidden)
+    properties (Access = private)
         cell_map_ref_img
         behavior_vid
     end
