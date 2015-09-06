@@ -1,4 +1,4 @@
-function [match_1to2, match_2to1, info] = run_alignment(ds1, ds2, varargin)
+function [match_1to2, match_2to1] = run_alignment(ds1, ds2, varargin)
 % Align two sets of cell filters.
 %
 % Inputs:
@@ -21,30 +21,55 @@ function [match_1to2, match_2to1, info] = run_alignment(ds1, ds2, varargin)
 %   [m1to2, m2to1] = run_alignment('c9m7d07_ica001', 'c9m7d08_ica001');
 %
 
-bijective_matching = 0;
+% Default alignment options
+%------------------------------------------------------------
+use_transform = 1;
+fast_matching = 0;
+bijective_matching = 1;
+
 for k = 1:length(varargin)
     if ischar(varargin{k})
         switch varargin{k}
-            case {'one-to-one', 'bijective'}
-                bijective_matching = 1;
+            case 'fast'
+                % Use fast -- nonexhaustive -- matching of masks. See
+                % 'match_masks' for further details
+                fast_matching = 1;
+            case 'notrans'
+                % No affine transform needed (e.g. for matching multiple
+                % extraction runs on the same movie). Requires the image
+                % dimensions to be identical!
+                assert(all(size(ds1.cells(1).mask)==size(ds2.cells(1).mask)),...
+                    'notrans option requires cell image dimensions to be identical!');
+                use_transform = 0;
+            case 'keepall' % Keep all matches
+                bijective_matching = 0;
         end
     end
 end
 
 % Control point-based registration of two sets of ICs
 %------------------------------------------------------------
-fprintf('run_alignment: Beginning alignment...\n');    
-[affine_info, masks1, masks2_tform] = compute_affine_transform(ds1, ds2);
-
+if use_transform
+    fprintf('run_alignment: Beginning alignment...\n');
+    [~, masks1, masks2] = compute_affine_transform(ds1, ds2);
+else
+    masks1 = {ds1.cells.mask};
+    masks2 = {ds2.cells.mask};
+    
+    figure;
+    ds1.plot_cell_boundaries('nobackground', 'cells', 'linespec', 'b', 'linewidth', 2);
+    hold on;
+    ds2.plot_cell_boundaries('nobackground', 'cells', 'linespec', 'r', 'linewidth', 1);
+    title('Dataset1 (blue) vs. Dataset2 (red)');
+end
 input('run_alignment: Press any key to continue with mask matching >> ');
-[match_1to2, match_2to1, M] = match_masks(masks1, masks2_tform);
 
-% Set up auxiliary output
-%------------------------------------------------------------
-info.affine = affine_info;
-info.masks1 = masks1;
-info.masks2 = masks2_tform;
-info.overlap_matrix = M;
+if fast_matching
+    [match_1to2, match_2to1] = match_masks(masks1, masks2, 'fast');
+else
+    [match_1to2, match_2to1] = match_masks(masks1, masks2);
+end
+
 
 % Optional bijective filtering
 %------------------------------------------------------------

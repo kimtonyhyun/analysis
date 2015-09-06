@@ -147,7 +147,7 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
                 
                 % trial_aware mode
                 % if image is the first image of a trial, use next centroid
-                if trial_aware && find(true_frame_idx==trial_indices(:,1),1)
+                if trial_aware && any(true_frame_idx==trial_indices(:,1))
                     reassign_prev_centroid = 1;
                     lost_centroids = lost_centroids+1;
                     centroid_color = 'm';
