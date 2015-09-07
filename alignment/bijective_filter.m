@@ -1,4 +1,7 @@
 function [match_1to2, match_2to1] = bijective_filter(match_1to2, match_2to1)
+% Makes sure that the the matching is bijective, i.e.
+%   1. Each cell in Dataset1 matches to at most one cell in Dataset 2 (and
+%      visa versa)
 
 for i = 1:length(match_1to2)
     match_itoj = match_1to2{i};
@@ -35,3 +38,5 @@ for j = 1:length(match_2to1)
         match_2to1{j} = match_jtoi(1,:);
     end
 end
+
+end % bijective_filter

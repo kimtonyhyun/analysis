@@ -5,7 +5,8 @@ function [match_1to2, match_2to1, M] = match_masks(masks1, masks2, varargin)
 % match_1to2{k} is a [Nx2] matrix where N is the number of masks from 
 %   source 2 that match mask k of source 1. The first column of the matrix 
 %   is the index of the matching mask in source 2; the second column is
-%   second column the overlap measure between the two masks.
+%   second column the overlap measure between the two masks. The list is
+%   sorted in order of descending overlap measure.
 %
 
 use_fast_matching = 0;
