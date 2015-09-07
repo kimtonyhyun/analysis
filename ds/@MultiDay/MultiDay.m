@@ -2,28 +2,31 @@
 %
 classdef MultiDay < handle
     properties
-        days % List of days in the MultiDay object
+        valid_days % List of days in the MultiDay object
         num_cells % Number of aligned cells through all days
         matched_indices
     end
     
     properties (Access = private)
+        full_to_sparse
         ds
         match
     end
     
     methods
         function obj = MultiDay(ds_list, match_list)
-            % Unpack the provided list of DaySummarys into a full cell
+            % Unpack the provided list of DaySummary's into a full cell
+            % TODO: Consider using sparse internal storage.
             %------------------------------------------------------------
-            obj.days = cell2mat(ds_list(:,1))';
-            num_days = length(obj.days);
-            max_day = max(obj.days);
+            obj.valid_days = cell2mat(ds_list(:,1))';            
+            num_days = length(obj.valid_days);
+            max_day = max(obj.valid_days);
+            
             obj.ds = cell(max_day, 1);
             for k = 1:size(ds_list,1)
                 day  = ds_list{k,1};
                 ds_k = ds_list{k,2};
-                fprintf('%s: Day %d ds has %d classified cells\n',...
+                fprintf('%s: Day %d has %d classified cells\n',...
                     datestr(now), day, sum(ds_k.is_cell));
                 
                 obj.ds{day} = ds_k;
@@ -46,8 +49,8 @@ classdef MultiDay < handle
             
             % Verify that there is is a match matrix for every pair of
             % provided DaySummarys
-            for i = obj.days
-                for j = setdiff(obj.days, i)
+            for i = obj.valid_days
+                for j = setdiff(obj.valid_days, i)
                     if isempty(obj.match{i,j})
                         error('No match between Day %d and Day %d provided!', i, j);
                     end
@@ -57,18 +60,22 @@ classdef MultiDay < handle
             % Compute matching across all provided days. We keep only the
             % _classified cells_ of each day
             %------------------------------------------------------------
-            base_day = obj.days(1);
+            base_day = obj.valid_days(1);
             base_day_cells = find(obj.ds{base_day}.is_cell);
             base_day_num_cells = length(base_day_cells);
             
-            % Scratch space for matching indices
+            % Scratch space (sparse) for matching indices
+            obj.full_to_sparse = zeros(1, max_day);
+            obj.full_to_sparse(base_day) = 1;
+            
             M = zeros(base_day_num_cells, num_days);
             M(:,1) = base_day_cells;
             
             % Fill out M columnwise
             for k = 2:num_days
-                prev_day = obj.days(k-1);
-                curr_day = obj.days(k);
+                prev_day = obj.valid_days(k-1);
+                curr_day = obj.valid_days(k);
+                obj.full_to_sparse(curr_day) = k;
                 for x = 1:base_day_num_cells
                     % First, check that the row corresponds to a valid
                     % matched cell on the previous (k-1) day
@@ -94,12 +101,29 @@ classdef MultiDay < handle
             unmatched = any(M==0, 2);
             obj.matched_indices = M(~unmatched, :);
             obj.num_cells = size(obj.matched_indices, 1);
+            fprintf('%s: Found %d matching classified cells across all days\n',...
+                datestr(now), obj.num_cells);
+            
         end % MultiDay
         
         % Accessors
         %------------------------------------------------------------
-        function cell_idx = get_cell_idx(cell_idx, day_idx)
-            cell_idx = obj.matched_indices(cell_idx, day_idx);
+        function ds = day(obj, day_idx)
+            if ~ismember(day_idx, obj.valid_days)
+                error('Error! Day %d is not valid for this MultiDay', day_idx);
+            end
+            ds = obj.ds{day_idx};
+        end
+        
+        function cell_idx = get_cell_idx(obj, common_cell_idx, day_idx)
+            % Convert the common_cell_idx into the day-specific index
+            cell_idx = obj.matched_indices(common_cell_idx,...
+                            obj.full_to_sparse(day_idx));
+        end
+        
+        function cell = get_cell(obj, common_cell_idx, day_idx)
+            cell_idx = obj.get_cell_idx(common_cell_idx, day_idx);
+            cell = obj.ds{day_idx}.cells(cell_idx);
         end
     end
 end
