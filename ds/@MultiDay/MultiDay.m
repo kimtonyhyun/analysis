@@ -61,7 +61,7 @@ classdef MultiDay < handle
             end
             
             % Compute matches
-            M = obj.compute_all_matches_by_graph();
+            M = obj.compute_all_matches();
             
             % Filter out rows of M with unmatched indices (i.e. zeros) and
             % store result
@@ -106,7 +106,7 @@ classdef MultiDay < handle
     end
     
     methods (Access=private)
-        function [M, assignments] = compute_all_matches_by_graph(obj)
+        function [M, assignments] = compute_all_matches(obj)
             % Cells of all days will be arranged linearly for the graph
             % computation.
             num_cells_per_day = zeros(1, obj.num_days);
@@ -140,12 +140,16 @@ classdef MultiDay < handle
             A = sparse(A); % Required by graphconncomp
             [num_components, assignments] = graphconncomp(A, 'Directed', 'false');
             
-            % Set up the match matrix; zero indicates unmatched
+            % Set up the match matrix; zero indicates unmatched (or not
+            % classified to be a cell)
             M = zeros(num_components, obj.num_days);
             for I = 1:length(assignments)
                 assignment = assignments(I);
                 [k, cell_idx] = linear_to_day(I);
-                M(assignment, k) = cell_idx;
+                day = obj.valid_days(k);
+                if obj.ds{day}.is_cell(cell_idx) % Keep only classified cells
+                    M(assignment, k) = cell_idx;
+                end
             end
             
             % Helper indexing functions
@@ -159,47 +163,6 @@ classdef MultiDay < handle
                 cell_idx = linear_idx - offsets(k);
             end % linear_to_day
 
-        end % compute_all_matches_by_graph
-        
-        function M = compute_all_matches(obj)
-            % Compute matching across all provided days. We keep only the
-            % _classified cells_ of each day. Unmatched indices are
-            % indicated by zeros.
-            %------------------------------------------------------------
-            base_day = obj.valid_days(1);
-            base_day_cells = find(obj.ds{base_day}.is_cell);
-            base_day_num_cells = length(base_day_cells);
-            
-            % Scratch space (sparse) for matching indices
-            M = zeros(base_day_num_cells, obj.num_days);
-            M(:,1) = base_day_cells;
-            
-            % Fill out M columnwise in the order of obj.valid_days
-            for k = 2:obj.num_days
-                curr_day = obj.valid_days(k);
-                for x = 1:base_day_num_cells
-                    for l = 1:(k-1)
-                        prev_day = obj.valid_days(l);
-                        % First, check that the row corresponds to a valid
-                        % matched cell on a previous day
-                        prev_cell_idx = M(x,l);
-                        if (prev_cell_idx ~= 0)
-                            % Next, check if the cell from the previous (l)
-                            % day matches to the current (k) day
-                            m = obj.match{prev_day, curr_day}{prev_cell_idx};
-                            if ~isempty(m)
-                                curr_cell_idx = m(1);
-                                % Finally, we save the matched result if it is
-                                % a valid classified cell on the current day
-                                if obj.ds{curr_day}.is_cell(curr_cell_idx)
-                                    M(x,k) = curr_cell_idx;
-                                end
-                            end
-                        end
-                    end % l
-                end % x
-            end % k
-            
         end % compute_all_matches
         
         function Mf = filter_matches(~, M)
