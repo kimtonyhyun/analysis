@@ -1,7 +1,7 @@
 % Structure for accessing multiple aligned DaySummary's
 %
 classdef MultiDay < handle
-    properties
+    properties (SetAccess = private)
         valid_days % List of days in the MultiDay object
         num_days
         num_cells % Number of aligned cells through all days
