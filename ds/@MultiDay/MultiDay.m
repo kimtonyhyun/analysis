@@ -72,6 +72,35 @@ classdef MultiDay < handle
             
         end % MultiDay
         
+        % Generate a new MultiDay object from a subset of days
+        function nobj = get_sub_multiday(obj, sub_days)
+            % Verify that all days are contained in the parent md
+            if ~all(ismember(sub_days, obj.valid_days))
+                error('Error! Parent MultiDay does not have the requested subset of days');
+            end
+            
+            num_sub_days = length(sub_days);
+            ds_list = cell(num_sub_days, 2);
+            for i = 1:num_sub_days
+                day = sub_days(i);
+                ds_list(i,:) = {day, obj.ds{day}};
+            end
+            
+            num_matches = nchoosek(num_sub_days,2);
+            match_list = cell(num_matches, 4);
+            idx = 1;
+            for i = 1:(num_sub_days-1)
+                day_i = sub_days(i);
+                for j = (i+1):num_sub_days
+                    day_j = sub_days(j);
+                    match_list(idx,:) = {day_i, day_j, obj.match{day_i, day_j}, obj.match{day_j, day_i}};
+                    idx = idx + 1;
+                end
+            end
+            
+            nobj = MultiDay(ds_list, match_list);
+        end
+        
         % General accessors
         %------------------------------------------------------------
         function ds = day(obj, day_idx)
