@@ -26,8 +26,8 @@ classdef MultiDay < handle
             for k = 1:size(ds_list,1)
                 day  = ds_list{k,1};
                 ds_k = ds_list{k,2};
-                fprintf('%s: Day %d has %d classified cells\n',...
-                    datestr(now), day, sum(ds_k.is_cell));
+                fprintf('%s: Day %d has %d classified cells (out of %d)\n',...
+                    datestr(now), day, ds_k.num_classified_cells, ds_k.num_cells);
                 
                 obj.ds{day} = ds_k;
                 obj.full_to_sparse(day) = k;
@@ -129,7 +129,7 @@ classdef MultiDay < handle
                         % matched cell on a previous day
                         prev_cell_idx = M(x,l);
                         if (prev_cell_idx ~= 0)
-                            % Next, check if the cell from the previous (k-1)
+                            % Next, check if the cell from the previous (l)
                             % day matches to the current (k) day
                             m = obj.match{prev_day, curr_day}{prev_cell_idx};
                             if ~isempty(m)
@@ -144,6 +144,7 @@ classdef MultiDay < handle
                     end % l
                 end % x
             end % k
+            
         end % compute_all_matches
     end
 end
