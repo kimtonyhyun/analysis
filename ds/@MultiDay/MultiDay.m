@@ -19,7 +19,6 @@ classdef MultiDay < handle
             % TODO: Consider using sparse internal storage.
             %------------------------------------------------------------
             obj.valid_days = cell2mat(ds_list(:,1))';            
-            num_days = length(obj.valid_days);
             max_day = max(obj.valid_days);
 
             obj.full_to_sparse = zeros(1, max_day);
@@ -33,9 +32,7 @@ classdef MultiDay < handle
                 obj.ds{day} = ds_k;
                 obj.full_to_sparse(day) = k;
             end
-            
 
-            
             % Unpack the provided list of matches into a full cell matrix
             % Convention:
             %   match{i,j} = match from Day i to Day j
@@ -60,40 +57,8 @@ classdef MultiDay < handle
                 end
             end
             
-            % Compute matching across all provided days. We keep only the
-            % _classified cells_ of each day
-            %------------------------------------------------------------
-            base_day = obj.valid_days(1);
-            base_day_cells = find(obj.ds{base_day}.is_cell);
-            base_day_num_cells = length(base_day_cells);
-            
-            % Scratch space (sparse) for matching indices
-            M = zeros(base_day_num_cells, num_days);
-            M(:,1) = base_day_cells;
-            
-            % Fill out M columnwise
-            for k = 2:num_days
-                prev_day = obj.valid_days(k-1);
-                curr_day = obj.valid_days(k);
-                for x = 1:base_day_num_cells
-                    % First, check that the row corresponds to a valid
-                    % matched cell on the previous (k-1) day
-                    prev_cell_idx = M(x,k-1);
-                    if (prev_cell_idx ~= 0)
-                        % Next, check if the cell from the previous (k-1)
-                        % day matches to the current (k) day
-                        m = obj.match{prev_day, curr_day}{prev_cell_idx};
-                        if ~isempty(m)
-                            curr_cell_idx = m(1);
-                            % Finally, we save the matched result if it is
-                            % a valid classified cell on the current day
-                            if obj.ds{curr_day}.is_cell(curr_cell_idx)
-                                M(x,k) = curr_cell_idx;
-                            end
-                        end
-                    end
-                end
-            end
+            % Compute matches
+            M = obj.compute_all_matches();
             
             % Filter out rows of M with unmatched indices (i.e. zeros) and
             % store result
@@ -139,6 +104,46 @@ classdef MultiDay < handle
     end
     
     methods (Access=private)
-        
+        function M = compute_all_matches(obj)
+            % Compute matching across all provided days. We keep only the
+            % _classified cells_ of each day. Unmatched indices are
+            % indicated by zeros.
+            %------------------------------------------------------------
+            num_days = length(obj.valid_days);
+            
+            base_day = obj.valid_days(1);
+            base_day_cells = find(obj.ds{base_day}.is_cell);
+            base_day_num_cells = length(base_day_cells);
+            
+            % Scratch space (sparse) for matching indices
+            M = zeros(base_day_num_cells, num_days);
+            M(:,1) = base_day_cells;
+            
+            % Fill out M columnwise in the order of obj.valid_days
+            for k = 2:num_days
+                curr_day = obj.valid_days(k);
+                for x = 1:base_day_num_cells
+                    for l = 1:(k-1)
+                        prev_day = obj.valid_days(l);
+                        % First, check that the row corresponds to a valid
+                        % matched cell on a previous day
+                        prev_cell_idx = M(x,l);
+                        if (prev_cell_idx ~= 0)
+                            % Next, check if the cell from the previous (k-1)
+                            % day matches to the current (k) day
+                            m = obj.match{prev_day, curr_day}{prev_cell_idx};
+                            if ~isempty(m)
+                                curr_cell_idx = m(1);
+                                % Finally, we save the matched result if it is
+                                % a valid classified cell on the current day
+                                if obj.ds{curr_day}.is_cell(curr_cell_idx)
+                                    M(x,k) = curr_cell_idx;
+                                end
+                            end
+                        end
+                    end % l
+                end % x
+            end % k
+        end % compute_all_matches
     end
 end
