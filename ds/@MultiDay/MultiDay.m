@@ -106,7 +106,7 @@ classdef MultiDay < handle
             
         end % MultiDay
         
-        % Accessors
+        % General accessors
         %------------------------------------------------------------
         function ds = day(obj, day_idx)
             if ~ismember(day_idx, obj.valid_days)
@@ -115,6 +115,18 @@ classdef MultiDay < handle
             ds = obj.ds{day_idx};
         end
         
+        function indices = get_all_indices(obj, selected_days)
+            % Returned indices are day-specific
+            if ~exist('selected_days', 'var')
+                selected_days = obj.valid_days;
+            end
+            selected_days = obj.full_to_sparse(selected_days);
+            indices = obj.matched_indices(:, selected_days);
+        end
+        
+        % Accessors using "common index" (i.e. indexing variable over the
+        % matched cells -- not specific to day)
+        %------------------------------------------------------------
         function cell_idx = get_cell_idx(obj, common_cell_idx, day_idx)
             % Convert the common_cell_idx into the day-specific index
             cell_idx = obj.matched_indices(common_cell_idx,...
