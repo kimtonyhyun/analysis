@@ -65,8 +65,7 @@ classdef MultiDay < handle
             
             % Filter out rows of M with unmatched indices (i.e. zeros) and
             % store result
-            unmatched = any(M==0, 2);
-            obj.matched_indices = M(~unmatched, :);
+            obj.matched_indices = obj.filter_matches(M);
             obj.num_cells = size(obj.matched_indices, 1);
             fprintf('%s: Found %d matching classified cells across all days\n',...
                 datestr(now), obj.num_cells);
@@ -159,7 +158,8 @@ classdef MultiDay < handle
                 k = find((linear_idx-offsets)>0, 1, 'last');
                 cell_idx = linear_idx - offsets(k);
             end % linear_to_day
-        end
+
+        end % compute_all_matches_by_graph
         
         function M = compute_all_matches(obj)
             % Compute matching across all provided days. We keep only the
@@ -201,5 +201,12 @@ classdef MultiDay < handle
             end % k
             
         end % compute_all_matches
+        
+        function Mf = filter_matches(~, M)
+            % Filter out rows of the match matrix M that has zeros
+            % (indicating non-matched cells)
+            unmatched = any(M==0, 2);
+            Mf = M(~unmatched,:);
+        end % filter_matches
     end
 end
