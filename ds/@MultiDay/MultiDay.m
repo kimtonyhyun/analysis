@@ -21,7 +21,8 @@ classdef MultiDay < handle
             obj.valid_days = cell2mat(ds_list(:,1))';            
             num_days = length(obj.valid_days);
             max_day = max(obj.valid_days);
-            
+
+            obj.full_to_sparse = zeros(1, max_day);
             obj.ds = cell(max_day, 1);
             for k = 1:size(ds_list,1)
                 day  = ds_list{k,1};
@@ -30,7 +31,10 @@ classdef MultiDay < handle
                     datestr(now), day, sum(ds_k.is_cell));
                 
                 obj.ds{day} = ds_k;
+                obj.full_to_sparse(day) = k;
             end
+            
+
             
             % Unpack the provided list of matches into a full cell matrix
             % Convention:
@@ -47,12 +51,11 @@ classdef MultiDay < handle
                 obj.match{j,i} = m_jtoi;
             end
             
-            % Verify that there is is a match matrix for every pair of
-            % provided DaySummarys
+            % Check if match matrices have been provided
             for i = obj.valid_days
                 for j = setdiff(obj.valid_days, i)
                     if isempty(obj.match{i,j})
-                        error('No match between Day %d and Day %d provided!', i, j);
+                        fprintf('Warning! No match provided from Day %d to Day %d!\n', i, j);
                     end
                 end
             end
@@ -65,9 +68,6 @@ classdef MultiDay < handle
             base_day_num_cells = length(base_day_cells);
             
             % Scratch space (sparse) for matching indices
-            obj.full_to_sparse = zeros(1, max_day);
-            obj.full_to_sparse(base_day) = 1;
-            
             M = zeros(base_day_num_cells, num_days);
             M(:,1) = base_day_cells;
             
@@ -75,7 +75,6 @@ classdef MultiDay < handle
             for k = 2:num_days
                 prev_day = obj.valid_days(k-1);
                 curr_day = obj.valid_days(k);
-                obj.full_to_sparse(curr_day) = k;
                 for x = 1:base_day_num_cells
                     % First, check that the row corresponds to a valid
                     % matched cell on the previous (k-1) day
@@ -137,5 +136,9 @@ classdef MultiDay < handle
             cell_idx = obj.get_cell_idx(common_cell_idx, day_idx);
             cell = obj.ds{day_idx}.cells(cell_idx);
         end
+    end
+    
+    methods (Access=private)
+        
     end
 end
