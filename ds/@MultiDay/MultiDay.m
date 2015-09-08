@@ -110,7 +110,7 @@ classdef MultiDay < handle
             ds = obj.ds{day_idx};
         end
         
-        function indices = get_all_indices(obj, selected_days)
+        function indices = get_indices(obj, selected_days)
             % Returned indices are day-specific
             if ~exist('selected_days', 'var')
                 selected_days = obj.valid_days;
