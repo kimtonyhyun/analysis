@@ -175,6 +175,10 @@ classdef DaySummary < handle
         
         % Accessors
         %------------------------------------------------------------
+        function count = num_classified_cells(obj)
+            count = sum(obj.is_cell);
+        end
+        
         function [trace, frame_indices] = get_trace(obj, cell_idx, selected_trials)
             % When 'selected_trials' is omitted, then return all trials
             if ~exist('selected_trials', 'var')
