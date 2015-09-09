@@ -130,27 +130,29 @@ classdef MultiDay < handle
             
             if ~isempty(varargin)
                 for k = 1:length(varargin)
-                    switch varargin{k}
-                        case isnumeric(varargin{k})
-                            trial_indices = varargin{k+1};
-                            if ~isvector(trial_indices) % not 1D
-                                error('trial_indices must be a vector.');
-                            end
-                        case {'start','end','turn'}
-                            var1 = varargin{k};
-                            var2 = varargin{k+1};
+                    if ~isnumeric(varargin{k})
+                        switch varargin{k}
+                            case 'trial_indices'
+                                trial_indices = varargin{k+1};
+                                if ~isvector(trial_indices) % not 1D
+                                    error('trial_indices must be a vector.');
+                                end
+                            case {'start','end','turn'}
+                                var1 = varargin{k};
+                                var2 = varargin{k+1};
+                                filtered_trials = filtered_trials & ...
+                                    obj.day(day_idx).filter_trials(var1,var2);
+                            case 'correct'
+                                filtered_trials = filtered_trials & ...
+                                    obj.day(day_idx).filter_trials('correct');
+                            case 'incorrect'
                             filtered_trials = filtered_trials & ...
-                                obj.day(day_idx).filter_trials(var1,var2);
-                        case 'correct'
-                            filtered_trials = filtered_trials & ...
-                                obj.day(day_idx).filter_trials('correct');
-                        case 'incorrect'
-                        filtered_trials = filtered_trials & ...
-                            obj.day(day_idx).filter_trials('incorrect');
-                        case {'pre','run','post'}
-                            separate_trial_portions = 1;
-                            var1 = varargin{k};
-                            trial_portions(end+1) = find(strcmp({'pre','run','post'},var1));                            
+                                obj.day(day_idx).filter_trials('incorrect');
+                            case {'pre','run','post'}
+                                separate_trial_portions = 1;
+                                var1 = varargin{k};
+                                trial_portions(end+1) = find(strcmp({'pre','run','post'},var1));                            
+                        end
                     end
                 end
             end
