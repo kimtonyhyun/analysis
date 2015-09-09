@@ -119,12 +119,17 @@ classdef MultiDay < handle
             indices = obj.matched_indices(:, selected_days);
         end
         
-        function trial = get_trial(obj, day_idx, trial_idx)
-            trial = obj.day(day_idx).trials(trial_idx);
+        function trials = get_trials(obj, day_idx, trial_indices)
+            if ~exist('trial_indices', 'var')
+                trial_indices = 1:obj.day(day_idx).num_trials;
+            end
+            trials = obj.day(day_idx).trials(trial_indices);
             
             % Reorder the traces to match the common (matched) index
             day_cell_indices = obj.get_indices(day_idx);
-            trial.traces = trial.traces(day_cell_indices, :);
+            for k = 1:length(trials)
+                trials(k).traces = trials(k).traces(day_cell_indices, :);
+            end
         end
         
         % Accessors using "common index" (i.e. indexing variable over the
