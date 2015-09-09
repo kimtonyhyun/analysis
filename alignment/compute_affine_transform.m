@@ -76,7 +76,7 @@ while (~all(num_selected == num_points_for_alignment))
             source_idx);
     end
 end
-fprintf('  All reference ICs selected!\n');
+fprintf('  All reference cells selected!\n');
 
 % Transform Source2 onto Source1
 %------------------------------------------------------------
@@ -114,19 +114,3 @@ info.alignment.selected_centers = selected_centers;
 info.tform = tform;
 
 end % compute_affine_transform
-
-function plot_boundaries_with_transform(ds, linespec, linewidth, sel_ics, tform)
-    % Plot boundaries as a single color, with an optional transform
-    for k = 1:ds.num_cells
-        boundary = ds.cells(k).boundary;
-        if ~isempty(tform) % Optional spatial transform
-            boundary = transformPointsForward(tform, boundary);
-        end
-        if ismember(k, sel_ics) % One of the user-selected ICs
-            fill(boundary(:,1), boundary(:,2), linespec, 'LineWidth', linewidth);
-        elseif ds.is_cell(k)
-            plot(boundary(:,1), boundary(:,2), linespec, 'LineWidth', linewidth);
-        end
-        hold on;
-    end
-end
