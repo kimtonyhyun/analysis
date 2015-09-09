@@ -22,12 +22,12 @@ ds{2} = ds2;
 % Display the two sets of ICs
 figure;
 ax1 = subplot(121);
-ds1.plot_cell_boundaries;
+ds1.plot_cell_boundaries('cells');
 hold on;
 title('Dataset 1');
 
 ax2 = subplot(122);
-ds2.plot_cell_boundaries;
+ds2.plot_cell_boundaries('cells');
 hold on;
 title('Dataset 2');
 
@@ -50,7 +50,7 @@ while (~all(num_selected == num_points_for_alignment))
         source_idx = 2;
     end
     
-    ic_idx = ds{source_idx}.get_cell_by_xy(click_xy);
+    ic_idx = ds{source_idx}.get_cell_by_xy(click_xy, 'cells');
     if ~isempty(ic_idx) % Hit
         sel_idx = num_selected(source_idx) + 1;
         if (sel_idx <= num_points_for_alignment)
