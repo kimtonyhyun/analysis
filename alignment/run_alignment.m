@@ -17,6 +17,10 @@ function [match_1to2, match_2to1, affine_info] = run_alignment(ds1, ds2, varargi
 %       of the matrix is the index of the matching cell in source 2; the
 %       second column is the overlap score between the cell pairs.
 %
+%   affine_info: Struct with additional information (e.g. selected points,
+%       etc.) regarding the affine transformation applied to match the
+%       datasets.
+%
 % Example usage:
 %   [m1to2, m2to1] = run_alignment('c9m7d07_ica001', 'c9m7d08_ica001');
 %
