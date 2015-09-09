@@ -1,4 +1,4 @@
-function [match_1to2, match_2to1] = run_alignment(ds1, ds2, varargin)
+function [match_1to2, match_2to1, affine_info] = run_alignment(ds1, ds2, varargin)
 % Align two sets of cell filters.
 %
 % Inputs:
@@ -16,6 +16,10 @@ function [match_1to2, match_2to1] = run_alignment(ds1, ds2, varargin)
 %       of ICs from source 2 that match cell k of source 1. The first column
 %       of the matrix is the index of the matching cell in source 2; the
 %       second column is the overlap score between the cell pairs.
+%
+%   affine_info: Struct with additional information (e.g. selected points,
+%       etc.) regarding the affine transformation applied to match the
+%       datasets.
 %
 % Example usage:
 %   [m1to2, m2to1] = run_alignment('c9m7d07_ica001', 'c9m7d08_ica001');
@@ -51,25 +55,24 @@ end
 %------------------------------------------------------------
 if use_transform
     fprintf('run_alignment: Beginning alignment...\n');
-    [~, masks1, masks2] = compute_affine_transform(ds1, ds2);
+    [affine_info, masks1, masks2] = compute_affine_transform(ds1, ds2);
 else
     masks1 = {ds1.cells.mask};
     masks2 = {ds2.cells.mask};
+    affine_info = [];
     
     figure;
-    ds1.plot_cell_boundaries('nobackground', 'cells', 'linespec', 'b', 'linewidth', 2);
-    hold on;
-    ds2.plot_cell_boundaries('nobackground', 'cells', 'linespec', 'r', 'linewidth', 1);
+    plot_boundaries_with_transform(ds1, 'b', 2, [], []);
+    plot_boundaries_with_transform(ds2, 'r', 1, [], []);
     title('Dataset1 (blue) vs. Dataset2 (red)');
 end
 input('run_alignment: Press any key to continue with mask matching >> ');
 
 if fast_matching
-    [match_1to2, match_2to1] = match_masks(masks1, masks2, 'fast');
+    [match_1to2, match_2to1] = match_masks(masks1, masks2, ds1, ds2, 'fast');
 else
-    [match_1to2, match_2to1] = match_masks(masks1, masks2);
+    [match_1to2, match_2to1] = match_masks(masks1, masks2, ds1, ds2);
 end
-
 
 % Optional bijective filtering
 %------------------------------------------------------------

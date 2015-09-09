@@ -1,4 +1,4 @@
-function [match_1to2, match_2to1, M] = match_masks(masks1, masks2, varargin)
+function [match_1to2, match_2to1, M] = match_masks(masks1, masks2, ds1, ds2, varargin)
 % Computes the overlaps between two sets of logical masks. Output format is
 % as follows:
 %
@@ -40,16 +40,20 @@ for i = 1:num_masks(1)
         fprintf('%s: Computing overlaps (%.1f%%)...\n',...
             datestr(now), 100*i/num_masks(1));
     end
-    for j = 1:num_masks(2)
-        if available_for_match(j)
-            M(i,j) = compute_mask_overlap(masks1{i}, masks2{j});
-            if use_fast_matching && (M(i,j) > fast_overlap_threshold)
-                available_for_match(j) = 0;
-                break;
-            end
-        end
-    end
-end
+    if ds1.is_cell(i)
+        for j = 1:num_masks(2)
+            if ds2.is_cell(j)
+                if available_for_match(j)
+                    M(i,j) = compute_mask_overlap(masks1{i}, masks2{j});
+                    if use_fast_matching && (M(i,j) > fast_overlap_threshold)
+                        available_for_match(j) = 0;
+                        break;
+                    end
+                end
+            end % j is cell
+        end % j
+    end % i is cell
+end % i
 fprintf('%s: Overlap matrix completed!\n', datestr(now));
 
 % Find the nonzero elements of the mask overlap matrix

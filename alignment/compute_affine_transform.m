@@ -12,7 +12,7 @@ function [info, masks1, masks2] = compute_affine_transform(ds1, ds2)
 %           dimensions of source 1 masks!)
 %
 
-num_points_for_alignment = 3;
+num_points_for_alignment = 4;
 
 % To programmatically address either of the two DaySummary's
 ds = cell(1,2);
@@ -22,18 +22,18 @@ ds{2} = ds2;
 % Display the two sets of ICs
 figure;
 ax1 = subplot(121);
-ds1.plot_cell_boundaries;
+ds1.plot_cell_boundaries('cells');
 hold on;
 title('Dataset 1');
 
 ax2 = subplot(122);
-ds2.plot_cell_boundaries;
+ds2.plot_cell_boundaries('cells');
 hold on;
 title('Dataset 2');
 
 % Allow the user to select the ICs used in matching
 %------------------------------------------------------------
-sel_colors = 'ybm';
+sel_colors = 'ybmc';
 fprintf('compute_affine_transform: Please select %d cells from each dataset (in order)\n',...
     num_points_for_alignment);
 
@@ -50,7 +50,7 @@ while (~all(num_selected == num_points_for_alignment))
         source_idx = 2;
     end
     
-    ic_idx = ds{source_idx}.get_cell_by_xy(click_xy);
+    ic_idx = ds{source_idx}.get_cell_by_xy(click_xy, 'cells');
     if ~isempty(ic_idx) % Hit
         sel_idx = num_selected(source_idx) + 1;
         if (sel_idx <= num_points_for_alignment)
@@ -68,15 +68,15 @@ while (~all(num_selected == num_points_for_alignment))
             num_selected(source_idx) = sel_idx;
             selected_centers(sel_idx,:,source_idx) = selected_center;
         else
-            fprintf('  Dataset%d: No more ICs needed!\n',...
+            fprintf('  Dataset%d: No more cells needed!\n',...
                 source_idx);
         end
     else % No hit
-        fprintf('  Dataset%d: No IC detected at cursor!\n',...
+        fprintf('  Dataset%d: No cell detected at cursor!\n',...
             source_idx);
     end
 end
-fprintf('  All reference ICs selected!\n');
+fprintf('  All reference cells selected!\n');
 
 % Transform Source2 onto Source1
 %------------------------------------------------------------
@@ -88,15 +88,11 @@ figure; % Pre-transform comparison
 plot_boundaries_with_transform(ds1, 'b', 2, selected_cells(:,1), []);
 plot_boundaries_with_transform(ds2, 'r', 1, selected_cells(:,2), []);
 title('Pre-transform: Dataset1 (blue) vs. Dataset2 (red)');
-axis equal;
-set(gca, 'YDir', 'Reverse');
 
 figure; % Post-transform comparison
 plot_boundaries_with_transform(ds1, 'b', 2, selected_cells(:,1), []);
 plot_boundaries_with_transform(ds2, 'r', 1, selected_cells(:,2), tform);
 title('Post-transform: Dataset1 (blue) vs. Dataset2 (red)');
-axis equal;
-set(gca, 'YDir', 'Reverse');
 
 % Prep output
 %------------------------------------------------------------
@@ -108,27 +104,9 @@ for k = 1:ds2.num_cells
     masks2{k} = imwarp(masks2{k}, tform, 'OutputView', mask1_ref);
 end
 
-info.num_cells1 = ds1.num_cells;
-info.num_cells2 = ds2.num_cells;
 info.alignment.num_points = num_points_for_alignment;
 info.alignment.selected_cells = selected_cells;
 info.alignment.selected_centers = selected_centers;
 info.tform = tform;
 
 end % compute_affine_transform
-
-function plot_boundaries_with_transform(ds, linespec, linewidth, sel_ics, tform)
-    % Plot boundaries as a single color, with an optional transform
-    for k = 1:ds.num_cells
-        boundary = ds.cells(k).boundary;
-        if ~isempty(tform) % Optional spatial transform
-            boundary = transformPointsForward(tform, boundary);
-        end
-        if ismember(k, sel_ics) % One of the user-selected ICs
-            fill(boundary(:,1), boundary(:,2), linespec, 'LineWidth', linewidth);
-        elseif ds.is_cell(k)
-            plot(boundary(:,1), boundary(:,2), linespec, 'LineWidth', linewidth);
-        end
-        hold on;
-    end
-end

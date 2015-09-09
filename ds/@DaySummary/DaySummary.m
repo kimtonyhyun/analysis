@@ -226,16 +226,29 @@ classdef DaySummary < handle
             is_correct = cellfun(@strcmp, {obj.trials.goal}, {obj.trials.end});
         end
         
-        function selected_idx = get_cell_by_xy(obj, xy)
+        function selected_idx = get_cell_by_xy(obj, xy, varargin)
             % Returns the first cell index whose filter boundary encloses
             % the XY position provided in 'xy'
+            
+            % By default all cell candidates can be clicked
+            classified_cells_only = 0;
+            for i = 1:length(varargin)
+                if ischar(varargin{i})
+                    switch lower(varargin{i})
+                        case {'cells', 'cellsonly'}
+                            classified_cells_only = 1;
+                    end
+                end
+            end
             
             selected_idx = []; % If no hit, then return empty
             for k = 1:obj.num_cells
                 boundary = obj.cells(k).boundary;
-                if inpolygon(xy(1), xy(2), boundary(:,1), boundary(:,2))
-                    selected_idx = k;
-                    break;
+                if (obj.is_cell(k) || ~classified_cells_only)
+                    if inpolygon(xy(1), xy(2), boundary(:,1), boundary(:,2))
+                        selected_idx = k;
+                        break;
+                    end
                 end
             end
         end
