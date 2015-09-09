@@ -68,11 +68,11 @@ while (~all(num_selected == num_points_for_alignment))
             num_selected(source_idx) = sel_idx;
             selected_centers(sel_idx,:,source_idx) = selected_center;
         else
-            fprintf('  Dataset%d: No more ICs needed!\n',...
+            fprintf('  Dataset%d: No more cells needed!\n',...
                 source_idx);
         end
     else % No hit
-        fprintf('  Dataset%d: No IC detected at cursor!\n',...
+        fprintf('  Dataset%d: No cell detected at cursor!\n',...
             source_idx);
     end
 end
