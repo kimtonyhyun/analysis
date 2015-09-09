@@ -31,7 +31,7 @@ mem_occup_scale_CPU = 0.5; % Occupy this fraction of available memory on RAM
 mem_occup_scale_GPU = 0.7; % Occupy this fraction of available memory on GPU
 corr_thresh = 0.2;
 filter_thresh = 0.25;
-max_num = 1500;
+max_num = 3000;
 do_baseline_fix = 1;
 good_cell_limit = 0.4; % threshold to call cell (wrt a custom metric, see code)
 bad_cell_limit = 0.2; % threshold to call non-cell
@@ -63,83 +63,12 @@ U = (pca.filters');
 [N,num_pcs] = size(U);
 norms_U = sqrt(sum(U.^2,2));
 U_norm = bsxfun(@times,U,1./norms_U);
-
-% Brute-force approach for 1-norm computation, use GPU if available
-use_gpu = 0;
-gpu_exists = gpuDeviceCount>0;
-if gpu_exists
-    avail_mem = compute_gpu_memory();    
-    f = max(avail_mem/4 - N*(num_pcs+2),0); % maximum available element size 
-    f = f*mem_occup_scale_GPU;
-    chunk_size = floor(f/ (2*N+num_pcs)); %# of pixels at once
-    use_gpu = chunk_size>=1;
-end    
-    
-if use_gpu %GPU    
-    fprintf('\t \t \t Using GPU to accelarate processing\n');
-    U = gpuArray(U);
-    one_norms = gpuArray(zeros(1,N,'single'));
-    norms_U = gpuArray(norms_U);
-    
-    for i = 1:chunk_size:N
-        fin = min(chunk_size-1,N-i);
-        Q = bsxfun(@times,U(i:i+fin,:),1./norms_U(i:i+fin))';
-        one_norms(i:i+fin) = sum(abs(U*Q),1);
-        clear Q;
-    end
-
-    % Transfer variables back to CPU
-    U = gather(U);
-    one_norms = gather(one_norms);
-    norms_U = gather(norms_U);
-    
-else % CPU
-    avail_mem = compute_cpu_memory();
-    f = avail_mem/4 ; % maximum available element size
-    f = f*mem_occup_scale_CPU;
-    chunk_size = floor(f/ (2*N+num_pcs)); %# of pixels at once
-    
-    one_norms = zeros(1,N);
-    for i = 1:chunk_size:N
-        fin = min(chunk_size-1,N-i);
-        Q = U_norm(i:i+fin,:)';
-        one_norms(i:i+fin) = sum(abs(U*Q),1);
-        clear Q;
-    end
-
-end
-
-% Extract filters recursively using the 1-norm criterion
-idx_possible = 1:N;
-F = zeros(N,max_num);
-inv_quality_filters = zeros(1,max_num);
-idx_cells = zeros(1,max_num);
-acc=0;
-
-while true
-    acc = acc+1;
-    [val,idx_this] = min(one_norms(idx_possible));
-    idx_this = idx_possible(idx_this);
-    sig_this = U*U_norm(idx_this,:)';
-    correl = sig_this.*(1./norms_U);
-    idx_possible = intersect(find(abs(correl)<corr_thresh),idx_possible);
-    F(:,acc) = sig_this;
-    inv_quality_filters(acc) = val;
-    idx_cells(acc) = idx_this;
-    % Termination condition
-    if isempty(idx_possible) || acc==max_num
-        break;
-    end
-    
-end
-
-% Truncate F in case there are less components than max_num
-F = F(:,1:acc);
-inv_quality_filters = inv_quality_filters(1:acc)/sqrt(N);
-idx_cells = idx_cells(1:acc);
+[Q_fine,idx_cells] = extract_filters(U,max_num);
+num_extracted = size(Q_fine,2);
+F = U*Q_fine;
 
 if is_trimmed % Untrim the pixels
-    F_temp = zeros(h*w,acc);
+    F_temp = zeros(h*w,num_extracted);
     F_temp(idx_kept,:) = F;
     F = F_temp;
     clear F_temp;
@@ -148,16 +77,13 @@ if is_trimmed % Untrim the pixels
 end
 
 % Cell centroids
-cent_cells = zeros(2,acc);
+cent_cells = zeros(2,num_extracted);
 [cent_cells(1,:),cent_cells(2,:)] = ind2sub([h,w],idx_cells); % [vert;horiz] format
 
-fprintf('\t \t \t Extracted %d potential cells \n',acc);
+fprintf('\t \t \t Extracted %d potential cells \n',num_extracted);
 fprintf('%s: Cleaning filters and removing duplicates...\n',datestr(now));
-[F,idx] = modify_filters(F,filter_thresh);
+[F,cent_cells] = modify_filters(F,filter_thresh);
 F = bsxfun(@times,F,1./sum(F,1)); % Make each filter sum up to 1
-inv_quality_filters = inv_quality_filters(idx);
-cent_cells = cent_cells(:,idx);
-idx_cells = idx_cells(idx);
 
 fprintf('%s: Loading movie for trace extraction...\n',datestr(now));
 M = load_movie(movie_source);
@@ -174,58 +100,61 @@ if do_baseline_fix
     end
 end
 
-% Identify split cells by looking at traces
-fprintf('%s: Identifying possible split cells...\n',datestr(now));
-cc = similar_traces(traces,cent_cells);
-save('cent_cells','cent_cells');
-
-fprintf('\t\t\t Identified %d split cells (total of %d objects), merging now...\n',...
-    length(cc),length(cell2mat(cc)));
-% Merge filters for split cells
-idx_elim = [];
-for i = 1:length(cc)
-    idx_to_merge = cc{i};
-    
-    if is_trimmed
-        filters_to_merge = U*U_norm(idx_cells_trimmed(idx_to_merge),:)';
-        F_temp = zeros(h*w,length(idx_to_merge));
-        F_temp(idx_kept,:) = filters_to_merge;
-        filters_to_merge = F_temp;
-        clear F_temp;
-    else
-        filters_to_merge = U*U_norm(idx_cells(idx_to_merge),:)';
-    end
-    
-    [~,merged_filter,~,~] = cleanup_filters(sum(filters_to_merge,2),filter_thresh);
-    merged_filter = merged_filter / sum(merged_filter);
-%     merged_filter = sum(F(:,idx_to_merge),2)/length(idx_to_merge);
-    F(:,idx_to_merge(1)) = merged_filter;
-    idx_elim = [idx_elim,idx_to_merge(2:end)];
-end
-F(:,idx_elim) = [];
-
-% Extract traces again
-fprintf('%s: Extracting traces with updated filters...\n',datestr(now));
-traces = extract_traces(M,F);
+% % Identify split cells by looking at traces
+% fprintf('%s: Identifying possible split cells...\n',datestr(now));
+% cc = similar_traces(traces,cent_cells);
+% 
+% fprintf('\t\t\t Identified %d split cells (total of %d objects), merging now...\n',...
+%     length(cc),length(cell2mat(cc)));
+% % Merge filters for split cells
+% idx_elim = [];
+% for i = 1:length(cc)
+%     idx_to_merge = cc{i};
+%     
+%     if is_trimmed
+%         filters_to_merge = U*U_norm(idx_cells_trimmed(idx_to_merge),:)';
+%         F_temp = zeros(h*w,length(idx_to_merge));
+%         F_temp(idx_kept,:) = filters_to_merge;
+%         filters_to_merge = F_temp;
+%         clear F_temp;
+%     else
+%         filters_to_merge = U*U_norm(idx_cells(idx_to_merge),:)';
+%     end
+%     
+%     [~,merged_filter,~,~] = cleanup_filters(sum(filters_to_merge,2),filter_thresh);
+%     merged_filter = merged_filter / sum(merged_filter);
+% %     merged_filter = sum(F(:,idx_to_merge),2)/length(idx_to_merge);
+%     F(:,idx_to_merge(1)) = merged_filter;
+%     idx_elim = [idx_elim,idx_to_merge(2:end)];
+% end
+% F(:,idx_elim) = [];
+% cent_cells(:,idx_elim) = [];
+% 
+% 
+% % Extract traces again
+% fprintf('%s: Extracting traces with updated filters...\n',datestr(now));
+% traces = extract_traces(M,F);
 clear M;
 
 filters = reshape(F,h,w,size(F,2)); %#ok<*NASGU>
 
-% Sort cells wrt a metric that determines how good a trace looks
-quality_traces = goodness_trace(traces);
-[ss,idx] = sort(quality_traces,'descend');
-idx_stationary = sort(idx(ss>good_cell_limit));
-idx_move = idx(ss<=good_cell_limit);
-filters = filters(:,:,[idx_stationary,idx_move]);
-traces = traces(:,[idx_stationary,idx_move]);
-s1 = sprintf('Total of %d potential cells are extracted.',...
-    length(ss));
-s2 = sprintf('First %d extracted cells are likely to be cells.',...
-    sum(ss>good_cell_limit));
-s3 = sprintf('It is likely that there are few or no cells from  #%d onwards. ',...
-    idx(find(ss<=bad_cell_limit,1)));
-fprintf('%s: Cell Statistics:\n \t\t\t %s\n \t\t\t %s\n \t\t\t %s\n',...
-    datestr(now),s1,s2,s3);
+% % Sort cells wrt a metric that determines how good a trace looks
+% quality_traces = goodness_trace(traces);
+% [ss,idx] = sort(quality_traces,'descend');
+% idx_stationary = sort(idx(ss>good_cell_limit));
+% idx_move = idx(ss<=good_cell_limit);
+% filters = filters(:,:,[idx_stationary,idx_move]);
+% traces = traces(:,[idx_stationary,idx_move]);
+% cent_cells = cent_cells(:,[idx_stationary,idx_move]);
+% save('cent_cells','cent_cells');
+% s1 = sprintf('Total of %d potential cells are extracted.',...
+%     length(ss));
+% s2 = sprintf('First %d extracted cells are likely to be cells.',...
+%     sum(ss>good_cell_limit));
+% s3 = sprintf('It is likely that there are few or no cells from  #%d onwards. ',...
+%     idx(find(ss<=bad_cell_limit,1)));
+% fprintf('%s: Cell Statistics:\n \t\t\t %s\n \t\t\t %s\n \t\t\t %s\n',...
+%     datestr(now),s1,s2,s3);
 
 % Reconstruction settings
 info.type = 'PCA+SSS';
@@ -280,92 +209,272 @@ function avail_mem = compute_cpu_memory()
     end
 end
 
-function [filters_out,idx_keep] = modify_filters(filters_in,filter_thresh)
+function [Q_fine,idx_cells] = extract_filters(U,max_num)
+% Extract filters recursively using the 1-norm criterion
 
+    [N,num_pcs] = size(U);
+    norms_U = sqrt(sum(U.^2,2));
+    U_norm = bsxfun(@times,U,1./norms_U);
+    
+    % Brute-force approach for 1-norm computation, use GPU if available
+    use_gpu = 0;
+    gpu_exists = gpuDeviceCount>0;
+    if gpu_exists
+        avail_mem = compute_gpu_memory();    
+        f = max(avail_mem/4 - N*(num_pcs+2),0); % maximum available element size 
+        f = f*mem_occup_scale_GPU;
+        chunk_size = floor(f/ (2*N+num_pcs)); %# of pixels at once
+        use_gpu = chunk_size>=1;
+    end    
+
+    if use_gpu %GPU    
+        fprintf('\t \t \t Using GPU to accelarate processing\n');
+        U = gpuArray(U);
+        one_norms = gpuArray(zeros(1,N,'single'));
+        norms_U = gpuArray(norms_U);
+
+        for i = 1:chunk_size:N
+            fin = min(chunk_size-1,N-i);
+            Q = bsxfun(@times,U(i:i+fin,:),1./norms_U(i:i+fin))';
+            one_norms(i:i+fin) = sum(abs(U*Q),1);
+            clear Q;
+        end
+
+        % Transfer variables back to CPU
+        U = gather(U);
+        one_norms = gather(one_norms);
+        norms_U = gather(norms_U);
+
+    else % CPU
+        avail_mem = compute_cpu_memory();
+        f = avail_mem/4 ; % maximum available element size
+        f = f*mem_occup_scale_CPU;
+        chunk_size = floor(f/ (2*N+num_pcs)); %# of pixels at once
+
+        one_norms = zeros(1,N);
+        for i = 1:chunk_size:N
+            fin = min(chunk_size-1,N-i);
+            Q = U_norm(i:i+fin,:)';
+            one_norms(i:i+fin) = sum(abs(U*Q),1);
+            clear Q;
+        end
+
+    end
+
+    idx_possible = 1:N;
+    F = zeros(N,max_num);
+    inv_quality_filters = zeros(1,max_num);
+    idx_cells = zeros(1,max_num);
+    acc=0;
+
+    while true
+        acc = acc+1;
+        [val,idx_this] = min(one_norms(idx_possible));
+        idx_this = idx_possible(idx_this);
+        sig_this = U*U_norm(idx_this,:)';
+        correl = sig_this.*(1./norms_U);
+        idx_possible = intersect(find(abs(correl)<corr_thresh),idx_possible);
+        F(:,acc) = sig_this;
+        inv_quality_filters(acc) = val;
+        idx_cells(acc) = idx_this;
+        % Termination condition
+        if isempty(idx_possible) || acc==max_num
+            break;
+        end
+    end
+
+    % Truncate F in case there are less components than max_num
+    F = F(:,1:acc);
+    inv_quality_filters = inv_quality_filters(1:acc)/sqrt(N);
+    idx_cells = idx_cells(1:acc);
+
+    % Q is the coarse linear mapping from U to filters (UQ=F)
+    Q = U_norm(idx_cells,:)';
+
+    % Fine tuning: estimate the optimum # of pcs to use for each filter
+    tic
+    num_sweep = 25;
+    rat_sweep = linspace(0.2,1,num_sweep);
+    
+    one_norms_F = zeros(acc,num_sweep);    
+    for rat = rat_sweep % forward sweep
+        idx_stop = ceil(num_pcs*rat);
+        Q_trunc = Q(1:idx_stop,:);
+        norms_Q_trunc = sqrt(sum(Q_trunc.^2,1));
+        Q_trunc = bsxfun(@times,Q_trunc,1./norms_Q_trunc);
+        F_trunc = U(:,1:idx_stop)*Q_trunc;
+        one_norms_F(:,rat_sweep==rat) = sum(abs(F_trunc),1)';
+        toc
+    end
+
+    % Reconstruct Q (Q_fine)
+    [best_one_norms,idx_best_rat] = min(one_norms_F,[],2);
+    idx_uncertain = find(idx_best_rat==1);
+    
+    % Deal with indices where its not certain which ratio is the best 
+%     idx_best_rat(idx_best_rat==1) = num_sweep/2;
+    for ii = idx_uncertain'
+        one_norms_vs_rat = one_norms_F(ii,:)/sqrt(N);
+        x = smooth(one_norms_vs_rat,floor(num_sweep/4));
+        [xmax,imax,xmin,imin] = extrema(x);
+        % Remove the first minimum (first index)
+        xmin = xmin(2:end);
+        imin = imin(2:end);
+        if ~isempty(imin)
+            % Find local minimum with big enough a basin
+            for iii = 1:length(imin) 
+                idx_candid = imin(iii);
+                idx_max_before_this = find((idx_candid-imax)>0,1);
+                if xmax(idx_max_before_this)- xmin(iii) > 3e-3
+                    idx_best_rat(ii) = idx_candid;
+                    best_one_norms(ii) = one_norms_F(ii,idx_candid);
+                    break;
+                end
+            end
+        end
+    end
+    
+    best_rat = rat_sweep(idx_best_rat);
+    idx_stop_best = ceil(num_pcs*best_rat);
+    Q_fine = Q;
+    for ii = 1:acc
+        Q_fine(idx_stop_best(ii)+1:end,ii) = 0;
+    end
+    Q_fine = bsxfun(@times,Q_fine,1./sqrt(sum(Q_fine.^2,1)));
+
+    % Eliminate possible duplicate cells by a 2nd step
+    num_cells_step1 = acc;
+    Corr_cells = Q_fine'*Q_fine;
+    
+    idx_possible = 1:num_cells_step1;
+    idx_cells = zeros(1,num_cells_step1);
+    acc=0;
+
+    while true
+        acc = acc+1;
+        [~,idx_this] = min(best_one_norms(idx_possible));
+        idx_this = idx_possible(idx_this);
+        sig_this = U*Q_fine(:,idx_this);
+        correl = Corr_cells(idx_this,:);
+        idx_possible = intersect(find(abs(correl)<corr_thresh+0.2),idx_possible);
+        idx_cells(acc) = idx_this;
+        % Termination condition
+        if isempty(idx_possible) || acc==max_num
+            break;
+        end
+    end
+    idx_cells = idx_cells(1:acc);
+    Q_fine = Q_fine(:,idx_cells);
+    elim = num_cells_step1-acc;
+   
+end
+
+function [filters_out,cent_out] = modify_filters(filters_in,filter_thresh)
+    
     % Clean up the filters
-    [masks,filters_int,cent_int,idx_keep] = cleanup_filters(filters_in,filter_thresh);
+    [masks,filters_int,cent_int] = cleanup_filters(filters_in,filter_thresh);
+    num_filters = size(filters_int,2);
 
     % Identify duplicate cells
     new_assignments = compute_reassignments(masks,cent_int);
 
     % Write to output variable (merging the duplicates)
-    filters_out = zeros(h*w,length(unique(new_assignments)));
+    filters_out = zeros(h*w,num_filters);%length(unique(new_assignments)));
+    cent_out = zeros(2,num_filters);%length(unique(new_assignments)));
+    
     acc = 0;
     idx_merged = [];
-    for idx_filt = 1:size(filters_int,2)
+    for idx_filt = 1:num_filters
         cells_this = find(new_assignments==idx_filt);
         len = length(cells_this);
-        if len==1 % not an overlapping cell
+        if true%len==1 % not an overlapping cell
             acc = acc+1;
             filters_out(:,acc) = filters_int(:,idx_filt);
+            cent_out(:,acc) = cent_int(:,idx_filt);
         elseif len>1 % overlapping cells, merge
             idx_merged = [idx_merged;setdiff(cells_this,idx_filt)];
-            merged_filter = sum(filters_int(:,cells_this),2);
+            merged_filter = sum(filters_in(:,idx_keep(cells_this)),2);
             merged_filter = merged_filter/norm(merged_filter);
-            [~,merged_filter,~,~] = cleanup_filters(merged_filter,filter_thresh);
+            [~,merged_filter,cent_dum] = cleanup_filters(merged_filter,filter_thresh);
             if sum(merged_filter)>0
                 acc = acc+1;
                 filters_out(:,acc) = merged_filter;
+                cent_out(:,acc) = cent_dum;
             else
                 idx_merged(end+1) = idx_filt;
             end
         end
     end
     
+     % Truncate output variables
+    filters_out = filters_out(:,1:acc);
+    cent_out = cent_out(:,1:acc);
+    
     if ~isempty(idx_merged)
         fprintf('\t \t \t %d cells were merged into others \n',length(idx_merged));
     end
     
     filters_out(:,acc+1:end) = []; % Remove the 0's in the end (if any)
-    idx_keep(idx_merged) = [];
 
 end
 
-function [masks,filters_out,cent_out,idx_out] = cleanup_filters(filters_in,filter_thresh)
+function [masks_out,filters_out,cent_out] = cleanup_filters(filters_in,filter_thresh)
     
+    size_thresh = 30;
     num_filters = size(filters_in,2);
+    
+    % Initialize output variables
     cent_out = zeros(2,num_filters);
+    filters_out = zeros(h,w,num_filters*2); % Be generous in size
+    masks_out = zeros(h,w,num_filters);
     
     % Remove the filter baselines
     meds = median(filters_in,1);
-    filters_out = bsxfun(@minus,filters_in,meds);
+    filters_in = bsxfun(@minus,filters_in,meds);
 
     % Reshape filters_out into 2D
-    filters_out = reshape(filters_out,h,w,num_filters);
+    filters_in = reshape(filters_in,h,w,num_filters);
 
-    % Threshold filters - Deal with multiple boundaries
-    masks = zeros(h,w,num_filters);
-    elim = []; % filters to eliminate due to size requirement
+    % Threshold filters + deal with multiple boundaries    
+    acc = 0;
+    num_elim_objects = 0;
     for idx_filt = 1:num_filters
-        this_filter = filters_out(:,:,idx_filt);
+        this_filter = filters_in(:,:,idx_filt);
         [boundaries, ~] = compute_ic_boundary(this_filter, filter_thresh);
-        this_mask = poly2mask(boundaries{1}(:,1), boundaries{1}(:,2), h, w); 
-        s = regionprops(this_mask,'centroid');
-        if isempty(s)
-            cent_out(:,idx_filt) = [0;0];
-            elim(end+1) = idx_filt;
-        else
-            cent_out(:,idx_filt) = s(1).Centroid;
-        end
-        masks(:,:,idx_filt) = this_mask;
-        filters_out(:,:,idx_filt) = this_filter .* this_mask;
-        if nnz(this_mask) <= 10
-            elim(end+1) = idx_filt; %#ok<AGROW>
+        num_objects = length(boundaries);
+        if num_objects <20
+            for idx_obj = 1:min(1,num_objects)
+                mask_candid = poly2mask(boundaries{idx_obj}(:,1), boundaries{idx_obj}(:,2), h, w);
+                if nnz(mask_candid)>=size_thresh
+                    acc = acc+1;
+                    s = regionprops(mask_candid,'centroid');
+                    filters_out(:,:,acc) = mask_candid.*this_filter;
+                    masks_out(:,:,acc) = mask_candid;
+                    cent_out(:,acc) = s(1).Centroid;
+                else
+                    num_elim_objects = num_elim_objects + 1;
+                end
+            end
         end
     end
-
-    % Reshape filters_out back into 1D
-    filters_out = reshape(filters_out,h*w,num_filters);
     
-    % Eliminate tiny blobs
-    elim = unique(elim);
-    if ~isempty(elim)
-        fprintf('\t \t \t %d cells were eliminated due to minimum size requirement(<10 pixels)\n',length(elim));
+    % Truncate output variables
+    filters_out = filters_out(:,:,1:acc);
+    masks_out = masks_out(:,:,1:acc);
+    cent_out = cent_out(:,1:acc);
+    
+    % Reshape filters_out back into 1D
+    filters_out = reshape(filters_out,h*w,acc);
+    
+    % num_filters + num_extra_objects = acc
+    num_extra_objects = acc-num_filters;
+    if num_extra_objects>0
+        fprintf('\t \t \t %d cells were created by splitting existing cells \n',num_extra_objects);
     end
-    filters_out(:,elim) = [];
-    masks(:,:,elim) = [];
-    cent_out(:,elim) = [];
-    idx_out = setdiff(1:num_filters,elim);
+%     if ~isempty(num_elim_objects)
+%         fprintf('\t \t \t %d cells were eliminated due to minimum size requirement(<%d pixels)\n',...
+%             num_elim_objects,size_thresh);
+%     end
 end
 
 function new_assignments = compute_reassignments(masks,cent)

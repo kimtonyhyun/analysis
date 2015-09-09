@@ -44,7 +44,7 @@ if ~isempty(varargin)
                 end
             case 'num_PCs'
                 num_PCs = varargin{k+1};
-                if ~isinteger(num_PCs)
+                if mod(num_PCs,1) ~=0
                     error('num_PCs must be an integer.');
                 end
                 autoset_num_PCs = 0;
@@ -108,7 +108,7 @@ M = bsxfun(@minus, M, mean_M);
 
 idx_kept = 1:num_pixels;
 if do_trim
-    idx_kept = find(max_proj(:)>quantile(max_proj(:),0.2));
+    idx_kept = find(max_proj(:)>quantile(max_proj(:),0.5));
     M = M(idx_kept,:);
 end
 
@@ -130,7 +130,9 @@ info.trim.idx_kept = idx_kept;
 info.medfilt.enabled = do_medfilt;  %#ok<*STRNU>
 info.medfilt.halfwidth = medfilt_halfwidth;
 
-info.cents = cents;
+if autoset_num_PCs
+    info.cents = cents;
+end
 
 save(savename, 'info', 'filters', 'traces', 'S');
 
