@@ -62,9 +62,8 @@ else
     affine_info = [];
     
     figure;
-    ds1.plot_cell_boundaries('nobackground', 'cells', 'linespec', 'b', 'linewidth', 2);
-    hold on;
-    ds2.plot_cell_boundaries('nobackground', 'cells', 'linespec', 'r', 'linewidth', 1);
+    plot_boundaries_with_transform(ds1, 'b', 2, [], []);
+    plot_boundaries_with_transform(ds2, 'r', 1, [], []);
     title('Dataset1 (blue) vs. Dataset2 (red)');
 end
 input('run_alignment: Press any key to continue with mask matching >> ');

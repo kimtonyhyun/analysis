@@ -88,15 +88,11 @@ figure; % Pre-transform comparison
 plot_boundaries_with_transform(ds1, 'b', 2, selected_cells(:,1), []);
 plot_boundaries_with_transform(ds2, 'r', 1, selected_cells(:,2), []);
 title('Pre-transform: Dataset1 (blue) vs. Dataset2 (red)');
-axis equal;
-set(gca, 'YDir', 'Reverse');
 
 figure; % Post-transform comparison
 plot_boundaries_with_transform(ds1, 'b', 2, selected_cells(:,1), []);
 plot_boundaries_with_transform(ds2, 'r', 1, selected_cells(:,2), tform);
 title('Post-transform: Dataset1 (blue) vs. Dataset2 (red)');
-axis equal;
-set(gca, 'YDir', 'Reverse');
 
 % Prep output
 %------------------------------------------------------------

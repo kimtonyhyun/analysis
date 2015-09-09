@@ -7,10 +7,14 @@ function plot_boundaries_with_transform(ds, linespec, linewidth, filled_cells, t
             boundary = transformPointsForward(tform, boundary);
         end
         if ismember(k, filled_cells)
-            fill(boundary(:,1), boundary(:,2), linespec, 'LineWidth', linewidth);
+            fill(boundary(:,1), boundary(:,2), linespec,...
+                 'LineWidth', linewidth,...
+                 'FaceAlpha', 0.4);
         elseif ds.is_cell(k)
             plot(boundary(:,1), boundary(:,2), linespec, 'LineWidth', linewidth);
         end
         hold on;
     end
+    axis equal tight;
+    set(gca, 'YDir', 'Reverse');
 end
