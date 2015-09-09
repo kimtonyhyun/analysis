@@ -119,16 +119,39 @@ classdef MultiDay < handle
             indices = obj.matched_indices(:, selected_days);
         end
         
-        function trials = get_trials(obj, day_idx, trial_indices)
+        function trials = get_trials(obj, day_idx, trial_indices,trial_portions)
             if ~exist('trial_indices', 'var')
                 trial_indices = 1:obj.day(day_idx).num_trials;
             end
             trials = obj.day(day_idx).trials(trial_indices);
             
+            if exist('trial_portions','var')
+                separate_trial_portions = 1;
+                selected_portions = [];
+                for i = 1:length(trial_portions)
+                    str = trial_portions{i};
+                    selected_portions(end+1) = find(strcmp({'pre','run','post'},str));
+                end    
+                frame_indices = obj.day(day_idx).trial_indices(trial_indices,:);
+                % Remove offsets
+                frame_indices = bsxfun(@minus,frame_indices,frame_indices(:,1)-1);
+            else
+                separate_trial_portions = 0;
+            end
+
+            
             % Reorder the traces to match the common (matched) index
             day_cell_indices = obj.get_indices(day_idx);
             for k = 1:length(trials)
                 trials(k).traces = trials(k).traces(day_cell_indices, :);
+                if separate_trial_portions
+                    idx_pre = frame_indices(k,1):frame_indices(k,2);
+                    idx_run = frame_indices(k,2)+1:frame_indices(k,3);
+                    idx_post = frame_indices(k,3)+1:frame_indices(k,4);
+                    x = trials(k).traces;
+                    x = {x(:,idx_pre),x(:,idx_run),x(:,idx_post)};
+                    trials(k).traces = x(selected_portions);
+                end
             end
         end
         
