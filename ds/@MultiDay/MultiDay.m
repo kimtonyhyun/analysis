@@ -55,7 +55,7 @@ classdef MultiDay < handle
             for i = obj.valid_days
                 for j = setdiff(obj.valid_days, i)
                     if isempty(obj.match{i,j})
-                        fprintf('Warning! No match provided from Day %d to Day %d!\n', i, j);
+                        fprintf('  Warning! No match provided from Day %d to Day %d!\n', i, j);
                     end
                 end
             end
@@ -177,6 +177,10 @@ classdef MultiDay < handle
                 [k, cell_idx] = linear_to_day(I);
                 day = obj.valid_days(k);
                 if obj.ds{day}.is_cell(cell_idx) % Keep only classified cells
+                    if (M(assignment, k) ~= 0) % There is an existing assignment!
+                        fprintf('  Warning! Cells %d and %d from Day %d match to the same cross-day set!\n',...
+                            M(assignment, k), cell_idx, obj.valid_days(k));
+                    end
                     M(assignment, k) = cell_idx;
                 end
             end
