@@ -108,8 +108,6 @@ for k = 1:ds2.num_cells
     masks2{k} = imwarp(masks2{k}, tform, 'OutputView', mask1_ref);
 end
 
-info.num_cells1 = ds1.num_cells;
-info.num_cells2 = ds2.num_cells;
 info.alignment.num_points = num_points_for_alignment;
 info.alignment.selected_cells = selected_cells;
 info.alignment.selected_centers = selected_centers;

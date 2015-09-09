@@ -1,4 +1,4 @@
-function [match_1to2, match_2to1] = run_alignment(ds1, ds2, varargin)
+function [match_1to2, match_2to1, affine_info] = run_alignment(ds1, ds2, varargin)
 % Align two sets of cell filters.
 %
 % Inputs:
@@ -51,10 +51,11 @@ end
 %------------------------------------------------------------
 if use_transform
     fprintf('run_alignment: Beginning alignment...\n');
-    [~, masks1, masks2] = compute_affine_transform(ds1, ds2);
+    [affine_info, masks1, masks2] = compute_affine_transform(ds1, ds2);
 else
     masks1 = {ds1.cells.mask};
     masks2 = {ds2.cells.mask};
+    affine_info = [];
     
     figure;
     ds1.plot_cell_boundaries('nobackground', 'cells', 'linespec', 'b', 'linewidth', 2);
