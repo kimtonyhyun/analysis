@@ -12,7 +12,7 @@ function [info, masks1, masks2] = compute_affine_transform(ds1, ds2)
 %           dimensions of source 1 masks!)
 %
 
-num_points_for_alignment = 3;
+num_points_for_alignment = 4;
 
 % To programmatically address either of the two DaySummary's
 ds = cell(1,2);
@@ -33,7 +33,7 @@ title('Dataset 2');
 
 % Allow the user to select the ICs used in matching
 %------------------------------------------------------------
-sel_colors = 'ybm';
+sel_colors = 'ybmc';
 fprintf('compute_affine_transform: Please select %d cells from each dataset (in order)\n',...
     num_points_for_alignment);
 

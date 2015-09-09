@@ -70,11 +70,10 @@ end
 input('run_alignment: Press any key to continue with mask matching >> ');
 
 if fast_matching
-    [match_1to2, match_2to1] = match_masks(masks1, masks2, 'fast');
+    [match_1to2, match_2to1] = match_masks(masks1, masks2, ds1, ds2, 'fast');
 else
-    [match_1to2, match_2to1] = match_masks(masks1, masks2);
+    [match_1to2, match_2to1] = match_masks(masks1, masks2, ds1, ds2);
 end
-
 
 % Optional bijective filtering
 %------------------------------------------------------------
