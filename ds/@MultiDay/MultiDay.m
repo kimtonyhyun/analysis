@@ -216,5 +216,41 @@ classdef MultiDay < handle
             unmatched = any(M==0, 2);
             Mf = M(~unmatched,:);
         end % filter_matches
+        
+        function Mf = verify_match_consistency(obj, M)
+            % For each cross-day match set, make sure that for every pair
+            % is consistent with the provided match_list
+            num_matches = size(M,1);
+            is_valid = true(num_matches, 1);
+            
+            day_inds = 1:size(M,2);
+            for di = day_inds % Source day
+                day_i = obj.valid_days(di);
+                for dj = setdiff(day_inds, di) % Target day
+                    day_j = obj.valid_days(dj);
+                    m_itoj = obj.match{day_i, day_j};
+                    if ~isempty(m_itoj) % Day i to Day j match was provided
+                        for k = 1:num_matches
+                            cell_i = M(k,di);
+                            cell_j = M(k,dj);
+                            if (cell_i ~= 0) && (cell_j ~= 0) % There is a pairing in M
+                                m = m_itoj{cell_i};
+                                if isempty(m) % No corresponding match in m_itoj
+                                    is_valid(k) = false;
+                                else
+                                    if (m(1) ~= cell_j) % The match in m_itoj disagrees
+                                        is_valid(k) = false;
+                                    end
+                                end
+                            end
+                        end % k
+                    end
+                end % dj
+            end % di
+            
+            num_invalid_matches = sum(~is_valid);
+            fprintf('  Removed %d inconsistent matches!\n', num_invalid_matches);
+            
+        end % verify_match_consistency
     end
 end
