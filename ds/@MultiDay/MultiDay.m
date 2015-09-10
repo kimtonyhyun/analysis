@@ -172,7 +172,6 @@ classdef MultiDay < handle
                                 I = day_to_linear(day_i, cell_i);
                                 J = day_to_linear(day_j, cell_j);
                                 A(I,J) = 1;
-                                A(J,I) = 1;
                             end
                         end
                     end
