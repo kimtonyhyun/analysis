@@ -62,6 +62,7 @@ classdef MultiDay < handle
             
             % Compute matches
             M = obj.compute_all_matches();
+            M = obj.verify_match_consistency(M);
             
             % Filter out rows of M with unmatched indices (i.e. zeros) and
             % store result
@@ -249,6 +250,7 @@ classdef MultiDay < handle
             end % di
             
             num_invalid_matches = sum(~is_valid);
+            Mf = M(is_valid, :);
             fprintf('  Removed %d inconsistent matches!\n', num_invalid_matches);
             
         end % verify_match_consistency
