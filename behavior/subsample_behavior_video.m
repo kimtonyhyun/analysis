@@ -15,7 +15,7 @@ function binned_indices = subsample_behavior_video(behavior_source, bin_factor, 
 %
 
 % Get the binned indices
-binned_indices = bin_frame_indices2(trial_indices, bin_factor);
+binned_indices = bin_frame_indices(trial_indices, bin_factor);
 binned_frames_per_trial = binned_indices(:,end) - binned_indices(:,1) + 1;
 num_trials = size(binned_frames_per_trial, 1);
 
