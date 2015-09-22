@@ -122,61 +122,62 @@ classdef MultiDay < handle
         function trials = get_trials(obj, day_idx, varargin) 
             
             % Defaults
-            num_trials = obj.day(day_idx).num_trials;
-            trial_indices = 1:num_trials;% get all trials
+            ds = obj.day(day_idx); %#ok<*PROP>
+            num_trials = ds.num_trials;
+            trial_indices = (1:num_trials)';% get all trials
             filtered_trials = true(num_trials,1);
-            separate_trial_portions = 0;
-            trial_portions = [];
+            split_trial_phases = 0;
             
             if ~isempty(varargin)
                 for k = 1:length(varargin)
-                    if ~isnumeric(varargin{k})
+                    if ischar(varargin{k})
                         switch varargin{k}
-                            case 'trial_indices'
+                            case 'trials'
                                 trial_indices = varargin{k+1};
                                 if ~isvector(trial_indices) % not 1D
-                                    error('trial_indices must be a vector.');
+                                    error('\''trials\'' must be a vector.');
+                                else
+                                    if size(trial_indices,1)==1% row vector
+                                        trial_indices = trial_indices';
+                                    end
                                 end
-                            case {'start','end','turn'}
+                            case {'start', 'end', 'turn'}
                                 var1 = varargin{k};
                                 var2 = varargin{k+1};
                                 filtered_trials = filtered_trials & ...
-                                    obj.day(day_idx).filter_trials(var1,var2);
+                                    ds.filter_trials(var1,var2);
                             case 'correct'
                                 filtered_trials = filtered_trials & ...
-                                    obj.day(day_idx).filter_trials('correct');
+                                    ds.filter_trials('correct');
                             case 'incorrect'
-                            filtered_trials = filtered_trials & ...
-                                obj.day(day_idx).filter_trials('incorrect');
-                            case {'pre','run','post'}
-                                separate_trial_portions = 1;
-                                var1 = varargin{k};
-                                trial_portions(end+1) = find(strcmp({'pre','run','post'},var1));                            
+                                filtered_trials = filtered_trials & ...
+                                    ds.filter_trials('incorrect');
+                            case {'split_trial_phases'}
+                                split_trial_phases = 1;
+                                frame_indices = ds.trial_indices(trial_indices,:);
+                                % Remove offsets
+                                frame_indices = bsxfun(@minus,frame_indices,...
+                                    frame_indices(:,1)-1);
                         end
                     end
                 end
             end
             
             trial_indices = intersect(trial_indices,find(filtered_trials));
-            trials = obj.day(day_idx).trials(trial_indices);
-
-            if separate_trial_portions
-                frame_indices = obj.day(day_idx).trial_indices(trial_indices,:);
-                % Remove offsets
-                frame_indices = bsxfun(@minus,frame_indices,frame_indices(:,1)-1);
-            end            
+            trials = ds.trials(trial_indices);   
+            frame_indices = frame_indices(trial_indices,:);
             
             % Reorder the traces to match the common (matched) index
             day_cell_indices = obj.get_indices(day_idx);
             for k = 1:length(trials)
                 trials(k).traces = trials(k).traces(day_cell_indices, :);
-                if separate_trial_portions
+                if split_trial_phases
                     idx_pre = frame_indices(k,1):frame_indices(k,2);
-                    idx_run = frame_indices(k,2)+1:frame_indices(k,3);
-                    idx_post = frame_indices(k,3)+1:frame_indices(k,4);
+                    idx_run = (frame_indices(k,2)+1):frame_indices(k,3);
+                    idx_post = (frame_indices(k,3)+1):frame_indices(k,4);
                     x = trials(k).traces;
-                    x = {x(:,idx_pre),x(:,idx_run),x(:,idx_post)};
-                    trials(k).traces = x(trial_portions);
+                    x = {x(:,idx_pre), x(:,idx_run), x(:,idx_post)};
+                    trials(k).traces = x;
                 end
             end
         end
