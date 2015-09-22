@@ -14,8 +14,8 @@ if ischar(movie_source)
     num_pixels = h*w;
     M = reshape(M,h*w,t);
 else
-    if ismatrix(movie_source)
-        M = movie_source;
+    M = movie_source;
+    if ismatrix(M)
         num_pixels = size(M,1);
     else
          [h,w,t] = size(M);
