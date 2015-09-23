@@ -133,11 +133,9 @@ classdef MultiDay < handle
                     if ischar(varargin{k})
                         switch varargin{k}
                             case 'trials'
-                                trial_indices = varargin{k+1};
-                                if ~isvector(trial_indices) % not 1D
-                                    error('\''trials\'' must be a vector.');
-                                else
-                                    if size(trial_indices,1)==1% row vector
+                                if isnumeric(varargin{k+1})
+                                    trial_indices = varargin{k+1};
+                                    if size(trial_indices,1)==1 % row vector
                                         trial_indices = trial_indices';
                                     end
                                 end
