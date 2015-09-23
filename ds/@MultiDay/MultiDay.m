@@ -164,8 +164,10 @@ classdef MultiDay < handle
             end
             
             trial_indices = intersect(trial_indices,find(filtered_trials));
-            trials = ds.trials(trial_indices);   
-            frame_indices = frame_indices(trial_indices,:);
+            trials = ds.trials(trial_indices);  
+            if split_trial_phases
+                frame_indices = frame_indices(trial_indices,:);
+            end
             
             % Reorder the traces to match the common (matched) index
             day_cell_indices = obj.get_indices(day_idx);
