@@ -144,8 +144,10 @@ classdef MultiDay < handle
                             case {'start', 'end', 'turn'}
                                 var1 = varargin{k};
                                 var2 = varargin{k+1};
-                                filtered_trials = filtered_trials & ...
-                                    ds.filter_trials(var1,var2);
+                                if ~isempty(var2)
+                                    filtered_trials = filtered_trials & ...
+                                        ds.filter_trials(var1,var2);
+                                end
                             case 'correct'
                                 filtered_trials = filtered_trials & ...
                                     ds.filter_trials('correct');
