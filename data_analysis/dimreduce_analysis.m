@@ -1,4 +1,38 @@
 function dimreduce_analysis(md,method,training_set,test_set,opts)
+% Do population analysis
+%
+% Inputs: 
+%
+%   md: multiday object
+%
+%   method: 'pca' or 'pls'
+%
+%   training_set: struct with following fields: 'day', 'attr','label',
+%   'disp_label'. 'attr' is a cell array specifying the desired trial types in
+%   a day. An example 'attr' is {'start','east','correct'}. This only
+%   retains the trials that start in the east arm and are correct. 'Label'
+%   can be (in theory) any real numeric value, but recommended type is
+%   integer. 'label' is not mandatory for method='pca'. 'displabel' is an
+%   optional field that specifies how the element is desired to be referred
+%   to in the plots. If left blank, it's set to be the aggregation of
+%   'attr' elements and the corresponding day.
+%
+%   test_set: Optional input for testing under the model constructed with 
+%   training_set. Type is same as training_set. 'label' field is optional for
+%   test_set.
+%
+%   opts: Optional struct input whose fields overwrites defaults set in the
+%   script. These are:
+%       'trial_phase': Default is 1(pre-run). Can be a 1D array composed
+%       of numbers 1(pre-run), 2(run), and 3(post-run).
+%       'ratio_PCs': PCA is computed prior to PLS to reduce noise. This
+%       parameter controls what ratio of PCs is retained for the PLS step.
+%       Default is 0.5.
+%       pca_dims: 2x1 array with PC dimensions to use. Default is [1,2]
+%       pls_dims: same as above for pls
+%
+% Output: Produces a plot.
+%
 
 if ~exist('opts','var')
     opts = [];
@@ -95,11 +129,13 @@ if do_test
 end
 
 % Class and display labels
-labels_training_days = cell2mat({training_set.label});
-labels_training = [];
-for i = 1:num_training
-    labels_training = [labels_training;...
-        repmat(labels_training_days(i),num_trials_each_day(i),1)];
+if strcmp(method,'pls')    
+    labels_training_days = cell2mat({training_set.label});
+    labels_training = [];
+    for i = 1:num_training
+        labels_training = [labels_training;...
+            repmat(labels_training_days(i),num_trials_each_day(i),1)];
+    end
 end
 
 displabels_training = {};
@@ -213,7 +249,9 @@ else % PLS
         dim1=1;dim2=2;
     end
     
-    % Fit 2D glm
+    % Fit 2D glm (suppress warnings when perfectly separated)
+    warning('off', 'stats:glmfit:IterationLimit');
+    warning('off', 'stats:glmfit:PerfectSeparation');
     w = glmfit(XS(:,[dim1,dim2]),labels_training,'binomial');
     l_tr = mean((XS(:,[dim1,dim2])*w(2:3)+w(1) > 0)==labels_training);   
     
