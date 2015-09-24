@@ -294,8 +294,6 @@ else % PLS
         xlim(opts.pls_xylim(1,:));
         ylim(opts.pls_xylim(2,:));
     end
-    % xlim([-0.2,0.2]);
-    % ylim([-0.25,0.2]);
     xlabel(['PLS Dimension ',num2str(dim1)],'FontSize',15)
     ylabel(['PLS Dimension ',num2str(dim2)],'FontSize',15)
     title(title_str,'FontSize',18);
@@ -303,7 +301,7 @@ else % PLS
     textloc = [min(dx),min(dy)];
     text(textloc(1),textloc(2),accuracy_str{1},'Fontsize',15,'Color','r');
     if do_test
-        text(textloc(1),textloc(2)-0.02,accuracy_str{2},'Fontsize',15,'Color',[0,0.5,0]);
+        text(textloc(1),textloc(2)-0.05,accuracy_str{2},'Fontsize',15,'Color',[0,0.5,0]);
     end
     legend('boxoff')
     hold off
