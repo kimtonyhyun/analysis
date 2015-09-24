@@ -167,7 +167,6 @@ classdef MultiDay < handle
                 % Remove offsets
                 frame_indices = bsxfun(@minus,frame_indices,...
                     frame_indices(:,1)-1);
-                frame_indices = frame_indices(trial_indices,:);
             end
             
             % Reorder the traces to match the common (matched) index
