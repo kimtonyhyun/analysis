@@ -120,16 +120,68 @@ classdef MultiDay < handle
             indices = obj.matched_indices(:, selected_days);
         end
         
-        function trials = get_trials(obj, day_idx, trial_indices)
-            if ~exist('trial_indices', 'var')
-                trial_indices = 1:obj.day(day_idx).num_trials;
+        function trials = get_trials(obj, day_idx, varargin) 
+            
+            % Defaults
+            ds = obj.day(day_idx); %#ok<*PROP>
+            num_trials = ds.num_trials;
+            trial_indices = (1:num_trials)';% get all trials
+            filtered_trials = true(num_trials,1);
+            split_trial_phases = 0;
+            
+            if ~isempty(varargin)
+                for k = 1:length(varargin)
+                    if ischar(varargin{k})
+                        switch varargin{k}
+                            case 'trials'
+                                if isnumeric(varargin{k+1})
+                                    trial_indices = varargin{k+1};
+                                    if size(trial_indices,1)==1 % row vector
+                                        trial_indices = trial_indices';
+                                    end
+                                end
+                            case {'start', 'end', 'turn'}
+                                var1 = varargin{k};
+                                var2 = varargin{k+1};
+                                if ~isempty(var2)
+                                    filtered_trials = filtered_trials & ...
+                                        ds.filter_trials(var1,var2);
+                                end
+                            case 'correct'
+                                filtered_trials = filtered_trials & ...
+                                    ds.filter_trials('correct');
+                            case 'incorrect'
+                                filtered_trials = filtered_trials & ...
+                                    ds.filter_trials('incorrect');
+                            case {'split_trial_phases'}
+                                split_trial_phases = 1;
+                        end
+                    end
+                end
             end
-            trials = obj.day(day_idx).trials(trial_indices);
+            
+            trial_indices = intersect(trial_indices,find(filtered_trials));
+            trials = ds.trials(trial_indices);  
+            if split_trial_phases
+                frame_indices = ds.trial_indices(trial_indices,:);
+                % Remove offsets
+                frame_indices = bsxfun(@minus,frame_indices,...
+                    frame_indices(:,1)-1);
+                frame_indices = frame_indices(trial_indices,:);
+            end
             
             % Reorder the traces to match the common (matched) index
             day_cell_indices = obj.get_indices(day_idx);
             for k = 1:length(trials)
                 trials(k).traces = trials(k).traces(day_cell_indices, :);
+                if split_trial_phases
+                    idx_pre = frame_indices(k,1):frame_indices(k,2);
+                    idx_run = (frame_indices(k,2)+1):frame_indices(k,3);
+                    idx_post = (frame_indices(k,3)+1):frame_indices(k,4);
+                    x = trials(k).traces;
+                    x = {x(:,idx_pre), x(:,idx_run), x(:,idx_post)};
+                    trials(k).traces = x;
+                end
             end
         end
         
