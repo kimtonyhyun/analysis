@@ -154,10 +154,6 @@ classdef MultiDay < handle
                                     ds.filter_trials('incorrect');
                             case {'split_trial_phases'}
                                 split_trial_phases = 1;
-                                frame_indices = ds.trial_indices(trial_indices,:);
-                                % Remove offsets
-                                frame_indices = bsxfun(@minus,frame_indices,...
-                                    frame_indices(:,1)-1);
                         end
                     end
                 end
@@ -166,6 +162,10 @@ classdef MultiDay < handle
             trial_indices = intersect(trial_indices,find(filtered_trials));
             trials = ds.trials(trial_indices);  
             if split_trial_phases
+                frame_indices = ds.trial_indices(trial_indices,:);
+                % Remove offsets
+                frame_indices = bsxfun(@minus,frame_indices,...
+                    frame_indices(:,1)-1);
                 frame_indices = frame_indices(trial_indices,:);
             end
             
