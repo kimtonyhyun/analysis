@@ -12,7 +12,7 @@ function dimreduce_analysis(md,method,training_set,test_set,opts)
 %   a day. An example 'attr' is {'start','east','correct'}. This only
 %   retains the trials that start in the east arm and are correct. 'Label'
 %   can be (in theory) any real numeric value, but recommended type is
-%   integer. 'label' is not mandatory for method='pca'. 'displabel' is an
+%   integer. 'label' is not checked for method='pca'. 'displabel' is an
 %   optional field that specifies how the element is desired to be referred
 %   to in the plots. If left blank, it's set to be the aggregation of
 %   'attr' elements and the corresponding day.
@@ -21,15 +21,15 @@ function dimreduce_analysis(md,method,training_set,test_set,opts)
 %   training_set. Type is same as training_set. 'label' field is optional for
 %   test_set.
 %
-%   opts: Optional struct input whose fields overwrites defaults set in the
+%   opts: Optional struct input whose fields overwrite defaults set in the
 %   script. These are:
 %       'trial_phase': Default is 1(pre-run). Can be a 1D array composed
 %       of numbers 1(pre-run), 2(run), and 3(post-run).
 %       'ratio_PCs': PCA is computed prior to PLS to reduce noise. This
 %       parameter controls what ratio of PCs is retained for the PLS step.
 %       Default is 0.5.
-%       pca_dims: 2x1 array with PC dimensions to use. Default is [1,2]
-%       pls_dims: same as above for pls
+%       pca_dims: 2x1 array with PC dimensions to use. Default is [1,2].
+%       pls_dims: same as above but for PLS.
 %
 % Output: Produces a plot.
 %
@@ -121,7 +121,7 @@ for i = 1:num_days
     num_trials_each_day = [num_trials_each_day,num_trials];
 end
 
-% Split data into 2 training and test
+% Split data into training and test
 idx_end_training = sum(num_trials_each_day(1:num_training));
 data_training = data(1:idx_end_training,:);
 if do_test
@@ -178,7 +178,7 @@ if do_test
             displabel_str = num2str(days_test(i));
             for j = 1:length(attr_test{i})
                 this_attr = attr_test{i}{j};
-                if isnumeric(this_attr) % Trials:indicate begin and end
+                if isnumeric(this_attr) % Trials: indicate begin and end
                     str_start = num2str(this_attr(1));
                     str_end = num2str(this_attr(end));
                     displabel_str = [displabel_str,'-',str_start,'-',str_end];
@@ -239,7 +239,6 @@ if strcmp(method,'pca') % PCA
     
 else % PLS
     num_PCs =size(score,2)*opts.ratio_PCs;
-    % Partial Least squares
     data_reduced = score(:,1:num_PCs);
     [XL,~,XS] = plsregress(data_reduced,labels_training);
     if isfield(opts,'pls_dims')
@@ -285,6 +284,7 @@ else % PLS
     gscatter(data_1,data_2,displabels,[],markers);
     
     hold on;
+    
     %Plot Decision Boundary
     dx = linspace(min(XS(:,dim1)),max(XS(:,dim1)),5);
     dy = (-dx*w(2)-w(1))/w(3);
@@ -303,6 +303,7 @@ else % PLS
     if do_test
         text(textloc(1),textloc(2)-0.05,accuracy_str{2},'Fontsize',15,'Color',[0,0.5,0]);
     end
-    legend('boxoff')
     hold off
+end
+legend('boxoff')
 end
