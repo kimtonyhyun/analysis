@@ -1,37 +1,33 @@
-function [F,cents,inv_qualities] = compute_spatial_weights(svd_source)
+function [F,cents,inv_qualities] = compute_spatial_weights(svd_source,ss_opts)
 
 %   Cell extraction method that is based on an algorithm that essentially
 %   solves the sparse source separation problem to find cell spatial weights.
 
 % Some parameters
-mem_occup_scale_CPU = 0.5; % Occupy this fraction of available memory on RAM
-mem_occup_scale_GPU = 0.7; % Occupy this fraction of available memory on GPU
 corr_thresh = 0.2;
 mag_thresh = 0.25;
 max_num = 3000;
 
-if ischar(svd_source)
-    str = svd_source;
-    svd_source = get_most_recent_file('','svd_*.mat');
-    svd = load(svd_source,['SVD',str]);
-    U = eval(['svd.SVD',str,'.U']);
-    info = eval(['svd.SVD',str,'.info']);
-else
-    U = svd_source.U;
-    info = svd_source.info;
+verb1=1;
+verb2=0;
+if ss_opts.verbose==0
+    verb1=0;
+elseif ss_opts.verbose==2
+    verb2=1;
 end
-% U = U(:,1:200);
+
+U = svd_source.U;
+info = svd_source.info;
+
+U = U(:,1:ss_opts.num_comp);
 is_trimmed = info.trim.enabled;
 h = info.movie_height;
 w = info.movie_width;
 idx_kept = info.trim.idx_kept;
 
-fprintf('%s: Extracting cell spatial weights...\n',datestr(now));
-
 [Q_fine,inv_qualities] = extract_sources(U,max_num);
 num_extracted = size(Q_fine,2);
 F = U*Q_fine;
-
 if is_trimmed % Untrim the pixels
     F_temp = zeros(h*w,num_extracted);
     F_temp(idx_kept,:) = F;
@@ -39,46 +35,17 @@ if is_trimmed % Untrim the pixels
     clear F_temp;
 end
 
-fprintf('%s: Checking cells and doing some cleaning...\n',datestr(now));
+dispfun(sprintf('%s: Checking cells and doing some cleaning...\n',datestr(now)),verb2);
 [F,cents,idx_retained] = cleanup_sources(F,mag_thresh);
 inv_qualities = inv_qualities(idx_retained);
 
 F = bsxfun(@times,F,1./sum(F,1)); % Make each weight vector sum up to 1
 
-fprintf('%s: Done. \n',datestr(now));
+dispfun(sprintf('%s: Done. Source count: %d.\n',datestr(now),size(F,2)),verb1);
 
 %-------------------
 % Internal functions
 %-------------------
-
-function avail_mem = compute_gpu_memory()
-% Available memory on GPU in bytes
-
-    D = gpuDevice;
-    % Handle 2 different versions of gpuDevice
-    if isprop(D,'AvailableMemory')
-        avail_mem = D.AvailableMemory;
-    elseif isprop(D,'FreeMemory')
-        avail_mem = D.FreeMemory;
-    else 
-        avail_mem = 0;
-    end
-end
-
-function avail_mem = compute_cpu_memory()
-% Available memory on CPU in bytes
-
-    if ispc % Windows
-        [~,sys] = memory;
-        avail_mem = (sys.PhysicalMemory.Available);
-    elseif ismac %Mac
-        % TODO
-    else % Linux
-         [~,meminfo] = system('cat /proc/meminfo');
-         tokens = regexpi(meminfo,'^*MemAvailable:\s*(\d+)\s','tokens');
-         avail_mem = str2double(tokens{1}{1})*1024;
-    end
-end
 
 function [Q_fine,inv_qualities] = extract_sources(U,max_num)
 % Extract sources recursively using the 1-norm criterion
@@ -93,13 +60,14 @@ function [Q_fine,inv_qualities] = extract_sources(U,max_num)
     if gpu_exists
         avail_mem = compute_gpu_memory();    
         f = max(avail_mem/4 - N*(num_pcs+2),0); % maximum available element size 
-        f = f*mem_occup_scale_GPU;
+        f = f*ss_opts.mem_occup_ratio_GPU;
         chunk_size = floor(f/ (2*N+num_pcs)); %# of pixels at once
         use_gpu = chunk_size>=1;
     end    
-
-    if use_gpu %GPU    
-        fprintf('\t\t\t GPU detected. Using it for computation...\n');
+    use_gpu = use_gpu & (~ss_opts.disableGPU);
+    
+    if use_gpu %GPU
+        dispfun(sprintf('\t\t\t GPU detected. Using it for computation...\n'),verb2);
         U = gpuArray(U);
         one_norms = gpuArray(zeros(1,N,'single'));
         norms_U = gpuArray(norms_U);
@@ -119,7 +87,7 @@ function [Q_fine,inv_qualities] = extract_sources(U,max_num)
     else % CPU
         avail_mem = compute_cpu_memory();
         f = avail_mem/4 ; % maximum available element size
-        f = f*mem_occup_scale_CPU;
+        f = f*ss_opts.mem_occup_ratio_CPU;
         chunk_size = floor(f/ (2*N+num_pcs)); %# of pixels at once
 
         one_norms = zeros(1,N);
@@ -129,10 +97,9 @@ function [Q_fine,inv_qualities] = extract_sources(U,max_num)
             one_norms(i:i+fin) = sum(abs(U*Q),1);
             clear Q;
         end
-
     end
 
-    fprintf('\t\t\t Beginning source separation..\n');
+    dispfun(sprintf('\t\t\t Beginning source separation..\n'),verb2);
     idx_possible = 1:N;
     idx_cells = zeros(1,max_num);
     acc=0;
@@ -157,9 +124,9 @@ function [Q_fine,inv_qualities] = extract_sources(U,max_num)
     % Q is the coarse linear mapping from U to weights (UQ=F)
     Q = U_norm(idx_cells,:)';
     
-    fprintf('\t\t\t Found %d sources in the initial pass.\n',acc);
+    dispfun(sprintf('\t\t\t Found %d sources in the initial pass.\n',acc),verb2);
     
-    fprintf('\t\t\t Fine tuning the sources...\n');
+    dispfun(sprintf('\t\t\t Fine tuning the sources...\n'),verb2);
     % Fine tuning: estimate the optimum # of singular vectors to use for each source
     num_sweep = 25;
     rat_sweep = linspace(0.2,1,num_sweep);
@@ -209,7 +176,7 @@ function [Q_fine,inv_qualities] = extract_sources(U,max_num)
     end
     Q_fine = bsxfun(@times,Q_fine,1./sqrt(sum(Q_fine.^2,1)));
 
-    fprintf('\t\t\t Doing a 2nd pass for removing duplicate sources...\n');
+    dispfun(sprintf('\t\t\t Doing a 2nd pass for removing duplicate sources...\n'),verb2);
     
     % Eliminate possible duplicate cells by a 2nd step
     num_cells_step1 = acc;
@@ -223,7 +190,6 @@ function [Q_fine,inv_qualities] = extract_sources(U,max_num)
         acc = acc+1;
         [~,idx_this] = min(best_one_norms(idx_possible));
         idx_this = idx_possible(idx_this);
-        sig_this = U*Q_fine(:,idx_this);
         correl = Corr_cells(idx_this,:);
         idx_possible = intersect(find(abs(correl)<corr_thresh+0.1),idx_possible);
         idx_cells(acc) = idx_this;
@@ -236,7 +202,7 @@ function [Q_fine,inv_qualities] = extract_sources(U,max_num)
     Q_fine = Q_fine(:,idx_cells);
     inv_qualities = best_one_norms(idx_cells)'/sqrt(N);
     size(inv_qualities,1);
-    fprintf('\t\t\t Done. Extracted %d potential cells in total. \n',acc);
+    dispfun(sprintf('\t\t\t Done. Extracted %d potential cells in total. \n',acc),verb2);
 end
 
 
@@ -247,7 +213,7 @@ function [F_out,cent_out,idx_retained] = cleanup_sources(F_in,mag_thresh)
     
     % Initialize output variables
     cent_out = zeros(2,num_cells);
-    F_out = zeros(h,w,num_cells*2); % Be generous in size
+    F_out = zeros(h,w,num_cells,'single'); 
     
     % Remove baselines
     meds = median(F_in,1);
@@ -287,8 +253,12 @@ function [F_out,cent_out,idx_retained] = cleanup_sources(F_in,mag_thresh)
     % Reshape back into 1D
     F_out = reshape(F_out,h*w,acc);
     idx_retained = setdiff(1:num_cells,idx_elim);
-    
-    fprintf('\t\t\t %d Cells were retained after cleanup.\n',acc);
+end
+
+function dispfun(str,state)
+    if state == 1
+        fprintf(str);
+    end
 end
 
 end
