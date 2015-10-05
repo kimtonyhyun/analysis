@@ -1,10 +1,9 @@
 function [F,cents,inv_qualities] = compute_spatial_weights(svd_source,ss_opts)
-
 %   Cell extraction method that is based on an algorithm that essentially
 %   solves the sparse source separation problem to find cell spatial weights.
 
 % Some parameters
-corr_thresh = 0.2;
+corr_thresh = 0.3;
 mag_thresh = 0.25;
 max_num = 3000;
 

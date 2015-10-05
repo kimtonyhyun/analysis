@@ -70,9 +70,12 @@ if ~skip_svd
     if opts.spat_medfilt_enabled
         dispfun(sprintf('%s: Beginning median filtering...\n', datestr(now)),opts.verbose~=0);
         medfilt_neighborhood = (1+2*opts.spat_medfilt_halfwidth)*[1 1];
+        filt = single(fspecial('average'));
+%         M = medfilt3(M,[3,3,3]);
         for idx_frame = 1:num_frames
             frame = M(:,:,idx_frame);
             M(:,:,idx_frame) = medfilt2(frame, medfilt_neighborhood);
+%             M(:,:,idx_frame) = conv2(frame,filt,'same') ;
             if mod(idx_frame,1000)== 0
                 dispfun(sprintf('%s: Median-filtered %d frames (out of %d)...\n',...
                     datestr(now),idx_frame, num_frames),opts.verbose==2);
@@ -99,7 +102,6 @@ if ~skip_svd
         end
         dispfun(sprintf('%s: Smoothing in time..\n',datestr(now)),opts.verbose~=0);
         filt = ones(1,filt_len)/filt_len;
-        
         % Do convolution in spatial blocks if memory is low 
         usable_mem_CPU = compute_cpu_memory()*opts.mem_occup_ratio_CPU;
         blocksize_M = floor(usable_mem_CPU/4 / num_frames /2);
@@ -116,7 +118,7 @@ if ~skip_svd
         M = M(:,1:end-filt_len+1);
         end
         
-        num_frames = size(M,2);
+        num_frames = size(M,2);        
         dispfun(sprintf('%s: Finished smoothing in time.\n',datestr(now)),opts.verbose~=0);
     end
    
