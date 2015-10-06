@@ -79,13 +79,22 @@ for i = 1:num_days
         chunk_trial = chunk_day(j).traces; % 1x3 cell 
         features_trial = zeros(num_cells,1);
         for trial_phase = opts.trial_phase
-            features_trial = features_trial+mean(chunk_trial{trial_phase},2);
+            if trial_phase ==2
+                features_trial = features_trial+mean(max(chunk_trial{trial_phase}(:,1:floor(end/2)),0),2);
+            else
+                features_trial = features_trial+mean(max(chunk_trial{trial_phase},0),2);
+            end
         end
         features_trial = features_trial / length(opts.trial_phase); % Average
+%         features_trial = features_trial/sum(features_trial);
         features = [features;features_trial'];
     end
     num_trials_each_day = [num_trials_each_day,num_trials];
+    % Normalization of features in the day
+%     features_day = features(end-num_trials+1:end,:);
+%     features(end-num_trials+1:end,:) = features(end-num_trials+1:end,:) / sum(features_day(:));
 end
+% save('features','features');
 
 % Split data into training and test
 idx_end_training = sum(num_trials_each_day(1:num_training));

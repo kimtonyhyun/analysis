@@ -8,7 +8,7 @@ function dimreduce_analysis(md,method,training_set,test_set,opts)
 %   method: 'pca' or 'pls'.
 %
 %   training_set: struct with following fields: 'day', 'attr','label',
-%   'disp_label'. 'attr' is a cell array specifying the desired trial types in
+%   'disp_label'. 'attr' is a cell  array specifying the desired trial types in
 %   a day. An example 'attr' is {'start','east','correct'}. This only
 %   retains the trials that start in the east arm and are correct. 'Label'
 %   can be (in theory) any real numeric value, but recommended type is
@@ -47,6 +47,8 @@ else
 end
 
 if ~isfield(opts,'ratio_PCs'),  opts.ratio_PCs=0.5; end
+if ~isfield(opts,'ratio_PCs'),  opts.ratio_PCs=0.5; end
+if ~isfield(opts,'shuffle'),  opts.shuffle='off'; end
 
 num_training = length(training_set);
 if do_test
@@ -55,12 +57,26 @@ end
 
 data = compute_ml_inputs(md,training_set,test_set,opts);
 features_training = data.features_training;
+
+if any(strcmp(opts.shuffle,{'on','tr'}))
+    for k = 1:size(features_training,1)
+        features_training(k,:) = features_training(k,randperm(md.num_cells));
+    end
+end
+
 displabels_training = data.displabels_training;
 if isfield(data,'labels_training')
     labels_training = data.labels_training;
 end
 if do_test
     features_test = data.features_test;
+    
+    if any(strcmp(opts.shuffle,{'on','te'}))
+        for k = 1:size(features_test,1)
+            features_test(k,:) = features_test(k,randperm(md.num_cells));
+        end
+    end
+
     displabels_test = data.displabels_test;
     if isfield(data,'labels_test'),
         labels_test = data.labels_test;
@@ -73,7 +89,7 @@ end
 
 mean_features_training = mean(features_training,1);
 [coeff,score,~,~,explained,~] = pca(features_training);
-
+save('coeff','coeff');
 if strcmp(method,'pca') % PCA
     if isfield(opts,'pca_dims')
         dim1 = opts.pca_dims(1);
@@ -92,7 +108,7 @@ if strcmp(method,'pca') % PCA
         centered_test_data = bsxfun(@minus,features_test,mean_features_training);
         dr_filter = coeff(:,[dim1,dim2]);
         dum =  centered_test_data * dr_filter ;
-        test_points = dum(:,[dim1,dim2]);
+        test_points = dum;
         
         data_1  = [data_1;test_points(:,1)];
         data_2  = [data_2;test_points(:,2)];
@@ -100,8 +116,7 @@ if strcmp(method,'pca') % PCA
         markers = [markers,repmat('o',1,num_test)];
         title_str = [title_str,' - Filled: Training, Hollow: Test'];
     end
-    gscatter(data_1,data_2,displabels,[],markers);
-    
+    gscatter(data_1,data_2,displabels,[],markers);  
     xlabel(['PC Dimension ',num2str(dim1)],'FontSize',15)
     ylabel(['PC Dimension ',num2str(dim2)],'FontSize',15)
     prcnt_explained = sum(explained([dim1,dim2]));
@@ -112,12 +127,13 @@ if strcmp(method,'pca') % PCA
     end
     
 else % PLS
-    num_PCs =size(score,2)*opts.ratio_PCs;
+    num_PCs =ceil(size(score,2)*opts.ratio_PCs);
     data_reduced = score(:,1:num_PCs);
+
     [XL,~,XS] = plsregress(data_reduced,labels_training);
     if isfield(opts,'pls_dims')
-        dim1 = opts.pca_dims(1);
-        dim2 = opts.pca_dims(2);
+        dim1 = opts.pls_dims(1);
+        dim2 = opts.pls_dims(2);
     else
         dim1=1;dim2=2;
     end
@@ -125,7 +141,7 @@ else % PLS
     % Fit 2D glm (suppress warnings when perfectly separated)
     warning('off', 'stats:glmfit:IterationLimit');
     warning('off', 'stats:glmfit:PerfectSeparation');
-    w = glmfit(XS(:,[dim1,dim2]),labels_training,'binomial');
+    w = glmfit(XS(:,[dim1,dim2]),labels_training,'binomial','link','logit');
     l_tr = mean((XS(:,[dim1,dim2])*w(2:3)+w(1) > 0)==labels_training);   
     
     data_1 = XS(:,dim1);
@@ -161,21 +177,24 @@ else % PLS
     
     %Plot Decision Boundary
     dx = linspace(min(XS(:,dim1)),max(XS(:,dim1)),5);
-    dy = (-dx*w(2)-w(1))/w(3);
+    dy = (-dx*w(2)-w(1))/(w(3)+0);
     plot(dx,dy,'--k','LineWidth',2); 
 
     if isfield(opts,'pls_xylim'),
         xlim(opts.pls_xylim(1,:));
         ylim(opts.pls_xylim(2,:));
+    else
+        xlim([min(XS(:,dim1)),max(XS(:,dim1))]+[-0.1,0.1]);
+        ylim([min(XS(:,dim2)),max(XS(:,dim2))]+[-0.1,0.1]);
     end
     xlabel(['PLS Dimension ',num2str(dim1)],'FontSize',15)
     ylabel(['PLS Dimension ',num2str(dim2)],'FontSize',15)
     title(title_str,'FontSize',18);
     
-    textloc = [min(dx),min(dy)];
+    textloc = [min(XS(:,dim1))-0.05,min(XS(:,dim2))-0.05];
     text(textloc(1),textloc(2),accuracy_str{1},'Fontsize',15,'Color','r');
     if do_test
-        text(textloc(1),textloc(2)-0.05,accuracy_str{2},'Fontsize',15,'Color',[0,0.5,0]);
+        text(textloc(1),textloc(2)-0.02,accuracy_str{2},'Fontsize',15,'Color',[0,0.5,0]);
     end
     hold off
 end
