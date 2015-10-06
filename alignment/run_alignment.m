@@ -5,8 +5,10 @@ function [match_1to2, match_2to1, affine_info] = run_alignment(ds1, ds2, varargi
 %   ds1/2: DaySummary object containing cell maps to be aligned
 %
 % Optional inputs:
-%   'one-to-one': Each cell of Dataset1 will match at most one cell of
-%       Dataset 2, and visa versa.
+%   'notrans': No transformation applied between ds1 and ds2
+%   'keepall': A cell from ds1 may match to more than one cell in ds2, and
+%              visa versa.
+%   Additional optional arugments are passed into 'match_masks.m'
 %
 % Outputs:
 %   match_XtoY: Cell that contains mapping information from source X to
@@ -28,16 +30,11 @@ function [match_1to2, match_2to1, affine_info] = run_alignment(ds1, ds2, varargi
 % Default alignment options
 %------------------------------------------------------------
 use_transform = 1;
-fast_matching = 0;
 bijective_matching = 1;
 
 for k = 1:length(varargin)
     if ischar(varargin{k})
         switch varargin{k}
-            case 'fast'
-                % Use fast -- nonexhaustive -- matching of masks. See
-                % 'match_masks' for further details
-                fast_matching = 1;
             case 'notrans'
                 % No affine transform needed (e.g. for matching multiple
                 % extraction runs on the same movie). Requires the image
@@ -46,7 +43,7 @@ for k = 1:length(varargin)
                     'notrans option requires cell image dimensions to be identical!');
                 use_transform = 0;
             case 'keepall' % Keep all matches
-                bijective_matching = 0;
+                bijective_matching = 0;                
         end
     end
 end
@@ -68,11 +65,7 @@ else
 end
 input('run_alignment: Press any key to continue with mask matching >> ');
 
-if fast_matching
-    [match_1to2, match_2to1] = match_masks(masks1, masks2, ds1, ds2, 'fast');
-else
-    [match_1to2, match_2to1] = match_masks(masks1, masks2, ds1, ds2);
-end
+[match_1to2, match_2to1] = match_masks(masks1, masks2, ds1, ds2, varargin{:});
 
 % Optional bijective filtering
 %------------------------------------------------------------

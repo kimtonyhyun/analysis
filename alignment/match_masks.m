@@ -11,6 +11,7 @@ function [match_1to2, match_2to1, M] = match_masks(masks1, masks2, ds1, ds2, var
 
 use_fast_matching = 0;
 fast_overlap_threshold = 0.7;
+match_all = 0; % By default, only classified cells are matched
 
 for k = 1:length(varargin)
     vararg = varargin{k};
@@ -25,6 +26,9 @@ for k = 1:length(varargin)
                 %    for against remaining masks1.
                 fprintf('%s: Using fast matching!\n', datestr(now));
                 use_fast_matching = 1;
+            case 'matchall'
+                fprintf('%s: Matching all filters!\n', datestr(now));
+                match_all = 1;
         end
     end
 end
@@ -40,9 +44,9 @@ for i = 1:num_masks(1)
         fprintf('%s: Computing overlaps (%.1f%%)...\n',...
             datestr(now), 100*i/num_masks(1));
     end
-    if ds1.is_cell(i)
+    if ds1.is_cell(i) || match_all
         for j = 1:num_masks(2)
-            if ds2.is_cell(j)
+            if ds2.is_cell(j) || match_all
                 if available_for_match(j)
                     M(i,j) = compute_mask_overlap(masks1{i}, masks2{j});
                     if use_fast_matching && (M(i,j) > fast_overlap_threshold)
