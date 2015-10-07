@@ -8,7 +8,9 @@ function [match_1to2, match_2to1, affine_info] = run_alignment(ds1, ds2, varargi
 %   'notrans': No transformation applied between ds1 and ds2
 %   'keepall': A cell from ds1 may match to more than one cell in ds2, and
 %              visa versa.
-%   Additional optional arugments are passed into 'match_masks.m'
+%
+%   Additional optional arguments are passed into 'match_masks.m', e.g.
+%       'fast' and 'matchall'
 %
 % Outputs:
 %   match_XtoY: Cell that contains mapping information from source X to
@@ -24,7 +26,7 @@ function [match_1to2, match_2to1, affine_info] = run_alignment(ds1, ds2, varargi
 %       datasets.
 %
 % Example usage:
-%   [m1to2, m2to1] = run_alignment('c9m7d07_ica001', 'c9m7d08_ica001');
+%   [m1to2, m2to1] = run_alignment(m1d12, m1d13, 'fast')
 %
 
 % Default alignment options
