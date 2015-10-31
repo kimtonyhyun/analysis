@@ -75,5 +75,5 @@ for i = 1:num_chunks
             [height width chunk_count]);
 end
 
-MIJ.exit;
+% MIJ.exit;
 fprintf('%s: Done!\n', datestr(now));
