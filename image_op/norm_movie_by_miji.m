@@ -1,7 +1,8 @@
 function norm_movie_by_miji(movie_in, movie_out, varargin)
-% Normalize HDF5 movie from file ('movie_in') to file ('movie_out').
-% Each frame is divided by a disk-filtered version of itself. Optional
-% argument specifies the radius of the disk-filter.
+% Normalize HDF5 movie from file ('movie_in') to file ('movie_out'), by
+% using 'Bandpass Filter...' option of ImageJ/MIJI. Note that Miji must be
+% running in the Matlab instance _before_ invoking this function. The
+% function will _not_ turn off Miji automatically.
 %
 % If 'movie_out' is left as an empty string, then default name will be
 % provided.
@@ -35,7 +36,8 @@ num_frames = movie_size(3);
 % Begin norm processing
 %------------------------------------------------------------
 % Miji; % Open ImageJ instance
-bpstr = 'filter_large=10000 filter_small=80 suppress=None tolerance=5 process';
+filter_small = 80;
+bpstr = sprintf('filter_large=10000 filter_small=%d suppress=None tolerance=5 process', filter_small);
 
 % Prepare output movie
 %------------------------------------------------------------
@@ -45,7 +47,10 @@ h5create(movie_out, movie_dataset,...
          'Datatype', 'single');
      
 copy_hdf5_params(movie_in, movie_out);     
-     
+
+h5create(movie_out, '/Norm/MijiFilterSmall', 1, 'Datatype', 'double');
+h5write(movie_out, '/Norm/MijiFilterSmall', filter_small);
+
 % Apply norm
 frame_chunk_size = 1000;
 [frame_chunks, num_chunks] = make_frame_chunks(num_frames, frame_chunk_size);
