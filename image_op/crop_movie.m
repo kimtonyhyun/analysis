@@ -107,6 +107,8 @@ colormap gray;
 axis image;
 title(sprintf('%s (cropped)',strrep(movie_in, '_', '\_')));
 
+fprintf('crop_movie: Crop bounds are [x0 x1 y0 y1] = [%d %d %d %d]\n',...
+    x_bounds(1), x_bounds(2), y_bounds(1), y_bounds(2));
 input('crop_movie: Press enter to proceed >> ');
 
 % Prepare output movie
