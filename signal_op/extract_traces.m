@@ -5,7 +5,7 @@ function traces = extract_traces(movie_source,rec_source)
 % movie matrix. Likewise, the rec source might be the path to the rec file
 % or the 'filters' structure in the rec file (or its transpose).
 
-regul = 0; % regularization term for LS reconstruction
+regul = 1; % regularization term for LS reconstruction
 
 % Determine if movie source is the link to source or the movie matrix
 if ischar(movie_source)

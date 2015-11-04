@@ -1,50 +1,55 @@
-function [F,cents,inv_qualities] = compute_spatial_weights(svd_source,ss_opts)
+function [F,cents,inv_qualities] = compute_spatial_weights(svd_source,opts)
 %   Cell extraction method that is based on an algorithm that essentially
 %   solves the sparse source separation problem to find cell spatial weights.
 
 % Some parameters
 corr_thresh = 0.3;
-mag_thresh = 0.25;
-max_num = 3000;
+mag_thresh = 0.1;
 
 verb1=1;
 verb2=0;
-if ss_opts.verbose==0
+if opts.verbose==0
     verb1=0;
-elseif ss_opts.verbose==2
+elseif opts.verbose==2
     verb2=1;
 end
 
 U = svd_source.U;
 info = svd_source.info;
 
-U = U(:,1:ss_opts.num_comp);
-is_trimmed = info.trim.enabled;
+if opts.ss_num_comp>0 % number of components are set
+    num_comp = opts.ss_num_comp;
+else % set to #PCs
+   num_comp = opts.svd_num_comp;
+end
+U = U(:,1:num_comp);
+
 h = info.movie_height;
 w = info.movie_width;
 idx_kept = info.trim.idx_kept;
 
-[Q_fine,inv_qualities] = extract_sources(U,max_num);
+[Q_fine,inv_qualities] = extract_sources(U,opts.ss_max_num_sources);
 num_extracted = size(Q_fine,2);
 F = U*Q_fine;
-if is_trimmed % Untrim the pixels
-    F_temp = zeros(h*w,num_extracted);
-    F_temp(idx_kept,:) = F;
-    F = F_temp;
-    clear F_temp;
-end
+
+% Untrim pixels 
+F_temp = zeros(h*w,num_extracted);
+F_temp(idx_kept,:) = F;
+F = F_temp;
+clear F_temp;
+% save('F','F');
 
 dispfun(sprintf('%s: Checking cells and doing some cleaning...\n',datestr(now)),verb2);
 [F,cents,idx_retained] = cleanup_sources(F,mag_thresh);
 inv_qualities = inv_qualities(idx_retained);
 
-F = bsxfun(@times,F,1./sum(F,1)); % Make each weight vector sum up to 1
+F = bsxfun(@times,F,1./max(F,[],1)); % Normalize to recover df/f at traces
 
 dispfun(sprintf('%s: Done. Source count: %d.\n',datestr(now),size(F,2)),verb1);
 
-%-------------------
+%%%%%%%%%%%%%%%%%%%%
 % Internal functions
-%-------------------
+%%%%%%%%%%%%%%%%%%%%
 
 function [Q_fine,inv_qualities] = extract_sources(U,max_num)
 % Extract sources recursively using the 1-norm criterion
@@ -59,11 +64,12 @@ function [Q_fine,inv_qualities] = extract_sources(U,max_num)
     if gpu_exists
         avail_mem = compute_gpu_memory();    
         f = max(avail_mem/4 - N*(num_pcs+2),0); % maximum available element size 
-        f = f*ss_opts.mem_occup_ratio_GPU;
+        f = f*opts.mem_occup_ratio_GPU;
+        
         chunk_size = floor(f/ (2*N+num_pcs)); %# of pixels at once
         use_gpu = chunk_size>=1;
     end    
-    use_gpu = use_gpu & (~ss_opts.disableGPU);
+    use_gpu = use_gpu & (~opts.disableGPU);
     
     if use_gpu %GPU
         dispfun(sprintf('\t\t\t GPU detected. Using it for computation...\n'),verb2);
@@ -86,7 +92,7 @@ function [Q_fine,inv_qualities] = extract_sources(U,max_num)
     else % CPU
         avail_mem = compute_cpu_memory();
         f = avail_mem/4 ; % maximum available element size
-        f = f*ss_opts.mem_occup_ratio_CPU;
+        f = f*opts.mem_occup_ratio_CPU;
         chunk_size = floor(f/ (2*N+num_pcs)); %# of pixels at once
 
         one_norms = zeros(1,N);
@@ -139,7 +145,7 @@ function [Q_fine,inv_qualities] = extract_sources(U,max_num)
         F_trunc = U(:,1:idx_stop)*Q_trunc;
         one_norms_F(:,rat_sweep==rat) = sum(abs(F_trunc),1)';
     end
-
+    
     % Reconstruct Q (Q_fine)
     [best_one_norms,idx_best_rat] = min(one_norms_F,[],2);
     idx_uncertain = find(idx_best_rat==1);
@@ -207,16 +213,16 @@ end
 
 function [F_out,cent_out,idx_retained] = cleanup_sources(F_in,mag_thresh)
     
-    size_thresh = 40;
+    size_thresh = opts.ss_cell_size_threshold;
     num_cells = size(F_in,2);
     
     % Initialize output variables
     cent_out = zeros(2,num_cells);
     F_out = zeros(h,w,num_cells,'single'); 
     
-    % Remove baselines
-    meds = median(F_in,1);
-    F_in = bsxfun(@minus,F_in,meds);
+%     % Remove baselines
+%     meds = median(F_in,1);
+%     F_in = bsxfun(@minus,F_in,meds);
 
     % Reshape into 2D
     F_in = reshape(F_in,h,w,num_cells);
@@ -228,7 +234,7 @@ function [F_out,cent_out,idx_retained] = cleanup_sources(F_in,mag_thresh)
         this_cell = F_in(:,:,idx_cell);
         [boundaries, ~] = compute_ic_boundary(this_cell, mag_thresh);
         num_objects = length(boundaries);
-        if num_objects <20
+        if num_objects <100
             for idx_obj = 1:min(1,num_objects)
                 mask_candid = poly2mask(boundaries{idx_obj}(:,1), boundaries{idx_obj}(:,2), h, w);
                 if nnz(mask_candid)>=size_thresh

@@ -7,30 +7,31 @@ if ~exist('opts','var')
 end
 
 % Defaults
-if ~isfield(opts,'num_partition_x'),  opts.num_partition_x=3; end
-if ~isfield(opts,'num_partition_y'),  opts.num_partition_y=3; end
-if ~isfield(opts,'overlap_x'),  opts.overlap_x=30; end
-if ~isfield(opts,'overlap_y'),  opts.overlap_y=30; end
-if ~isfield(opts,'svd_num_comp'),  opts.svd_num_comp=300; end
-if ~isfield(opts,'spat_medfilt_enabled'),  opts.spat_medfilt_enabled=1; end
-if ~isfield(opts,'spat_medfilt_halfwidth'),  opts.spat_medfilt_halfwidth=1; end
-if ~isfield(opts,'temporal_smooth_enabled'),  opts.temporal_smooth_enabled=1; end
-if ~isfield(opts,'temporal_smooth_len'),  opts.temporal_smooth_len=10; end
-if ~isfield(opts,'trim_pixels'), opts.trim_pixels = 0; end
+if ~isfield(opts,'num_partition_x'), opts.num_partition_x=1; end
+if ~isfield(opts,'num_partition_y'), opts.num_partition_y=1; end
+if ~isfield(opts,'overlap_x'), opts.overlap_x=25; end
+if ~isfield(opts,'overlap_y'), opts.overlap_y=25; end
+if ~isfield(opts,'svd_num_comp'), opts.svd_num_comp=1000; end
+if ~isfield(opts,'spat_medfilt_enabled'), opts.spat_medfilt_enabled=1; end
+if ~isfield(opts,'spat_linfilt_enabled'), opts.spat_linfilt_enabled=1; end
+if ~isfield(opts,'spat_medfilt_halfwidth'), opts.spat_medfilt_halfwidth=1; end
+if ~isfield(opts,'spat_linfilt_halfwidth'), opts.spat_linfilt_halfwidth=4; end
+if ~isfield(opts,'temporal_smooth_enabled'), opts.temporal_smooth_enabled=1; end
+if ~isfield(opts,'temporal_smooth_filter'), opts.temporal_smooth_filter='gauss'; end
+if ~isfield(opts,'temporal_smooth_len'), opts.temporal_smooth_len=21; end
+if ~isfield(opts,'trim_pixels'), opts.trim_pixels = 0.4; end
 if ~isfield(opts,'subsample_time'), opts.subsample_time = 'off'; end
 if ~isfield(opts,'subsample_time_ratio'), opts.subsample_time_ratio = 0.5; end
 if ~isfield(opts,'verbose'), opts.verbose = 1; end
 if ~isfield(opts,'disableGPU'), opts.disableGPU = 0; end
 if ~isfield(opts,'mem_occup_ratio_CPU'), opts.mem_occup_ratio_CPU=0.8; end
 if ~isfield(opts,'mem_occup_ratio_GPU'), opts.mem_occup_ratio_GPU=0.7; end
-if ~isfield(opts,'ss_num_comp'), opts.ss_num_comp = opts.svd_num_comp; end
-
-% Copy some parameters to ss_opts
-ss_opts.verbose = opts.verbose;
-ss_opts.disableGPU = opts.disableGPU;
-ss_opts.mem_occup_ratio_CPU = opts.mem_occup_ratio_CPU;
-ss_opts.mem_occup_ratio_GPU = opts.mem_occup_ratio_GPU;
-ss_opts.num_comp = min(opts.ss_num_comp,opts.svd_num_comp);
+if ~isfield(opts,'existing_SVD_file'), opts.existing_SVD_file = ''; end
+if ~isfield(opts,'save_SVD'), opts.save_SVD = 1; end
+if ~isfield(opts,'ss_num_comp'), opts.ss_num_comp = 0; end
+if ~isfield(opts,'ss_max_num_sources'), opts.ss_max_num_sources =1500; end
+if ~isfield(opts,'ss_cell_size_threshold'), opts.ss_cell_size_threshold = 0; end
+if ~isfield(opts,'remove_duplicate_cells'), opts.remove_duplicate_cells = 0; end
 
 if opts.spat_medfilt_enabled
     splen = 2*opts.spat_medfilt_halfwidth+1;
@@ -43,16 +44,27 @@ else
     tmplen=0;
 end
 
-svd_savename = sprintf('svd_n%dx%dy%dsp%dtmp%dtrimlvl%.1ftime_sub_%s.mat', opts.svd_num_comp,...
-    opts.num_partition_x,opts.num_partition_y,splen,tmplen,opts.trim_pixels,opts.subsample_time);
+if opts.save_SVD
+    timestamp = datestr(now, 'yymmdd-HHMMSS');
+    svd_savename = sprintf('svd_%s.mat', timestamp);
+end
 
-skip_svd = exist(svd_savename,'file');
+skip_svd = exist(opts.existing_SVD_file,'file');
 if ~skip_svd
-    dummy_var = '';
-    save(svd_savename,'dummy_var'); % Only way to make matlab save an blank .mat
+    if opts.save_SVD
+        save(svd_savename,'opts');
+    end
     
     dispfun(sprintf('%s: Loading %s...\n', datestr(now), movie_source),opts.verbose~=0);
     M = load_movie(movie_source);
+    
+    % Mean subtract in time
+    mean_M = mean(M,3);
+    is_zeromean = std(mean_M(:)) <1e-5;
+    if ~is_zeromean
+        M = bsxfun(@minus,M,mean_M);
+    end
+    
     [height, width, num_frames] = size(M);
     num_pixels = height * width;
     
@@ -66,63 +78,80 @@ if ~skip_svd
         num_frames = length(idx_keep);
     end
     
-    % Median filter
-    if opts.spat_medfilt_enabled
-        dispfun(sprintf('%s: Beginning median filtering...\n', datestr(now)),opts.verbose~=0);
+    % Spatial smoothing
+    if opts.spat_medfilt_enabled || opts.spat_linfilt_enabled
+        dispfun(sprintf('%s: Beginning spatial filtering...\n', datestr(now)),opts.verbose~=0);
         medfilt_neighborhood = (1+2*opts.spat_medfilt_halfwidth)*[1 1];
-        filt = single(fspecial('average'));
-%         M = medfilt3(M,[3,3,3]);
+        linfilt_neighborhood = (1+2*opts.spat_linfilt_halfwidth)*[1 1];
         for idx_frame = 1:num_frames
             frame = M(:,:,idx_frame);
-            M(:,:,idx_frame) = medfilt2(frame, medfilt_neighborhood);
-%             M(:,:,idx_frame) = conv2(frame,filt,'same') ;
+            if opts.spat_medfilt_enabled
+                frame = medfilt2(frame, medfilt_neighborhood);
+            end
+            if opts.spat_linfilt_enabled
+                frame = wiener2(frame,linfilt_neighborhood);
+            end
+            M(:,:,idx_frame) = frame;
             if mod(idx_frame,1000)== 0
-                dispfun(sprintf('%s: Median-filtered %d frames (out of %d)...\n',...
+                dispfun(sprintf('%s: Filtered %d frames (out of %d)...\n',...
                     datestr(now),idx_frame, num_frames),opts.verbose==2);
             end
         end
-        dispfun(sprintf('%s: Finished median filtering.\n', datestr(now)),opts.verbose~=0);
+        dispfun(sprintf('%s: Finished spatial filtering.\n', datestr(now)),opts.verbose~=0);
     end
     
     % Compute pixels to retain in case of trimming
     if opts.trim_pixels
         max_proj = max(M,[],3);
+        max_proj = medfilt2(max_proj,[5,5]);
         mask_retained = max_proj>quantile(max_proj(:),opts.trim_pixels);
     end
 
     % Make M 2D
     M = reshape(M, num_pixels, num_frames);
 
-    % Temporal smoothing with moving average filter
+    % Temporal smoothing
     if opts.temporal_smooth_enabled
         if strcmp(opts.subsample_time,'uniform') % Subsampling was done before
             filt_len = ceil(opts.temporal_smooth_len*opts.subsample_time_ratio);
         else
             filt_len = opts.temporal_smooth_len;
         end
-        dispfun(sprintf('%s: Smoothing in time..\n',datestr(now)),opts.verbose~=0);
-        filt = ones(1,filt_len)/filt_len;
-        % Do convolution in spatial blocks if memory is low 
-        usable_mem_CPU = compute_cpu_memory()*opts.mem_occup_ratio_CPU;
-        blocksize_M = floor(usable_mem_CPU/4 / num_frames /2);
-        if blocksize_M >= num_pixels
-            M= conv2(1,filt,M,'valid');
+        dispfun(sprintf('%s: Smoothing in time...\n',datestr(now)),opts.verbose~=0);
+        if strcmp(opts.temporal_smooth_filter,'gauss')
+            idx_filt = -floor(filt_len/2):floor(filt_len/2);
+            filt = normpdf(idx_filt,0,2);
+            filt = filt/sum(filt);
+            mem_factor = 2; % Need this x movie size for gauss filter
         else
-            for idx_begin = 1:blocksize_M:num_pixels
-                idx_end = min(idx_begin+blocksize_M-1,num_pixels);
-                M(idx_begin:idx_end,1:end-filt_len+1)= conv2(1,filt,M(idx_begin:idx_end,:),'valid');
-                clear M_block;
-            end
-            % Delete the non-valid portion of M
-%             M(:,end-filt_len+2:end) = [];
-        M = M(:,1:end-filt_len+1);
+            mem_factor = 5; % Need this x movie size for wiener filter
         end
         
-        num_frames = size(M,2);        
+        usable_mem_CPU = compute_cpu_memory()*opts.mem_occup_ratio_CPU;
+        blocksize_M = floor(usable_mem_CPU/4 / num_frames /mem_factor);
+        
+        if blocksize_M >= num_pixels
+           if strcmp(opts.temporal_smooth_filter,'gauss')
+               M= conv2(1,filt,M,'same');
+           else
+               M = wiener(M,filt_len);
+           end
+                 
+        else
+            for idx_begin = 1:blocksize_M:num_pixels 
+                idx_end = min(idx_begin+blocksize_M-1,num_pixels);
+                if strcmp(opts.temporal_smooth_filter,'gauss')
+                    M(idx_begin:idx_end,:)= conv2(1,filt,M(idx_begin:idx_end,:),'same');
+                else
+                    M(idx_begin:idx_end,:)= wiener(M(idx_begin:idx_end,:),filt_len);
+                end
+            end
+        end
+       
         dispfun(sprintf('%s: Finished smoothing in time.\n',datestr(now)),opts.verbose~=0);
     end
    
-    % Randomized subsampling in time (from a nice paper by Drineas et.al.)
+    % Randomized subsampling in time (from Drineas et.al.)
     if strcmp(opts.subsample_time,'random')
         p = zeros(1,num_frames);
         for i =1:num_frames
@@ -137,9 +166,9 @@ if ~skip_svd
     end
 
 else
-    dispfun(sprintf('%s: Existing SVD source detected, skipping movie preprocessing and SVD...\n',...
+    dispfun(sprintf('%s: Using existing SVD source, skipping movie preprocessing and SVD...\n',...
         datestr(now)),opts.verbose~=0);
-    load(svd_savename,'SVD1');
+    load(opts.existing_SVD_file,'SVD1');
     height = SVD1.info.movie_height;
     width = SVD1.info.movie_width;
     num_frames = SVD1.info.movie_frames;
@@ -147,7 +176,9 @@ else
     clear SVD1;
 end
 
-% Divide movie into partitions and run extraction
+%%%%%%%%%%%%%%%%
+% Run extraction
+%%%%%%%%%%%%%%%%
 
 %shorthand variables
 npx = opts.num_partition_x;
@@ -183,6 +214,9 @@ for idx_partition_x = 1:npx
             end
             idx_kept = find(dum);
             M_small = M(idx_kept,:);
+            if num_partitions == 1
+                clear M;
+            end
 
             % Make M_small zero mean in the spatial dimension
             mean_M_small = mean(M_small,1);
@@ -190,10 +224,9 @@ for idx_partition_x = 1:npx
             dispfun(sprintf('%s: Computing SVD...\n',datestr(now)),opts.verbose~=0);
             % Do SVD
             M_small = bsxfun(@minus, M_small, mean_M_small);
-            [U,S,V] = svds_custom(M_small, opts.svd_num_comp,opts.verbose==2); 
-            S = diag(S);
-  
-            % Save SVD results
+            [U,S,V] = svds_custom(M_small, opts.svd_num_comp,opts.verbose==2);
+            S = diag(S);       
+            
             info.movie_height = height;
             info.movie_width  = width;
             info.movie_frames = num_frames;
@@ -205,19 +238,21 @@ for idx_partition_x = 1:npx
             svd_source.V = V;
             svd_source.S = S;
             svd_source.info = info;
-            this_savename = sprintf('SVD%d',part_no);
-            savedum.(this_savename) = svd_source;
-            save(svd_savename, '-struct','savedum','-append');
+            if opts.save_SVD % Save SVD results
+                this_savename = sprintf('SVD%d',part_no);
+                savedum.(this_savename) = svd_source;
+                save(svd_savename, '-struct','savedum','-append','-v7.3');
+            end
             clear M_small;
         end
         
         % Source extraction
         if skip_svd
-            svd = load(svd_savename,['SVD',num2str(part_no)]);
+            svd = load(opts.existing_SVD_file,['SVD',num2str(part_no)]);
             svd_source = eval(['svd.SVD',num2str(part_no)]);
         end
         dispfun(sprintf('%s: Extracting cell spatial weights...\n',datestr(now)),opts.verbose~=0);
-        [F_this,cents_this,inv_qualities_this] = compute_spatial_weights(svd_source,ss_opts);
+        [F_this,cents_this,inv_qualities_this] = compute_spatial_weights(svd_source,opts);
         F = [F,F_this];
         cents = [cents,cents_this];
         inv_qualities = [inv_qualities,inv_qualities_this];
@@ -225,25 +260,33 @@ for idx_partition_x = 1:npx
     end
 end
 
-dispfun(sprintf('%s: Total of %d cells are found. Removing duplicate cells...\n',...
+dispfun(sprintf('%s: Total of %d cells are found.\n',...
     datestr(now),size(F,2)),opts.verbose~=0);
-[F,idx_retained] = remove_duplicate_cells(F,cents,[height,width]);
-inv_qualities = inv_qualities(idx_retained);
+
+if opts.remove_duplicate_cells
+    dispfun(sprintf('%s: Removing duplicate cells...\n',...
+    datestr(now),size(F,2)),opts.verbose~=0);
+
+    [F,idx_retained] = remove_duplicate_cells(F,cents,[height,width]);
+    inv_qualities = inv_qualities(idx_retained);
+
+    dispfun(sprintf('%s: %d cells were retained after removing duplicates.\n',...
+        datestr(now),size(F,2)),opts.verbose~=0);
+end
 
 % Sort spatial weights in descending goodness
 [~,idx_sort] = sort(inv_qualities);
 F = F(:,idx_sort);
-
-dispfun(sprintf('%s: %d cells were retained after removing duplicates.\n',...
-    datestr(now),size(F,2)),opts.verbose~=0);
-
+    
 clear M;
 dispfun(sprintf('%s: Loading the movie again for extracting temporal traces...\n',...
     datestr(now)),opts.verbose~=0);
 M = load_movie(movie_source);
+M = reshape(M,height*width,num_frames);
 
 dispfun(sprintf('%s: Extracting traces...\n',datestr(now)),opts.verbose~=0);
 traces = extract_traces(M,F);
+
 
 % Remove baseline from the traces
 for k = 1:size(F,2);
@@ -252,10 +295,18 @@ end
 
 filters = reshape(F,height,width,size(F,2)); %#ok<*NASGU>
 
+% Some statistics
+stats.inv_qualities = inv_qualities;
+val = goodness_trace(traces);
+stats.goodness_traces = val;
+
 info.type = 'SS';
 info.num_pairs = size(F,2);
 info.movie_source = movie_source;
-info.svd_source = svd_savename; 
+info.stats = stats;
+if opts.save_SVD
+    info.svd_source = svd_savename;
+end
 
 % Save the result to mat file
 timestamp = datestr(now, 'yymmdd-HHMMSS');
@@ -268,15 +319,31 @@ save(rec_savename, 'info', 'filters', 'traces','-v7.3');
 
 fprintf('%s: All done! \n',datestr(now));
 
-%-------------------
+%%%%%%%%%%%%%%%%%%%%
 % Internal functions
-%-------------------
+%%%%%%%%%%%%%%%%%%%%
+
+function F = wiener(G,conv_len)
+% Wiener filtering in time, adapted from Matlab built-in wiener2
+
+    localMean = conv2(1,ones(1,conv_len),G,'same') / conv_len;
+    localVar = conv2(1,ones(1,conv_len),G.^2,'same') / conv_len - localMean.^2;
+    noise = mean(localVar,2);
+
+    F = G - localMean;
+    G = bsxfun(@minus,localVar,noise);
+    G = max(G, 0);
+    localVar = bsxfun(@max,localVar, noise);
+    F = F ./ localVar;
+    F = F .* G;
+    F = F + localMean;
+end
 
 function [filters_out,idx_retained] = remove_duplicate_cells(filters_in,cent_cells,hw)
 % Outputs a cell array with indices to be merged
 
     h = hw(1);w = hw(2);
-    thresh_A = 0.7;
+    thresh_A = 0.65;
     num_cells = size(filters_in,2);
     masks = filters_in>0;  
     cell_sizes = sum(masks,1);
@@ -338,6 +405,24 @@ function Dist = compute_dist_matrix(centroids)
     Dist = sqrt(max(NN+NN'-2*centroids'*centroids,0));  %#ok<MHERM>
     Dist(Dist<1e-3) = inf; % Set diagonals to infinity
     
+end
+
+function val = goodness_trace(traces)
+%Determine the "spiky-ness" by comparing distribution to gaussian  
+
+    num_cells = size(traces,2);
+    val = zeros(2,num_cells);
+    for idx_cell =1:num_cells
+        tr = traces(:,idx_cell);
+        tr(tr<0) = [];
+        tr = [tr;-tr]; %make distribution symmetric
+        tr = tr/std(tr); % standardize
+        [c,x] = hist(tr,100);
+        f_g = 1/sqrt(2*pi)*exp(-x.^2/2); % gaussian pdf
+        f_r = c/length(tr)/(x(2)-x(1)); % empirical pdf
+        val(1,idx_cell) = norm(f_g-f_r,2);
+        val(2,idx_cell) = norm(f_g-f_r,1);
+    end
 end
 
 function dispfun(str,state)
