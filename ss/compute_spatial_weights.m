@@ -238,14 +238,16 @@ function [F_out,cent_out,idx_retained] = cleanup_sources(F_in,mag_thresh)
             for idx_obj = 1:min(1,num_objects)
                 mask_candid = poly2mask(boundaries{idx_obj}(:,1), boundaries{idx_obj}(:,2), h, w);
                 if nnz(mask_candid)>=size_thresh
-                    acc = acc+1;
                     s = regionprops(mask_candid,'centroid');
                     if ~isempty(s)
+                        acc = acc+1;
                         F_out(:,:,acc) = mask_candid.*this_cell;
                         cent_out(:,acc) = s(1).Centroid;
                     else
                         idx_elim = [idx_elim,idx_cell];
                     end
+                else
+                    idx_elim = [idx_elim,idx_cell];
                 end
             end
         else

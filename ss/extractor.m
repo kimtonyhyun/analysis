@@ -1,4 +1,4 @@
-function extractor(movie_source,opts)
+function [filters,traces,info,opts] = extractor(movie_source,opts)
 % Automated cell extraction by source separation algorithm. More
 % documentation to come.
 
