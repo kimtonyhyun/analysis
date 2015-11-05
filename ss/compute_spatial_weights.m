@@ -240,10 +240,12 @@ function [F_out,cent_out,idx_retained] = cleanup_sources(F_in,mag_thresh)
                 if nnz(mask_candid)>=size_thresh
                     acc = acc+1;
                     s = regionprops(mask_candid,'centroid');
-                    F_out(:,:,acc) = mask_candid.*this_cell;
-                    cent_out(:,acc) = s(1).Centroid;
-                else
-                    idx_elim = [idx_elim,idx_cell];
+                    if ~isempty(s)
+                        F_out(:,:,acc) = mask_candid.*this_cell;
+                        cent_out(:,acc) = s(1).Centroid;
+                    else
+                        idx_elim = [idx_elim,idx_cell];
+                    end
                 end
             end
         else

@@ -7,6 +7,8 @@ if ~exist('opts','var')
 end
 
 % Defaults
+if ~isfield(opts,'movie_dataset'), opts.movie_dataset = '/Data/Images'; end
+if ~isfield(opts,'save_to_movie_dir'), opts.save_to_movie_dir = 1; end
 if ~isfield(opts,'num_partition_x'), opts.num_partition_x=1; end
 if ~isfield(opts,'num_partition_y'), opts.num_partition_y=1; end
 if ~isfield(opts,'overlap_x'), opts.overlap_x=25; end
@@ -44,9 +46,18 @@ else
     tmplen=0;
 end
 
+if opts.save_to_movie_dir
+    movie_dir = fileparts(movie_source);
+    if ~isempty(movie_dir)
+        save_dir = [movie_dir,'/'];
+    else
+        save_dir = '';
+    end
+end
+
 if opts.save_SVD
     timestamp = datestr(now, 'yymmdd-HHMMSS');
-    svd_savename = sprintf('svd_%s.mat', timestamp);
+    svd_savename = sprintf('%ssvd_%s.mat', save_dir,timestamp);
 end
 
 skip_svd = exist(opts.existing_SVD_file,'file');
@@ -56,7 +67,7 @@ if ~skip_svd
     end
     
     dispfun(sprintf('%s: Loading %s...\n', datestr(now), movie_source),opts.verbose~=0);
-    M = load_movie(movie_source);
+    M = load_movie_from_hdf5(movie_source,opts.movie_dataset);
     
     % Mean subtract in time
     mean_M = mean(M,3);
@@ -241,7 +252,7 @@ for idx_partition_x = 1:npx
             if opts.save_SVD % Save SVD results
                 this_savename = sprintf('SVD%d',part_no);
                 savedum.(this_savename) = svd_source;
-                save(svd_savename, '-struct','savedum','-append','-v7.3');
+                save(svd_savename, '-struct','savedum','-append');
             end
             clear M_small;
         end
@@ -281,7 +292,7 @@ F = F(:,idx_sort);
 clear M;
 dispfun(sprintf('%s: Loading the movie again for extracting temporal traces...\n',...
     datestr(now)),opts.verbose~=0);
-M = load_movie(movie_source);
+M = load_movie_from_hdf5(movie_source,opts.movie_dataset);
 M = reshape(M,height*width,num_frames);
 
 dispfun(sprintf('%s: Extracting traces...\n',datestr(now)),opts.verbose~=0);
@@ -310,7 +321,7 @@ end
 
 % Save the result to mat file
 timestamp = datestr(now, 'yymmdd-HHMMSS');
-rec_savename = sprintf('rec_%s.mat', timestamp);
+rec_savename = sprintf('%srec_%s.mat',save_dir, timestamp);
 
 dispfun(sprintf('%s: Writing the output to file... \n',datestr(now)),opts.verbose~=0);
 fprintf('%s: Output will be saved in %s \n',datestr(now),rec_savename);
