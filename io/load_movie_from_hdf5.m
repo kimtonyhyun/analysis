@@ -8,7 +8,7 @@ movie_dataset = '/Data/Images';
 if ~isempty(varargin) % Read a subset of the movie
     for k = 1:length(varargin)
         if isnumeric(varargin{k})
-            frame_range = varargin{1}; % [Start End]
+            frame_range = varargin{k}; % [Start End]
             frame_start = frame_range(1);
             frame_count = frame_range(2) - frame_range(1) + 1;
             [movie_size, ~] = get_dataset_info(source, movie_dataset);
