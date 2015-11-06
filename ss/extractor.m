@@ -312,6 +312,7 @@ val = goodness_trace(traces);
 stats.goodness_traces = val;
 
 info.type = 'SS';
+info.version = '20151105.0.1.1';
 info.num_pairs = size(F,2);
 info.movie_source = movie_source;
 info.stats = stats;
