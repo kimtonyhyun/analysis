@@ -59,17 +59,17 @@ function [Q_fine,inv_qualities] = extract_sources(U,max_num)
     U_norm = bsxfun(@times,U,1./norms_U);
     
     % Brute-force approach for 1-norm computation, use GPU if available
-    use_gpu = 0;
     gpu_exists = gpuDeviceCount>0;
-    if gpu_exists
+    if gpu_exists && (~opts.disableGPU)
         avail_mem = compute_gpu_memory();    
         f = max(avail_mem/4 - N*(num_pcs+2),0); % maximum available element size 
         f = f*opts.mem_occup_ratio_GPU;
         
         chunk_size = floor(f/ (2*N+num_pcs)); %# of pixels at once
         use_gpu = chunk_size>=1;
+    else
+        use_gpu = 0;
     end    
-    use_gpu = use_gpu & (~opts.disableGPU);
     
     if use_gpu %GPU
         dispfun(sprintf('\t\t\t GPU detected. Using it for computation...\n'),verb2);
