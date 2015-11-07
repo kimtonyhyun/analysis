@@ -18,9 +18,17 @@ function norm_movie_by_miji(movie_in, movie_out, varargin)
 %   norm_movie_by_miji('c9m7d12.hdf5','');
 %
 
+% User specification of filter cutoff
+if ~isempty(varargin)
+    filter_small = varargin{1};
+else
+    filter_small = 40;
+end
+filter_small = round(filter_small);
+
 if isempty(movie_out)
     [~, name] = fileparts(movie_in);
-    movie_out = sprintf('%s_norm-miji.hdf5', name);
+    movie_out = sprintf('%s_norm%d.hdf5', name, filter_small);
     fprintf('norm_movie: Output movie will be saved as "%s"\n', movie_out);
 end
 
@@ -36,11 +44,6 @@ num_frames = movie_size(3);
 % Begin norm processing
 %------------------------------------------------------------
 % Miji; % Open ImageJ instance
-if ~isempty(varargin)
-    filter_small = varargin{1};
-else
-    filter_small = 40;
-end
 fprintf('norm_movie_by_miji: Using filter cutoff at %d pixels...\n', filter_small);
 bpstr = sprintf('filter_large=10000 filter_small=%d suppress=None tolerance=5 process', filter_small);
 
