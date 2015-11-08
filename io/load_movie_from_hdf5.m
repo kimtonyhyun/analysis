@@ -11,7 +11,6 @@ if ~isempty(varargin) % Read a subset of the movie
             frame_range = varargin{k}; % [Start End]
             frame_start = frame_range(1);
             frame_count = frame_range(2) - frame_range(1) + 1;
-            [movie_size, ~] = get_dataset_info(source, movie_dataset);
         else
             movie_dataset = varargin{k};
         end
@@ -19,6 +18,7 @@ if ~isempty(varargin) % Read a subset of the movie
 end 
 
 if exist('frame_range','var')
+    [movie_size, ~] = get_dataset_info(source, movie_dataset);
     M = h5read(source, movie_dataset,...        
         [1 1 frame_start],...
         [movie_size(1) movie_size(2) frame_count]);        
