@@ -4,7 +4,7 @@ function [F,cents,inv_qualities] = compute_spatial_weights(svd_source,opts)
 
 % Some parameters
 corr_thresh = 0.3;
-mag_thresh = 0.1;
+mag_thresh = 0.05;
 
 verb1=1;
 verb2=0;
@@ -216,7 +216,7 @@ function [F_out,cent_out,idx_retained] = cleanup_sources(F_in,mag_thresh)
     size_thresh = opts.ss_cell_size_threshold;
     num_cells = size(F_in,2);
     
-    % Initialize output variables
+   % Initialize output variables
     cent_out = zeros(2,num_cells);
     F_out = zeros(h,w,num_cells,'single'); 
     
@@ -226,33 +226,38 @@ function [F_out,cent_out,idx_retained] = cleanup_sources(F_in,mag_thresh)
 
     % Reshape into 2D
     F_in = reshape(F_in,h,w,num_cells);
-
-    % Threshold sources + deal with multiple boundaries    
+ 
     acc = 0;
     idx_elim = [];
     for idx_cell = 1:num_cells
         this_cell = F_in(:,:,idx_cell);
-        [boundaries, ~] = compute_ic_boundary(this_cell, mag_thresh);
-        num_objects = length(boundaries);
-        if num_objects <100
-            for idx_obj = 1:min(1,num_objects)
-                mask_candid = poly2mask(boundaries{idx_obj}(:,1), boundaries{idx_obj}(:,2), h, w);
-                if nnz(mask_candid)>=size_thresh
-                    s = regionprops(mask_candid,'centroid');
-                    if ~isempty(s)
-                        acc = acc+1;
-                        F_out(:,:,acc) = mask_candid.*this_cell;
-                        cent_out(:,acc) = s(1).Centroid;
-                    else
-                        idx_elim = [idx_elim,idx_cell];
-                    end
-                else
-                    idx_elim = [idx_elim,idx_cell];
-                end
+        [mx,idx_mx] = max(this_cell(:));
+        this_cell(this_cell<mx*mag_thresh) = 0; % Threshold
+        this_mask = this_cell>0;
+        CC = bwconncomp(this_mask);
+        
+        % Find the connected component that has idx_mx
+        lens = cellfun(@length, CC.PixelIdxList);
+        [~,idx_sort] = sort(lens,'descend');
+        CC.PixelIdxList = CC.PixelIdxList(idx_sort); 
+        
+        acc2 = 0;
+        while 1
+            acc2 = acc2+1;
+            if ~isempty(find(CC.PixelIdxList{acc2}==idx_mx,1))
+                break;
             end
-        else
-           idx_elim = [idx_elim,idx_cell];
         end
+        this_mask = zeros(h,w,'single');
+        this_mask(CC.PixelIdxList{acc2})=1;
+        if nnz(this_mask) >= size_thresh
+            acc = acc+1;
+            F_out(:,:,acc) = this_mask.*this_cell;
+            s = regionprops(this_mask,'centroid');
+            cent_out(:,acc) = s(1).Centroid;
+        else
+            idx_elim = [idx_elim,idx_cell];
+        end        
     end
         
     % Truncate output variables

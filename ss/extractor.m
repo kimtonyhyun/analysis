@@ -34,6 +34,8 @@ if ~isfield(opts,'ss_num_comp'), opts.ss_num_comp = 0; end
 if ~isfield(opts,'ss_max_num_sources'), opts.ss_max_num_sources =1500; end
 if ~isfield(opts,'ss_cell_size_threshold'), opts.ss_cell_size_threshold = 0; end
 if ~isfield(opts,'remove_duplicate_cells'), opts.remove_duplicate_cells = 0; end
+if ~isfield(opts,'remove_trace_baseline'), opts.remove_trace_baseline = 0; end
+
 
 if opts.spat_medfilt_enabled
     splen = 2*opts.spat_medfilt_halfwidth+1;
@@ -300,8 +302,10 @@ traces = extract_traces(M,F);
 
 
 % Remove baseline from the traces
-for k = 1:size(F,2);
-    traces(:,k) = fix_baseline(traces(:,k));
+if opts.remove_trace_baseline
+    for k = 1:size(F,2);
+        traces(:,k) = fix_baseline(traces(:,k));
+    end
 end
 
 filters = reshape(F,height,width,size(F,2)); %#ok<*NASGU>
