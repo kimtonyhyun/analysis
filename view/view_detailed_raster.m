@@ -99,6 +99,7 @@ end
         num_frames_in_trial = length(trace);
         
         % Zoom into the selected trial in the full raster
+        %------------------------------------------------------------
         trial_window = 10;
         trial_window_start = max(1, trial_idx-trial_window);
         trial_window_end = min(ds.num_trials, trial_idx+trial_window);
@@ -115,10 +116,14 @@ end
         colormap jet; freezeColors;
         
         % Show trace
+        %------------------------------------------------------------
+        trial_frame_indices = double(ds.trial_indices(trial_idx, :)); % [start open-gate close-gate end]
+        trial_frame_indices = trial_frame_indices - trial_frame_indices(1);
+        trial_markers = trial_frame_indices / trial_frame_indices(4);
+        
         subplot(3,4,[3 4]);
         trial_phase = linspace(0, 1, num_frames_in_trial);
-        plot(trial_phase, trace,...
-             'HitTest', 'off');
+        plot(trial_phase, trace, 'LineWidth', 2, 'HitTest', 'off');
         xlim([0 1]);
         ylim(scale);
         grid on;
@@ -126,10 +131,15 @@ end
         xlabel('Trial phase [a.u.]');
         ylabel('Signal [a.u.]');
         hold on;
+        
+        plot(trial_markers(2)*[1 1], scale, 'r--', 'HitTest', 'off'); % Open-gate
+        plot(trial_markers(3)*[1 1], scale, 'r--', 'HitTest', 'off'); % Close-gate
+        
         t = plot(0*[1 1], scale, 'k--');
         set(gca, 'ButtonDownFcn', @update_frame);
         
         % Show behavior movie
+        %------------------------------------------------------------
         subplot(3,4,[7 8 11 12]);
         hb = imagesc(Mb(:,:,1));
         set(gca, 'XTick', []);
