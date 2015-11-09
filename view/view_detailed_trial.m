@@ -28,7 +28,7 @@ else
         else % Not a number
             resp = lower(resp);
             switch (resp)
-                case 'n' % Next trial
+                case {'n', ''} % Next trial
                     if (trial_idx < ds.num_trials)
                         trial_idx = trial_idx + 1;
                     else
