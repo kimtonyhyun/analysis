@@ -98,7 +98,7 @@ ds.save_class(output_name);
         ds.plot_superposed_trials(cell_idx);
 
         subplot(3,2,[4 6]);
-        ds.plot_cell_raster(cell_idx);
+        ds.plot_cell_raster(cell_idx, 'draw_correct');
     end % display_candidate
 
     function display_map()

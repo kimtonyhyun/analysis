@@ -9,8 +9,7 @@ function view_detailed_raster(ds, cell_idx)
 %
 
 while (1)
-    clf;
-    scale = draw_rasters(); 
+    draw_rasters(); % Global normalized scaling for all trials
     
     % Ask user for command
     prompt = sprintf('Cell %d raster >> ', cell_idx);
@@ -21,12 +20,7 @@ while (1)
         if ~ds.is_behavior_loaded
             fprintf('  Behavior video not loaded into DaySummary!\n');
         else
-            if ((1 <= val) && (val <= ds.num_trials))
-                fprintf('  Showing trial %d. Press any key to return.\n', val);
-                draw_trial(val);
-            else
-                fprintf('  Error, %d is not a valid trial index!\n', val);
-            end
+            view_detailed_trial(ds, cell_idx, val);
         end
     else
         resp = lower(resp);
@@ -47,7 +41,9 @@ end
 
     % Helper functions
     %------------------------------------------------------------
-    function raster_scale = draw_rasters()
+    function draw_rasters()
+        clf;
+        
         % Image of cell
         subplot(3,4,[1 2]);
         imagesc(ds.cells(cell_idx).im);
@@ -92,44 +88,4 @@ end
         set(gca, 'CLim', raster_scale);
         title('North end'); 
     end % draw_rasters
-
-    function draw_trial(trial_idx)
-        Mb = ds.get_behavior_trial(trial_idx); % Behavior movie
-        trace = ds.trials(trial_idx).traces(cell_idx,:);
-        num_frames_in_trial = length(trace);
-        
-        % Show trace
-        subplot(3,4,[3 4]);
-        trial_phase = linspace(0, 1, num_frames_in_trial);
-        plot(trial_phase, trace,...
-             'HitTest', 'off');
-        xlim([0 1]);
-        ylim(scale);
-        grid on;
-        title(sprintf('Trial %d', trial_idx));
-        xlabel('Trial phase [a.u.]');
-        ylabel('Signal [a.u.]');
-        hold on;
-        t = plot(0*[1 1], scale, 'k--');
-        set(gca, 'ButtonDownFcn', @update_frame);
-        
-        % Show behavior movie
-        subplot(3,4,[7 8 11 12]);
-        hb = imagesc(Mb(:,:,1));
-        set(gca, 'XTick', []);
-        set(gca, 'YTick', []);
-        colormap gray;
-        pause;
-        
-        function update_frame(h, ~)
-            cp = get(h, 'CurrentPoint');
-            sel_phase = cp(1); % X point of click
-            sel_phase = max(sel_phase, 0);
-            sel_phase = min(sel_phase, 1);
-            
-            sel_frame = round(num_frames_in_trial * sel_phase);
-            set(t, 'XData', sel_phase*[1 1]);
-            set(hb, 'CData', Mb(:,:,sel_frame));
-        end % update_frame
-    end % draw_trial
 end % view_cell_rasters
