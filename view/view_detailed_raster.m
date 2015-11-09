@@ -98,6 +98,10 @@ end
         trace = ds.trials(trial_idx).traces(cell_idx,:);
         num_frames_in_trial = length(trace);
         
+        % Zoom into the selected trial in the full raster
+        subplot(3,4,[5 6 9 10]);
+        ylim([trial_idx-10.5 trial_idx+10.5]);
+        
         % Show trace
         subplot(3,4,[3 4]);
         trial_phase = linspace(0, 1, num_frames_in_trial);
@@ -118,6 +122,7 @@ end
         hb = imagesc(Mb(:,:,1));
         set(gca, 'XTick', []);
         set(gca, 'YTick', []);
+        axis image;
         colormap gray;
         pause;
         
