@@ -119,7 +119,8 @@ end
         %------------------------------------------------------------
         trial_frame_indices = double(ds.trial_indices(trial_idx, :)); % [start open-gate close-gate end]
         trial_frame_indices = trial_frame_indices - trial_frame_indices(1);
-        trial_markers = trial_frame_indices / trial_frame_indices(4);
+        num_trials_in_frame = trial_frame_indices(4) + 1;
+        trial_markers = trial_frame_indices / num_trials_in_frame;
         
         subplot(3,4,[3 4]);
         trial_phase = linspace(0, 1, num_frames_in_trial);
@@ -135,7 +136,7 @@ end
         plot(trial_markers(2)*[1 1], scale, 'r--', 'HitTest', 'off'); % Open-gate
         plot(trial_markers(3)*[1 1], scale, 'r--', 'HitTest', 'off'); % Close-gate
         
-        t = plot(0*[1 1], scale, 'k--');
+        t = plot(0*[1 1], scale);
         set(gca, 'ButtonDownFcn', @update_frame);
         
         % Show behavior movie
@@ -154,9 +155,12 @@ end
             sel_phase = max(sel_phase, 0);
             sel_phase = min(sel_phase, 1);
             
-            sel_frame = round(num_frames_in_trial * sel_phase);
+            sel_frame = 1 + round((num_frames_in_trial-1) * sel_phase);
             set(t, 'XData', sel_phase*[1 1]);
             set(hb, 'CData', Mb(:,:,sel_frame));
+            
+            subplot(3,4,[7 8 11 12]);
+            title(sprintf('Frame %d of %d', sel_frame, num_trials_in_frame));
         end % update_frame
     end % draw_trial
 end % view_cell_rasters
