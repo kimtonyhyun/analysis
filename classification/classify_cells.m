@@ -75,7 +75,6 @@ while (cell_idx <= num_candidates)
                 end
             case 't' % "Take" screenshot
                 screenshot_name = sprintf('cell%03d.png', cell_idx);
-                screenshot_name = fullfile(rec_dir, screenshot_name);
                 print('-dpng', screenshot_name);
                 fprintf('  Plot saved to %s\n', screenshot_name);
             otherwise
