@@ -24,6 +24,7 @@ while (1)
             if ((1 <= val) && (val <= ds.num_trials))
                 fprintf('  Showing trial %d. Press any key to return.\n', val);
                 draw_trial(val);
+                pause;
             else
                 fprintf('  Error, %d is not a valid trial index!\n', val);
             end
@@ -147,7 +148,7 @@ end
         set(gca, 'YTick', []);
         axis image;
         colormap gray;
-        pause;
+        title(sprintf('Frame 1 of %d', num_trials_in_frame));
         
         function update_frame(h, ~)
             cp = get(h, 'CurrentPoint');
