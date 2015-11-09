@@ -99,8 +99,20 @@ end
         num_frames_in_trial = length(trace);
         
         % Zoom into the selected trial in the full raster
+        trial_window = 10;
+        trial_window_start = max(1, trial_idx-trial_window);
+        trial_window_end = min(ds.num_trials, trial_idx+trial_window);
+        
         subplot(3,4,[5 6 9 10]);
-        ylim([trial_idx-10.5 trial_idx+10.5]);
+        ds.plot_cell_raster(cell_idx, 'draw_correct');
+        ylim([trial_window_start-0.5 trial_window_end+0.5]);
+        set(gca, 'YTick', trial_window_start:trial_window_end);
+        x_ends = get(gca, 'XLim');
+        line(x_ends, (trial_idx-0.5)*[1 1], 'Color', 'w', 'LineWidth', 2);
+        line(x_ends, (trial_idx+0.5)*[1 1], 'Color', 'w', 'LineWidth', 2);
+        
+        title('All trials');
+        colormap jet; freezeColors;
         
         % Show trace
         subplot(3,4,[3 4]);
