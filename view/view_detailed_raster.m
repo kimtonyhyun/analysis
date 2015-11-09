@@ -137,7 +137,9 @@ end
         plot(trial_markers(2)*[1 1], scale, 'r--', 'HitTest', 'off'); % Open-gate
         plot(trial_markers(3)*[1 1], scale, 'r--', 'HitTest', 'off'); % Close-gate
         
-        t = plot(0*[1 1], scale);
+        % Markers for indicating current frame
+        t = plot(0*[1 1], scale); % Vertical bar
+        d = plot(0, trace(1), 'o', 'MarkerFaceColor', 'b', 'MarkerSize', 8); % Dot
         set(gca, 'ButtonDownFcn', @update_frame);
         
         % Show behavior movie
@@ -155,9 +157,11 @@ end
             sel_phase = cp(1); % X point of click
             sel_phase = max(sel_phase, 0);
             sel_phase = min(sel_phase, 1);
-            
             sel_frame = 1 + round((num_frames_in_trial-1) * sel_phase);
+            
+            % Update visuals
             set(t, 'XData', sel_phase*[1 1]);
+            set(d, 'XData', sel_phase, 'YData', trace(sel_frame));
             set(hb, 'CData', Mb(:,:,sel_frame));
             
             subplot(3,4,[7 8 11 12]);
