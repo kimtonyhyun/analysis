@@ -9,8 +9,7 @@ function view_detailed_raster(ds, cell_idx)
 %
 
 while (1)
-    clf;
-    scale = draw_rasters(); 
+    scale = draw_rasters(); % Global normalized scaling for all trials
     
     % Ask user for command
     prompt = sprintf('Cell %d raster >> ', cell_idx);
@@ -21,12 +20,11 @@ while (1)
         if ~ds.is_behavior_loaded
             fprintf('  Behavior video not loaded into DaySummary!\n');
         else
-            if ((1 <= val) && (val <= ds.num_trials))
-                fprintf('  Showing trial %d. Press any key to return.\n', val);
+            while ~isnan(val) && ((1 <= val) && (val <= ds.num_trials))
                 draw_trial(val);
-                pause;
-            else
-                fprintf('  Error, %d is not a valid trial index!\n', val);
+                prompt = sprintf('  Showing trial %d >> ', val);
+                resp = strtrim(input(prompt, 's'));
+                val = str2double(resp);
             end
         end
     else
@@ -49,6 +47,8 @@ end
     % Helper functions
     %------------------------------------------------------------
     function raster_scale = draw_rasters()
+        clf;
+        
         % Image of cell
         subplot(3,4,[1 2]);
         imagesc(ds.cells(cell_idx).im);
@@ -95,9 +95,19 @@ end
     end % draw_rasters
 
     function draw_trial(trial_idx)
+        clf;
+        
         Mb = ds.get_behavior_trial(trial_idx); % Behavior movie
         trace = ds.trials(trial_idx).traces(cell_idx,:);
         num_frames_in_trial = length(trace);
+        
+        % Image of cell
+        %------------------------------------------------------------
+        subplot(3,4,[1 2]);
+        imagesc(ds.cells(cell_idx).im);
+        axis image;
+        title(sprintf('Cell %d (%s)', cell_idx, ds.cells(cell_idx).label));
+        colormap jet; freezeColors;
         
         % Zoom into the selected trial in the full raster
         %------------------------------------------------------------
