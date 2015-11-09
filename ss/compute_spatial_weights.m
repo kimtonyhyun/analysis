@@ -61,7 +61,12 @@ function [Q_fine,inv_qualities] = extract_sources(U,max_num)
     % Brute-force approach for 1-norm computation, use GPU if available
     gpu_exists = gpuDeviceCount>0;
     if gpu_exists && (~opts.disableGPU)
-        avail_mem = compute_gpu_memory();    
+        try
+            avail_mem = compute_gpu_memory();
+        catch
+            warning('GPU was detected but available memory could not be retrieved. Using CPU...');
+            avail_mem = 0;
+        end
         f = max(avail_mem/4 - N*(num_pcs+2),0); % maximum available element size 
         f = f*opts.mem_occup_ratio_GPU;
         
