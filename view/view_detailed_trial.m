@@ -2,12 +2,17 @@ function view_detailed_trial(ds, cell_idx, trial_idx)
 % Examine the trace of a cell alongside the behavior video for that trial.
 % The DaySummary must have the behavior video loaded.
 
+prev_trial = 0;
+
 if ~ds.is_behavior_loaded
     fprintf('  Behavior video has not been loaded into this DaySummary!\n');
 else
     while (1)
         if is_valid_trial(trial_idx)
-            draw_cell_trial(cell_idx, trial_idx);
+            if (trial_idx ~= prev_trial) % Don't need to redraw if cell_idx didn't change
+                draw_cell_trial(cell_idx, trial_idx);
+                prev_trial = trial_idx;
+            end
         else
             fprintf('  Invalid trial index (%d) for this DaySummary. Exiting!\n', trial_idx);
             break;
