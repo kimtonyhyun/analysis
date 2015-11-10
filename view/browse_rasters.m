@@ -47,7 +47,7 @@ while (1)
         end
     else
         resp = lower(resp);
-        switch (resp)
+        switch (resp)    
             case {'n', ''} % Next page
                 if (page_idx < num_pages)
                     page_idx = page_idx + 1;

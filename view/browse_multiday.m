@@ -13,11 +13,29 @@ while (1)
     
     val = str2double(resp);
     if (~isnan(val)) % Is a number
-        
+        if ((1 <= val) && (val <= md.num_cells))
+            common_cell_idx = val;
+        else
+            fprintf('  Sorry, %d is not a valid md cell index\n', val);
+        end
     else
         resp = lower(resp);
-        switch (resp)
-            case {'n', ''} % Next cell
+        if isempty(resp) % Empty string gets mapped to "n"
+            resp = 'n';
+        end
+        
+        switch resp(1)
+            case 'd' % Day selected. View detailed raster on that day.
+                % Parse the remainder of the string for day
+                val = str2double(resp(2:end));
+                if ~isnan(val)
+                    if ismember(val, md.valid_days)
+                        day_cell_idx = md.get_cell_idx(common_cell_idx, val);
+                        view_detailed_raster(md.day(val), day_cell_idx);
+                    end
+                end
+                
+            case 'n'
                 if (common_cell_idx < md.num_cells)
                     common_cell_idx = common_cell_idx + 1;
                 else
