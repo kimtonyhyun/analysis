@@ -32,6 +32,8 @@ while (1)
                     if ismember(val, md.valid_days)
                         day_cell_idx = md.get_cell_idx(common_cell_idx, val);
                         view_detailed_raster(md.day(val), day_cell_idx);
+                    else
+                        fprintf('  Sorry, %d is not a valid day for this MultiDay\n', val);
                     end
                 end
                 
@@ -75,7 +77,8 @@ end
             axis image;
             xlim(cell_com_k(1)+zoom_half_width*[-1 1]);
             ylim(cell_com_k(2)+zoom_half_width*[-1 1]);
-            title(sprintf('Day %d -- Cell %d', day, cell_idx_k));
+            title(sprintf('Day %d -- Cell %d', day, cell_idx_k),...
+                  'FontSize', 12);
             
             % Draw raster
             subplot(3, md.num_days, [md.num_days+k 2*md.num_days+k]);
