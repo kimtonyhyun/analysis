@@ -12,7 +12,7 @@ fps = 10; % FIXME
 num_candidates = ds.num_cells;
 
 assert(size(M,3) == ds.trial_indices(end,end),...
-       'Error: Number of frames in movie does not match that in DaySummary!');
+       'Number of frames in movie does not match that in DaySummary!');
 
 % Begin classification
 %------------------------------------------------------------
