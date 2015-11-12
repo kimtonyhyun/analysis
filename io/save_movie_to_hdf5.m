@@ -18,3 +18,7 @@ h5create(outname, dataset_name, [height width num_frames],...
     'DataType', data_type,...
     'ChunkSize', chunk_size);
 h5write(outname, dataset_name, movie);
+
+% Create standard "/Params" directory
+h5create(outname, '/Params/NumFrames', 1);
+h5write(outname, '/Params/NumFrames', num_frames);
