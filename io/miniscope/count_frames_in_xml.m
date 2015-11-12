@@ -39,5 +39,5 @@ for i = 1:num_files
             xml_filename);
     end
 end
-fprintf('  Total frame count is %d (with %d dropped frames)\n',...
+fprintf('  Total frame count is %d (including %d dropped frames)\n',...
     total_frames, total_dropped_frames);
