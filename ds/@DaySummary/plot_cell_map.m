@@ -29,14 +29,20 @@ function plot_cell_map(obj, color_grouping, varargin)
     % By default, color the cells based on classification
     if ~exist('color_grouping', 'var') || enable_class_colors
         for k = 1:obj.num_cells
-            % Note: Unlabeled cells remain white!
-            if isempty(obj.cells(k).label)
-                cell_colors{k} = 'w';
+            if obj.is_cell(k)
+                cell_colors{k} = 'g';
             else
-                if obj.is_cell(k)
-                    cell_colors{k} = 'g';
-                else
-                    cell_colors{k} = 'r';
+                cell_label = obj.cells(k).label;
+                if isempty(cell_label)
+                    cell_colors{k} = 'w'; % Unlabeled cells are white
+                else % More nuanced coloring
+                    switch cell_label    
+                        case 'cell with problems'
+                            cell_colors{k} = 'y';
+
+                        otherwise % All other labels considered to be not a cell
+                            cell_colors{k} = 'r';
+                    end
                 end
             end
         end

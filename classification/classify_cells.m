@@ -51,7 +51,7 @@ while (cell_idx <= num_candidates)
                     go_to_next_unlabeled_cell();
                 end
 
-            case {'p!', 'c!', 'n'} % Classify without viewing trace
+            case {'p!', 'c!', 'x', 'n'} % Classify without viewing trace
                 set_label(cell_idx, resp(1));
                 go_to_next_unlabeled_cell();
                 
@@ -129,6 +129,8 @@ ds.save_class(output_name);
                 full_label = 'phase-sensitive cell';
             case 'c'
                 full_label = 'cell';
+            case 'x'
+                full_label = 'cell with problems';
             case 'n'
                 full_label = 'not a cell';
         end
