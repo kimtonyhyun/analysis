@@ -210,21 +210,6 @@ classdef DaySummary < handle
             end
         end
         
-        function is_cell = is_cell(obj, cell_indices)
-            % When 'cell_indices' is omitted, then return the label of all
-            % cells
-            if ~exist('cell_indices', 'var')
-                cell_indices = 1:obj.num_cells;
-            end
-            
-            is_cell = zeros(size(cell_indices));
-            for k = 1:length(cell_indices)
-                cell_idx = cell_indices(k);
-                is_cell(k) = any(strcmp(obj.cells(cell_idx).label,...
-                    {'phase-sensitive cell', 'cell'}));
-            end
-        end
-        
         function is_correct = get_trial_correctness(obj)
             is_correct = cellfun(@strcmp, {obj.trials.goal}, {obj.trials.end});
         end
@@ -258,6 +243,21 @@ classdef DaySummary < handle
         
         % Classification
         %------------------------------------------------------------
+        function is_cell = is_cell(obj, cell_indices)
+            % When 'cell_indices' is omitted, then return the label of all
+            % cells (1=cell, 0=not a cell)
+            if ~exist('cell_indices', 'var')
+                cell_indices = 1:obj.num_cells;
+            end
+            
+            is_cell = zeros(size(cell_indices));
+            for k = 1:length(cell_indices)
+                cell_idx = cell_indices(k);
+                is_cell(k) = any(strcmp(obj.cells(cell_idx).label,...
+                    {'phase-sensitive cell', 'cell'}));
+            end
+        end
+        
         function class = get_class(obj)
             class = {obj.cells.label}'; % Column cell
         end
