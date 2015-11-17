@@ -1,4 +1,4 @@
-function trim_behavior_video(plusmaze_source, behavior_source, trim, varargin)
+function trim_behavior_video(plusmaze_source, behavior_source, lick_source, trim, varargin)
 % Extract the trial frames of the behavior video, so that the resulting
 %   video lines up with the concatenated Miniscope movie (e.g. as produced
 %   by `concatenateHDF5` or `concatenate_bigtiff`). The `trim` parameter
@@ -7,6 +7,7 @@ function trim_behavior_video(plusmaze_source, behavior_source, trim, varargin)
 % Inputs:
 %   plusmaze_source: Text file output from the plus maze
 %   behavior_source: Behavior video (MPEG-4)
+%   lick_source: Lickometer text file from the plus maze.
 %   trim: Number of frames to drop from the beginning (trim[1]) and
 %         end (trim[2]) of each trial
 %   
@@ -37,6 +38,17 @@ orig_frame_indices = orig_frame_indices(:,[1 4]); % Keep [Start End]
 num_trials = size(orig_frame_indices,1);
 num_frames = orig_frame_indices(num_trials,2); % Very last frame
 fprintf('  PlusMaze output (%s) has %d frames\n', plusmaze_source, num_frames);
+
+% Load the lickometer data. Note that licometer sampling is synchronized to
+% the FPGA counter (and NOT the behavior video). Hence, we don't need to
+% apply dropped behavior frame compensation.
+%----------------------------------------------------------------------
+lick_series = load(lick_source);
+num_lick_samples = length(lick_series);
+fprintf('  Lickometer series (%s) has %d samples\n', lick_source, num_lick_samples);
+assert(num_lick_samples == num_frames,...
+       '  Number of samples (%d) in lickometer file is inconsistent with PlusMaze output (%d)!',...
+       num_lick_samples, num_frames);
 
 % Generate frame indices into the behavior video, with its dropped frames
 %   (Optional parameter specifies a table of dropped frames)
@@ -82,6 +94,10 @@ trimmed_behavior_video.Quality = 100;
 trimmed_behavior_video.FrameRate = 20; % FIXME: Don't hardcode
 open(trimmed_behavior_video);
 
+% Parametrize the "lick indicator"
+lick_square_size = floor(behavior_video.Width / 10);
+lick_square_border = 1;
+
 write_idx = 0; % For tracking progress
 for trial_idx = 1:num_trials
     frame_indices = frames_to_keep(trial_idx,1):frames_to_keep(trial_idx,2);
@@ -96,6 +112,16 @@ for trial_idx = 1:num_trials
     for behavior_frame_idx = behavior_frame_indices
         A = read(behavior_video, behavior_frame_idx);
         A = rgb2gray(A);
+        
+        % Lick indicator at top right corner of video
+        lick_indicator = 255*ones(lick_square_size); % Max uint8
+        if ~lick_series(behavior_frame_idx) % If no lick, mask white square with black
+            lick_indicator((1+lick_square_border):(end-lick_square_border),...
+                           (1+lick_square_border):(end-lick_square_border)) =...
+                                zeros(lick_square_size-2*lick_square_border);
+        end
+        A(1:lick_square_size, (end-(lick_square_size-1)):end) = lick_indicator;
+        
         writeVideo(trimmed_behavior_video, A);
 
         write_idx = write_idx + 1;
