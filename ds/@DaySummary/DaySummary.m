@@ -21,10 +21,10 @@ classdef DaySummary < handle
         num_trials
         
         trial_indices
+        full_num_frames
     end
     
     properties (Access = private)
-        full_num_frames
         cell_map_ref_img
         behavior_vid
     end
