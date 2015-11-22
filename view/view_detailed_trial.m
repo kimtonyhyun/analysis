@@ -58,6 +58,7 @@ end
 
     function draw_cell_trial(cell_idx, trial_idx)
         clf;
+        f = gcf;
         
         Mb = ds.get_behavior_trial(trial_idx); % Behavior movie
         trace = ds.trials(trial_idx).traces(cell_idx,:);
@@ -111,9 +112,13 @@ end
         plot(trial_markers(3)*[1 1], scale, 'r--', 'HitTest', 'off'); % Close-gate
         
         % Markers for indicating current frame
-        t = plot(0*[1 1], scale); % Vertical bar
-        d = plot(0, trace(1), 'o', 'MarkerFaceColor', 'b', 'MarkerSize', 8); % Dot
-        set(gca, 'ButtonDownFcn', @update_frame);
+        t = plot(0*[1 1], scale, 'ButtonDownFcn', @start_drag); % Vertical bar -- can be dragged
+        d = plot(0, trace(1), 'o',... % Dot
+                 'MarkerFaceColor', 'b', 'MarkerSize', 8,...
+                 'HitTest', 'off');
+        trace_axis = gca;
+        set(trace_axis, 'ButtonDownFcn', @update_frame);
+        set(f, 'WindowButtonUpFcn', @end_drag);
         
         % Show behavior movie
         %------------------------------------------------------------
@@ -125,8 +130,16 @@ end
         colormap gray;
         title(sprintf('Frame 1 of %d', num_trials_in_frame));
         
-        function update_frame(h, ~)
-            cp = get(h, 'CurrentPoint');
+        function start_drag(~, ~)
+            set(f, 'WindowButtonMotionFcn', @update_frame);
+        end
+        
+        function end_drag(~, ~)
+            set(f, 'WindowButtonMotionFcn', '');
+        end
+        
+        function update_frame(~, ~)
+            cp = get(trace_axis, 'CurrentPoint');
             sel_phase = cp(1); % X point of click
             sel_phase = max(sel_phase, 0);
             sel_phase = min(sel_phase, 1);

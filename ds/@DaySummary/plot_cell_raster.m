@@ -43,7 +43,8 @@ function raster = plot_cell_raster(obj, cell_idx, varargin)
     xlabel('Trial phase [a.u.]');
     xlim([0 1]);
     ylabel('Trial index');
-
+    set(gca, 'TickLength', [0 0]);
+    
     if (draw_correct)
         corr_width = 0.025;
         for k = 1:num_filtered_trials
