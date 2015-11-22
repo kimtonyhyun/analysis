@@ -79,6 +79,13 @@ end
             ylim(cell_com_k(2)+zoom_half_width*[-1 1]);
             title(sprintf('Day %d -- Cell %d', day, cell_idx_k),...
                   'FontSize', 12);
+%             hold on;
+%             for m = 1:ds.num_cells
+%                 if ds.is_cell(m)
+%                     boundary = ds.cells(m).boundary;
+%                     plot(boundary(:,1), boundary(:,2), 'w');
+%                 end
+%             end
             
             % Draw raster
             subplot(3, md.num_days, [md.num_days+k 2*md.num_days+k]);
