@@ -11,8 +11,8 @@ fps = 10; % FIXME
 % Load filter/trace pairs to be classified
 num_candidates = ds.num_cells;
 
-assert(size(M,3) == ds.trial_indices(end,end),...
-       'Error: Number of frames in movie does not match that in DaySummary!');
+assert(size(M,3) == ds.full_num_frames,...
+       'Number of frames in movie does not match that in DaySummary!');
 
 % Begin classification
 %------------------------------------------------------------
