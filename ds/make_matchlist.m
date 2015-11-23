@@ -1,4 +1,21 @@
 function match_list = make_matchlist(ds_list)
+% A convenience function for making a 'match_list' to be used in the
+% instantiation of a MultiDay object.
+%
+% Example usage:
+%   ds_list = {12, m1d12; 13, m1d13; 14, m1d14};
+%   match_list = make_matchlist(ds_list)
+%
+%   will perform the necessary alignment runs to yield:
+%   
+%   match_list = {12, 13, m_12to13, m_13to12;
+%                 12, 14, m_12to14, m_14to12;
+%                 13, 14, m_13to14, m_14to13};
+%
+%   which can then be used to instantiate a MultiDay object as:
+%
+%   md = MultiDay(ds_list, match_list);
+%
 
 num_ds = size(ds_list, 1);
 
