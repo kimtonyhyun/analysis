@@ -1,4 +1,4 @@
-function extractor(movie_source,opts)
+function [filters,traces,info,opts] = extractor(movie_source,opts)
 % Automated cell extraction by source separation algorithm. More
 % documentation to come.
 
@@ -7,6 +7,8 @@ if ~exist('opts','var')
 end
 
 % Defaults
+if ~isfield(opts,'movie_dataset'), opts.movie_dataset = '/Data/Images'; end
+if ~isfield(opts,'save_to_movie_dir'), opts.save_to_movie_dir = 1; end
 if ~isfield(opts,'num_partition_x'), opts.num_partition_x=1; end
 if ~isfield(opts,'num_partition_y'), opts.num_partition_y=1; end
 if ~isfield(opts,'overlap_x'), opts.overlap_x=25; end
@@ -32,6 +34,8 @@ if ~isfield(opts,'ss_num_comp'), opts.ss_num_comp = 0; end
 if ~isfield(opts,'ss_max_num_sources'), opts.ss_max_num_sources =1500; end
 if ~isfield(opts,'ss_cell_size_threshold'), opts.ss_cell_size_threshold = 0; end
 if ~isfield(opts,'remove_duplicate_cells'), opts.remove_duplicate_cells = 0; end
+if ~isfield(opts,'remove_trace_baseline'), opts.remove_trace_baseline = 0; end
+
 
 if opts.spat_medfilt_enabled
     splen = 2*opts.spat_medfilt_halfwidth+1;
@@ -44,9 +48,18 @@ else
     tmplen=0;
 end
 
+if opts.save_to_movie_dir
+    movie_dir = fileparts(movie_source);
+    if ~isempty(movie_dir)
+        save_dir = [movie_dir,'/'];
+    else
+        save_dir = '';
+    end
+end
+
 if opts.save_SVD
     timestamp = datestr(now, 'yymmdd-HHMMSS');
-    svd_savename = sprintf('svd_%s.mat', timestamp);
+    svd_savename = sprintf('%ssvd_%s.mat', save_dir,timestamp);
 end
 
 skip_svd = exist(opts.existing_SVD_file,'file');
@@ -56,7 +69,7 @@ if ~skip_svd
     end
     
     dispfun(sprintf('%s: Loading %s...\n', datestr(now), movie_source),opts.verbose~=0);
-    M = load_movie(movie_source);
+    M = load_movie_from_hdf5(movie_source,opts.movie_dataset);
     
     % Mean subtract in time
     mean_M = mean(M,3);
@@ -241,7 +254,7 @@ for idx_partition_x = 1:npx
             if opts.save_SVD % Save SVD results
                 this_savename = sprintf('SVD%d',part_no);
                 savedum.(this_savename) = svd_source;
-                save(svd_savename, '-struct','savedum','-append','-v7.3');
+                save(svd_savename, '-struct','savedum','-append');
             end
             clear M_small;
         end
@@ -281,7 +294,7 @@ F = F(:,idx_sort);
 clear M;
 dispfun(sprintf('%s: Loading the movie again for extracting temporal traces...\n',...
     datestr(now)),opts.verbose~=0);
-M = load_movie(movie_source);
+M = load_movie_from_hdf5(movie_source,opts.movie_dataset);
 M = reshape(M,height*width,num_frames);
 
 dispfun(sprintf('%s: Extracting traces...\n',datestr(now)),opts.verbose~=0);
@@ -289,8 +302,10 @@ traces = extract_traces(M,F);
 
 
 % Remove baseline from the traces
-for k = 1:size(F,2);
-    traces(:,k) = fix_baseline(traces(:,k));
+if opts.remove_trace_baseline
+    for k = 1:size(F,2);
+        traces(:,k) = fix_baseline(traces(:,k));
+    end
 end
 
 filters = reshape(F,height,width,size(F,2)); %#ok<*NASGU>
@@ -301,6 +316,7 @@ val = goodness_trace(traces);
 stats.goodness_traces = val;
 
 info.type = 'SS';
+info.version = '20151105.0.1.1';
 info.num_pairs = size(F,2);
 info.movie_source = movie_source;
 info.stats = stats;
@@ -310,7 +326,7 @@ end
 
 % Save the result to mat file
 timestamp = datestr(now, 'yymmdd-HHMMSS');
-rec_savename = sprintf('rec_%s.mat', timestamp);
+rec_savename = sprintf('%srec_%s.mat',save_dir, timestamp);
 
 dispfun(sprintf('%s: Writing the output to file... \n',datestr(now)),opts.verbose~=0);
 fprintf('%s: Output will be saved in %s \n',datestr(now),rec_savename);
