@@ -21,6 +21,7 @@ classdef DaySummary < handle
         num_trials
         
         trial_indices
+        full_num_frames
     end
     
     properties (Access = private)
@@ -52,11 +53,13 @@ classdef DaySummary < handle
             data_source = get_most_recent_file(rec_dir, 'rec_*.mat');
             data = load(data_source);
             obj.num_cells = data.info.num_pairs;
-            fprintf('%s: Loaded filters and traces from %s\n', datestr(now), data_source);
+            fprintf('%s: Loaded %d filters and traces from %s\n',...
+                    datestr(now), obj.num_cells, data_source);
             
             % Check that the length of traces is consistent with the table
             % of trial indices.
-            assert(size(data.traces,1) == trial_indices(end,end),...
+            obj.full_num_frames = trial_indices(end,end);
+            assert(size(data.traces,1) == obj.full_num_frames,...
                 'Error: Length of traces does not match trial index table!');
             
             if (exclude_probe_trials)
@@ -97,17 +100,25 @@ classdef DaySummary < handle
             [height, width] = size(images{1});
             boundaries = cell(size(images));
             masks = cell(size(images));
+            coms = cell(size(images)); % Center of mass
             for k = 1:obj.num_cells
                 boundary = compute_ic_boundary(images{k}, 0.3);
                 boundaries{k} = boundary{1}; % Keeps only the longest-boundary!
                 masks{k} = poly2mask(boundaries{k}(:,1), boundaries{k}(:,2),...
                                      height, width);
+                
+                % Compute the center of mass
+                masked_filter = masks{k}.*images{k};
+                com = [(1:width)*sum(masked_filter,1)';
+                       (1:height)*sum(masked_filter,2)];
+                coms{k} = com / sum(masked_filter(:));
             end
             
             obj.cells = struct(...
                 'im', images,...
                 'boundary', boundaries,...
                 'mask', masks,...
+                'com', coms,...
                 'label', class);
             
             % Load classification
@@ -284,7 +295,7 @@ classdef DaySummary < handle
             obj.behavior_vid = VideoReader(behavior_source);
             fprintf('%s: Loaded behavior video from "%s"\n',...
                 datestr(now), behavior_source);
-            if (obj.behavior_vid.NumberOfFrames ~= obj.trial_indices(end,end))
+            if (obj.behavior_vid.NumberOfFrames ~= obj.full_num_frames)
                 fprintf('  Warning! Number of frames in behavior video (%d) does not match the trial frame table (%d)!\n',...
                     obj.behavior_vid.NumberOfFrames, obj.trial_indices(end,end));
             end

@@ -21,7 +21,6 @@ h = figure;
 
 page_idx = 1;
 while (1)
-    clf;
     draw_page(page_idx);
 
     % Ask user for command
@@ -48,7 +47,7 @@ while (1)
         end
     else
         resp = lower(resp);
-        switch (resp)
+        switch (resp)    
             case {'n', ''} % Next page
                 if (page_idx < num_pages)
                     page_idx = page_idx + 1;
@@ -81,6 +80,8 @@ end
     % Helper functions
     %------------------------------------------------------------
     function draw_page(page_idx)
+        clf;
+        
         cells_on_page = get_cells_on_page(page_idx);
         for i = 1:length(cells_on_page)
             subplot(cells_per_page(1), cells_per_page(2), i);
@@ -98,4 +99,4 @@ end
         
     end % draw_page
 
-end % view_ds_raster
+end % browse_rasters

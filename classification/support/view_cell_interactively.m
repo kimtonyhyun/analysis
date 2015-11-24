@@ -26,7 +26,7 @@ axis image;
 xlabel('x [px]');
 ylabel('y [px]');
 hold on;
-[ic_boundaries, ic_mask] = compute_ic_boundary(filter, ic_filter_threshold);
+ic_boundaries = compute_ic_boundary(filter, ic_filter_threshold);
 for i = 1:length(ic_boundaries)
     ic_boundary = ic_boundaries{i};
     plot(ic_boundary(:,1), ic_boundary(:,2), 'c', 'LineWidth', 2);
@@ -55,15 +55,12 @@ end
 show_other_cells(false); % Turn off the boundaries of other cells
 
 % Compute the center of mass of the filter
-masked_filter = ic_mask .* filter;
-[height, width] = size(masked_filter);
-COM = [(1:width) * sum(masked_filter,1)';
-       (1:height)* sum(masked_filter,2)];
-COM = COM / sum(masked_filter(:));
+COM = ds.cells(cell_idx).com;
 plot(COM(1), COM(2), 'b.');
 hold off;
 
 % Start off zoomed
+[height, width, ~] = size(movie);
 zoom_half_width = min([width, height])/10;
 xlim(COM(1)+zoom_half_width*[-1 1]);
 ylim(COM(2)+zoom_half_width*[-1 1]);

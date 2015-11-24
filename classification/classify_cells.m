@@ -11,8 +11,8 @@ fps = 10; % FIXME
 % Load filter/trace pairs to be classified
 num_candidates = ds.num_cells;
 
-assert(size(M,3) == ds.trial_indices(end,end),...
-       'Error: Number of frames in movie does not match that in DaySummary!');
+assert(size(M,3) == ds.full_num_frames,...
+       'Number of frames in movie does not match that in DaySummary!');
 
 % Begin classification
 %------------------------------------------------------------
@@ -75,7 +75,6 @@ while (cell_idx <= num_candidates)
                 end
             case 't' % "Take" screenshot
                 screenshot_name = sprintf('cell%03d.png', cell_idx);
-                screenshot_name = fullfile(rec_dir, screenshot_name);
                 print('-dpng', screenshot_name);
                 fprintf('  Plot saved to %s\n', screenshot_name);
             otherwise
@@ -99,7 +98,7 @@ ds.save_class(output_name);
         ds.plot_superposed_trials(cell_idx);
 
         subplot(3,2,[4 6]);
-        ds.plot_cell_raster(cell_idx);
+        ds.plot_cell_raster(cell_idx, 'draw_correct');
     end % display_candidate
 
     function display_map()
