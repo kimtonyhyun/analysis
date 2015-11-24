@@ -8,6 +8,9 @@ function [match_1to2, match_2to1, M] = match_masks(masks1, masks2, ds1, ds2, var
 %   second column the overlap measure between the two masks. The list is
 %   sorted in order of descending overlap measure.
 %
+% Note that the 'masksX' inputs may have been spatially transformed. For
+% this reason, we don't simply pull the 'masks' from the corresponding
+% input DaySummary objects.
 
 % "Fast matching" mode uses two shortcuts. Given a mask i from masks1,
 % if a mask is found in masks2 that exceeds a certain threshold, then:
@@ -17,7 +20,8 @@ function [match_1to2, match_2to1, M] = match_masks(masks1, masks2, ds1, ds2, var
 use_fast_matching = 1;
 fast_overlap_threshold = 0.7;
 
-match_all = 0; % By default, only classified cells are matched
+% By default, only classified cells are matched
+match_all = 0;
 
 for k = 1:length(varargin)
     vararg = varargin{k};
