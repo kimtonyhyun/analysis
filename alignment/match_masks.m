@@ -9,23 +9,23 @@ function [match_1to2, match_2to1, M] = match_masks(masks1, masks2, ds1, ds2, var
 %   sorted in order of descending overlap measure.
 %
 
-use_fast_matching = 0;
+% "Fast matching" mode uses two shortcuts. Given a mask i from masks1,
+% if a mask is found in masks2 that exceeds a certain threshold, then:
+% 1) Don't perform exhaustive search of the remaining masks2;
+% 2) The matched mask in masks2 is now unavailable for matching
+%    for against remaining masks1.
+use_fast_matching = 1;
 fast_overlap_threshold = 0.7;
+
 match_all = 0; % By default, only classified cells are matched
 
 for k = 1:length(varargin)
     vararg = varargin{k};
     if ischar(vararg)
         switch lower(vararg)
-            case 'fast'
-                % "Fast matching" mode uses two shortcuts. Given a mask i
-                % from masks1, if a mask is found in masks2 that exceeds a
-                % certain threshold, then:
-                % 1) Don't perform exhaustive search of all masks2;
-                % 2) The mask in masks2 is now unavailable for matching
-                %    for against remaining masks1.
-                fprintf('%s: Using fast matching!\n', datestr(now));
-                use_fast_matching = 1;
+            case 'full'
+                fprintf('%s: Using exhaustive matching!\n', datestr(now));
+                use_fast_matching = 0;
             case 'matchall'
                 fprintf('%s: Matching all filters!\n', datestr(now));
                 match_all = 1;
