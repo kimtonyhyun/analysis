@@ -28,13 +28,18 @@ for k = 1:length(varargin)
     if ischar(vararg)
         switch lower(vararg)
             case 'full'
-                fprintf('%s: Using exhaustive matching!\n', datestr(now));
                 use_fast_matching = 0;
             case 'matchall'
                 fprintf('%s: Matching all filters!\n', datestr(now));
                 match_all = 1;
         end
     end
+end
+
+if use_fast_matching
+    fprintf('%s: Using fast matching!\n', datestr(now));
+else
+    fprintf('%s: Using exhaustive matching!\n', datestr(now)); 
 end
 
 % Compute the matrix M of mask overlaps
