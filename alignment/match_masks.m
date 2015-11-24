@@ -8,25 +8,38 @@ function [match_1to2, match_2to1, M] = match_masks(masks1, masks2, ds1, ds2, var
 %   second column the overlap measure between the two masks. The list is
 %   sorted in order of descending overlap measure.
 %
+% Note that the 'masksX' inputs may have been spatially transformed. For
+% this reason, we don't simply pull the 'masks' from the corresponding
+% input DaySummary objects.
 
-use_fast_matching = 0;
+% "Fast matching" mode uses two shortcuts. Given a mask i from masks1,
+% if a mask is found in masks2 that exceeds a certain threshold, then:
+% 1) Don't perform exhaustive search of the remaining masks2;
+% 2) The matched mask in masks2 is now unavailable for matching
+%    for against remaining masks1.
+use_fast_matching = 1;
 fast_overlap_threshold = 0.7;
+
+% By default, only classified cells are matched
+match_all = 0;
 
 for k = 1:length(varargin)
     vararg = varargin{k};
     if ischar(vararg)
         switch lower(vararg)
-            case 'fast'
-                % "Fast matching" mode uses two shortcuts. Given a mask i
-                % from masks1, if a mask is found in masks2 that exceeds a
-                % certain threshold, then:
-                % 1) Don't perform exhaustive search of all masks2;
-                % 2) The mask in masks2 is now unavailable for matching
-                %    for against remaining masks1.
-                fprintf('%s: Using fast matching!\n', datestr(now));
-                use_fast_matching = 1;
+            case 'full'
+                use_fast_matching = 0;
+            case 'matchall'
+                fprintf('%s: Matching all filters!\n', datestr(now));
+                match_all = 1;
         end
     end
+end
+
+if use_fast_matching
+    fprintf('%s: Using fast matching!\n', datestr(now));
+else
+    fprintf('%s: Using exhaustive matching!\n', datestr(now)); 
 end
 
 % Compute the matrix M of mask overlaps
@@ -40,9 +53,9 @@ for i = 1:num_masks(1)
         fprintf('%s: Computing overlaps (%.1f%%)...\n',...
             datestr(now), 100*i/num_masks(1));
     end
-    if ds1.is_cell(i)
+    if ds1.is_cell(i) || match_all
         for j = 1:num_masks(2)
-            if ds2.is_cell(j)
+            if ds2.is_cell(j) || match_all
                 if available_for_match(j)
                     M(i,j) = compute_mask_overlap(masks1{i}, masks2{j});
                     if use_fast_matching && (M(i,j) > fast_overlap_threshold)
