@@ -7,8 +7,8 @@ while (1)
     draw_cell(common_cell_idx);
     
     % Ask user for command
-    prompt = sprintf('Multiday browser (md cell %d of %d) >> ',...
-        common_cell_idx, md.num_cells);
+    prompt = sprintf('MD browser (Sort day %d, ID %d of %d) >> ',...
+        md.sort_day, common_cell_idx, md.num_cells);
     resp = strtrim(input(prompt, 's'));
     
     val = str2double(resp);
@@ -32,6 +32,18 @@ while (1)
                     if ismember(val, md.valid_days)
                         day_cell_idx = md.get_cell_idx(common_cell_idx, val);
                         view_detailed_raster(md.day(val), day_cell_idx);
+                    else
+                        fprintf('  Sorry, %d is not a valid day for this MultiDay\n', val);
+                    end
+                end
+                
+            case 's' % Sort the MD object on a different day.
+                val = str2double(resp(2:end));
+                if ~isnan(val)
+                    if ismember(val, md.valid_days)
+                        sort_inds = md.sort_matches_by_day(val);
+                        common_cell_idx = find(sort_inds==common_cell_idx, 1);
+                        fprintf('  MultiDay is now sorted on Day %d\n', val);
                     else
                         fprintf('  Sorry, %d is not a valid day for this MultiDay\n', val);
                     end
@@ -77,8 +89,13 @@ end
             axis image;
             xlim(cell_com_k(1)+zoom_half_width*[-1 1]);
             ylim(cell_com_k(2)+zoom_half_width*[-1 1]);
-            title(sprintf('Day %d -- Cell %d', day, cell_idx_k),...
-                  'FontSize', 12);
+            
+            title_str = sprintf('Day %d -- Cell %d', day, cell_idx_k);
+            if (day == md.sort_day)
+                title(title_str, 'FontWeight', 'bold', 'FontSize', 12);
+            else
+                title(title_str, 'FontWeight', 'normal');
+            end
 %             hold on;
 %             for m = 1:ds.num_cells
 %                 if ds.is_cell(m)

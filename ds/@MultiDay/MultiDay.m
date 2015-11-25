@@ -203,9 +203,9 @@ classdef MultiDay < handle
         
         % Auxiliary methods
         %------------------------------------------------------------
-        function sort_matches_by_day(obj, day_idx)
+        function sort_inds = sort_matches_by_day(obj, day_idx)
             sort_col = obj.full_to_sparse(day_idx);
-            obj.matched_indices = sortrows(obj.matched_indices, sort_col);
+            [obj.matched_indices, sort_inds] = sortrows(obj.matched_indices, sort_col);
             obj.sort_day = day_idx;
         end
         
