@@ -1,4 +1,4 @@
-function browse_rasters(ds)
+function browse_rasters(ds, varargin)
 % Tool for browsing single cell rasters of a single day (i.e. DaySummary)
 %
 % Usage:
@@ -8,8 +8,21 @@ function browse_rasters(ds)
 %     browse_rasters(m3d15);
 %
 
-% By default, show rasters of classified cells
-cell_indices = find(ds.is_cell);
+cell_indices = [];
+
+for k = 1:length(varargin)
+    if ischar(varargin{k})
+        switch lower(varargin{k})
+            case 'cells' % Specify the IDs of cells to browse through
+                cell_indices = varargin{k+1};
+        end
+    end
+end
+
+% By default, browse through rasters of all classified cells
+if isempty(cell_indices)
+    cell_indices = find(ds.is_cell);
+end
 num_cells = length(cell_indices);
 
 % Display settings
