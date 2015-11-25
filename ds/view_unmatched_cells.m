@@ -1,4 +1,4 @@
-function view_unmatched_cells(ds1, m_1to2)
+function unmatched_ids = view_unmatched_cells(ds1, m_1to2)
 
 [unmatched_ids, matched_ids] = find_unmatched_cells(ds1, m_1to2);
 num_unmatched_ids = length(unmatched_ids);
