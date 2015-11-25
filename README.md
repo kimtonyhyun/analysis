@@ -1,9 +1,9 @@
 analysis
 ========
 
-Repository for code that is _specific_ to the strategy-shifting experiment at Herrin.
+Repository for code that is specific to the strategy-shifting experiment at Herrin.
 
-We should observe the lab-wide formatting for data objects:
+Basic formatting of data objects:
 - Movies: `[height width time]`
-- Traces: `[cell-idx time]`
+- Traces: `[time cell-idx]`
 - Cell images: `[height width cell-idx]`
