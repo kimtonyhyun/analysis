@@ -9,7 +9,7 @@ is_not_cell1 = setdiff(find(~ds1.is_cell), transfer_to_1);
 
 subplot(121);
 ds1.plot_cell_map({is_cell1, 'g'; transfer_to_1, 'c'; is_not_cell1, 'r'});
-title(sprintf('Dataset 1: %d transferred labels', num_transfer_to_1));
+title(sprintf('Dataset 1: %d transferred labels (cyan)', num_transfer_to_1));
 
 % Transfer (positive) labels from ds1 --> ds2
 %------------------------------------------------------------
@@ -20,7 +20,7 @@ is_not_cell2 = setdiff(find(~ds2.is_cell), transfer_to_2);
 
 subplot(122);
 ds2.plot_cell_map({is_cell2, 'g'; transfer_to_2, 'c'; is_not_cell2, 'r'});
-title(sprintf('Dataset 2: %d transferred labels', num_transfer_to_2));
+title(sprintf('Dataset 2: %d transferred labels (cyan)', num_transfer_to_2));
 
 % Update the labels in place
 %------------------------------------------------------------

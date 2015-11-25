@@ -31,17 +31,10 @@ while (1)
     if (~isnan(val)) % Is a number (cell index)
         if ismember(val, cell_indices)
             fprintf('  Cell %d selected!\n', val);
+            view_detailed_raster(ds, val);
             
-            % Find the page that contains the cell
-            page_idx2 = ceil(find(cell_indices==val,1) / num_cells_per_page);
-            if (page_idx2 == page_idx)
-                % The selected cell is already in the current page, examine
-                % the raster in further detail
-                view_detailed_raster(ds, val);
-                
-            else % Else, jump to page that contains the cell
-                page_idx = page_idx2;
-            end
+            % When done, return to the page that contains the cell
+            page_idx = ceil(find(cell_indices==val,1) / num_cells_per_page);
         else
             fprintf('  Sorry, %d is not a valid cell index\n', val);
         end
