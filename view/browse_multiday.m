@@ -42,10 +42,24 @@ while (1)
                 if ~isnan(val)
                     if ismember(val, md.valid_days)
                         sort_inds = md.sort_matches_by_day(val);
+                        % Keep the currently selected cell in view,
+                        % despite the resorting of the underlying MD
                         common_cell_idx = find(sort_inds==common_cell_idx, 1);
                         fprintf('  MultiDay is now sorted on Day %d\n', val);
                     else
                         fprintf('  Sorry, %d is not a valid day for this MultiDay\n', val);
+                    end
+                end
+                
+            case 'c' % Jump to a cell on the current sorted day.
+                val = str2double(resp(2:end));
+                if ~isnan(val)
+                    cells_from_sort_day = md.get_indices(md.sort_day);
+                    common_cell_idx2 = find(cells_from_sort_day == val);
+                    if ~isempty(common_cell_idx2)
+                        common_cell_idx = common_cell_idx2;
+                    else
+                        fprintf('  Sorry, %d is not a valid cell on Day %d\n', val, md.sort_day);
                     end
                 end
                 

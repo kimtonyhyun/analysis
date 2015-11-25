@@ -219,7 +219,9 @@ classdef MultiDay < handle
             unmatched_ids = setdiff(all_cell_ids, matched_ids);
         end
     end
-    
+
+    % Private methods for implementing the cross-day matching logic
+    %------------------------------------------------------------
     methods (Access=private)
         function [M, assignments] = compute_all_matches(obj)
             % Cells of all days will be arranged linearly for the graph
