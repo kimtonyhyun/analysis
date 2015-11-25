@@ -31,7 +31,7 @@ for k = 1:length(varargin)
                 use_fast_matching = 0;
 
             case {'matchall', 'all'}
-                fprintf('%s: Matching all filters!\n', datestr(now));
+                fprintf('%s: Matching all sources (cells and non-cells)!\n', datestr(now));
                 match_all = 1;
                 
                 % When using both cells and non-cells, the sources are
@@ -43,9 +43,9 @@ for k = 1:length(varargin)
 end
 
 if use_fast_matching
-    fprintf('%s: Using fast matching!\n', datestr(now));
+    fprintf('%s: Using fast matching heuristic!\n', datestr(now));
 else
-    fprintf('%s: Using exhaustive matching!\n', datestr(now)); 
+    fprintf('%s: Fast heuristic disabled\n', datestr(now)); 
 end
 
 % Compute the matrix M of mask overlaps
