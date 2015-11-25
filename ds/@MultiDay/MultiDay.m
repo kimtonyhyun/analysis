@@ -1,11 +1,12 @@
-% Structure for accessing multiple aligned DaySummary's
-%
 classdef MultiDay < handle
     properties (SetAccess = private)
         valid_days % List of days in the MultiDay object
         num_days
         num_cells % Number of aligned cells through all days
+        
         matched_indices
+        sort_day % 'matched_indices' is sorted in ascending order according
+                 % to cell IDs on 'sort_day'
     end
     
     properties (Access = private)
@@ -67,6 +68,7 @@ classdef MultiDay < handle
             % Filter out rows of M with unmatched indices (i.e. zeros) and
             % store result
             obj.matched_indices = obj.filter_matches(M);
+            obj.sort_matches_by_day(obj.valid_days(1));
             obj.num_cells = size(obj.matched_indices, 1);
             fprintf('%s: Found %d matching classified cells across all days\n',...
                 datestr(now), obj.num_cells);
@@ -201,6 +203,12 @@ classdef MultiDay < handle
         
         % Auxiliary methods
         %------------------------------------------------------------
+        function sort_matches_by_day(obj, day_idx)
+            sort_col = obj.full_to_sparse(day_idx);
+            obj.matched_indices = sortrows(obj.matched_indices, sort_col);
+            obj.sort_day = day_idx;
+        end
+        
         function unmatched_ids = get_unmatched_cells(obj, day_idx)
             % Retrieve the IDs of cells on 'day_idx' that are not matched
             % across all days of MultiDay. NOTE: The definition of
