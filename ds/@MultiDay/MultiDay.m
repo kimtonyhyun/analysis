@@ -203,7 +203,9 @@ classdef MultiDay < handle
         %------------------------------------------------------------
         function unmatched_ids = get_unmatched_cells(obj, day_idx)
             % Retrieve the IDs of cells on 'day_idx' that are not matched
-            % across all days of MultiDay
+            % across all days of MultiDay. NOTE: The definition of
+            % "unmatched" computed here considers cells that match to 
+            % non-cells as unmatched!
             all_cell_ids = find(obj.day(day_idx).is_cell);
             matched_ids = obj.matched_indices(:, obj.full_to_sparse(day_idx));
             unmatched_ids = setdiff(all_cell_ids, matched_ids);
