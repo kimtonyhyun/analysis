@@ -27,11 +27,17 @@ for k = 1:length(varargin)
     vararg = varargin{k};
     if ischar(vararg)
         switch lower(vararg)
-            case 'full'
+            case 'noheuristic'
                 use_fast_matching = 0;
-            case 'matchall'
+
+            case {'matchall', 'all'}
                 fprintf('%s: Matching all filters!\n', datestr(now));
                 match_all = 1;
+                
+                % When using both cells and non-cells, the sources are
+                % expected to be denser. Let's be careful and perform an
+                % exhaustive search.
+                use_fast_matching = 0;
         end
     end
 end
