@@ -198,6 +198,16 @@ classdef MultiDay < handle
             cell_idx = obj.get_cell_idx(common_cell_idx, day_idx);
             cell = obj.ds{day_idx}.cells(cell_idx);
         end
+        
+        % Auxiliary methods
+        %------------------------------------------------------------
+        function unmatched_ids = get_unmatched_cells(obj, day_idx)
+            % Retrieve the IDs of cells on 'day_idx' that are not matched
+            % across all days of MultiDay
+            all_cell_ids = find(obj.day(day_idx).is_cell);
+            matched_ids = obj.matched_indices(:, obj.full_to_sparse(day_idx));
+            unmatched_ids = setdiff(all_cell_ids, matched_ids);
+        end
     end
     
     methods (Access=private)
