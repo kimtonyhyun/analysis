@@ -27,19 +27,25 @@ for k = 1:length(varargin)
     vararg = varargin{k};
     if ischar(vararg)
         switch lower(vararg)
-            case 'full'
+            case 'noheuristic'
                 use_fast_matching = 0;
-            case 'matchall'
-                fprintf('%s: Matching all filters!\n', datestr(now));
+
+            case {'matchall', 'all'}
+                fprintf('%s: Matching all sources (cells and non-cells)!\n', datestr(now));
                 match_all = 1;
+                
+                % When using both cells and non-cells, the sources are
+                % expected to be denser. Let's be careful and perform an
+                % exhaustive search.
+                use_fast_matching = 0;
         end
     end
 end
 
 if use_fast_matching
-    fprintf('%s: Using fast matching!\n', datestr(now));
+    fprintf('%s: Using fast matching heuristic!\n', datestr(now));
 else
-    fprintf('%s: Using exhaustive matching!\n', datestr(now)); 
+    fprintf('%s: Fast heuristic disabled\n', datestr(now)); 
 end
 
 % Compute the matrix M of mask overlaps
