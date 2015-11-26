@@ -21,6 +21,8 @@ output_name = sprintf('class_%s.txt', datestr(now, 'yymmdd-HHMMSS'));
 hfig = figure;
 
 cell_idx = 1;
+prev_cell_idx = 1;
+
 while (cell_idx <= num_candidates)
     display_candidate(cell_idx);
     
@@ -32,6 +34,7 @@ while (cell_idx <= num_candidates)
     val = str2double(resp);
     if (~isnan(val)) % Is a number. Check if it is a valid index and jump to it
         if ((1 <= val) && (val <= num_candidates))
+            prev_cell_idx = cell_idx;
             cell_idx = val;
         else
             fprintf('  Sorry, %d is not a valid cell index\n', val);
@@ -59,6 +62,10 @@ while (cell_idx <= num_candidates)
             %------------------------------------------------------------
             case ''  % Go to next unlabeled cell candidate, loop at end
                 go_to_next_unlabeled_cell();
+            case '-' % Jump to previously viewed cell
+                temp_idx = cell_idx;
+                cell_idx = prev_cell_idx;
+                prev_cell_idx = temp_idx;
             case 'm' % View cell map
                 display_map();
             case 'q' % Exit
@@ -119,6 +126,7 @@ ds.save_class(output_name);
         if isempty(search_offset)
             fprintf('  All cells have been classified!\n');
         else
+            prev_cell_idx = cell_idx;
             cell_idx = mod(cell_idx+search_offset-1, num_candidates) + 1;
         end
     end
