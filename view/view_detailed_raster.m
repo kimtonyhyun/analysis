@@ -70,11 +70,11 @@ end
         
         % Divide rasters by start location
         subplot(3,4,7);
-        ds.plot_cell_raster(cell_idx, 'start', 'west');
+        ds.plot_cell_raster(cell_idx, 'start', 'west', 'draw_correct');
         set(gca, 'CLim', raster_scale);
         title('West start'); 
         subplot(3,4,8);
-        ds.plot_cell_raster(cell_idx, 'start', 'east');
+        ds.plot_cell_raster(cell_idx, 'start', 'east', 'draw_correct');
         set(gca, 'CLim', raster_scale);
         title('East start');
         

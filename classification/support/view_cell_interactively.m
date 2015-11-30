@@ -101,8 +101,8 @@ while (1)
             case {'', 'q'} % "quit"
                 break;
                 
-            case 'a' % "all"
-                display_active_period(1:num_active_periods);
+%             case 'a' % "all"
+%                 display_active_period(1:num_active_periods);
                 
             case 't' % "threshold"
                 fprintf('  Please select a new threshold on the global trace\n');
