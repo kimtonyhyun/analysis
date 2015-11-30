@@ -39,6 +39,7 @@ num_frames = movie_size(3);
 % Begin crop processing
 %------------------------------------------------------------
 use_min_projection = 0;
+use_automin = 0;
 
 % Optional specification of the cropping ROI
 x_bounds = [];
@@ -57,6 +58,11 @@ if ~isempty(varargin)
                     y_bounds = bounds(3:4);
                 case 'min' % Compute minimum projection
                     use_min_projection = 1;
+                case 'automin'
+                    % Automatically computes the crop bounds, assuming 
+                    % TurboReg registration (fills borders with 0's) with
+                    % rotation _disabled_
+                    use_automin = 1;
             end
         end
     end
@@ -65,7 +71,7 @@ end
 frame_chunk_size = 2500;
 [frame_chunks, num_chunks] = make_frame_chunks(num_frames, frame_chunk_size);
 
-if use_min_projection
+if use_min_projection || use_automin
     ref_frame = Inf*ones(height, width);
     for i = 1:num_chunks
         fprintf('%s: Reading frames %d to %d for minimum projection (out of %d)...\n',...
@@ -80,6 +86,10 @@ if use_min_projection
                          
         movie_chunk_min = min(movie_chunk, [], 3);
         ref_frame = min(ref_frame, movie_chunk_min);
+    end
+    
+    if use_automin
+        [x_bounds, y_bounds] = compute_automin_bounds(ref_frame);
     end
 else % Just display the first frame
     ref_idx = 1;
@@ -144,3 +154,25 @@ for i = 1:num_chunks
             [cropped_height cropped_width chunk_count]);
 end
 fprintf('%s: Done!\n', datestr(now));
+
+end % crop_movie
+
+function [x_bounds, y_bounds] = compute_automin_bounds(ref_frame)
+    % Automatically compute the crop bounds, assuming TurboReg registration
+    % (which fills borders with 0's) with rotation disabled.
+    %
+    % TODO: Generalize to account for rotation-enabled registration.
+    
+    [height, width] = size(ref_frame);
+    
+    % Coordinates for (roughly) the center of image
+    x_mid = round(width/2);
+    y_mid = round(height/2);
+    
+    % 1D slices through the image, then binarized
+    x_cut = (ref_frame(y_mid, :) ~= 0);
+    y_cut = (ref_frame(:, x_mid) ~= 0);
+    
+    x_bounds = [find(x_cut, 1, 'first') find(x_cut, 1, 'last')];
+    y_bounds = [find(y_cut, 1, 'first') find(y_cut, 1, 'last')];
+end
