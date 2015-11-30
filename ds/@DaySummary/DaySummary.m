@@ -25,6 +25,7 @@ classdef DaySummary < handle
     end
     
     properties (Access = private)
+        cell_distances
         cell_map_ref_img
         behavior_vid
     end
@@ -42,7 +43,7 @@ classdef DaySummary < handle
                 end
             end
             
-            % Parse trial data
+            % Parse trial metadata
             %------------------------------------------------------------
             [trial_indices, loc_info, trial_durations] =...
                 parse_plusmaze(plusmaze_txt); %#ok<*PROP>
@@ -101,9 +102,12 @@ classdef DaySummary < handle
             boundaries = cell(size(images));
             masks = cell(size(images));
             coms = cell(size(images)); % Center of mass
+
+            fprintf('  Computing auxiliary spatial parameters...');
+            tic;
             for k = 1:obj.num_cells
                 boundary = compute_ic_boundary(images{k}, 0.3);
-                boundaries{k} = boundary{1}; % Keeps only the longest-boundary!
+                boundaries{k} = boundary{1}; % Keep only the longest boundary!
                 masks{k} = poly2mask(boundaries{k}(:,1), boundaries{k}(:,2),...
                                      height, width);
                 
@@ -113,6 +117,8 @@ classdef DaySummary < handle
                        (1:height)*sum(masked_filter,2)];
                 coms{k} = com / sum(masked_filter(:));
             end
+            t = toc;
+            fprintf(' Done (%.1f sec)\n', t);
             
             obj.cells = struct(...
                 'im', images,...
@@ -121,6 +127,28 @@ classdef DaySummary < handle
                 'com', coms,...
                 'label', class);
             
+            % Compute distances among all sources
+            fprintf('  Computing distances between all sources...');
+            tic;
+            D = Inf*ones(obj.num_cells);
+            for i = 1:(obj.num_cells-1)
+                for j = (i+1):obj.num_cells
+                    delta = obj.cells(i).com - obj.cells(j).com;
+                    D(i,j) = norm(delta);
+                end
+            end
+            obj.cell_distances = min(D, D'); % Make symmetric. Note Infs.
+            t = toc;
+            fprintf(' Done (%.1f sec)\n', t);
+            
+            % Precompute cell map image, to avoid doing it each time
+            [height, width] = size(obj.cells(1).im);
+            ref_image = zeros(height, width);
+            for k = 1:obj.num_cells
+                ref_image = ref_image + obj.cells(k).im;
+            end
+            obj.cell_map_ref_img = ref_image;
+            
             % Load classification
             %------------------------------------------------------------
             class_source = get_most_recent_file(rec_dir, 'class_*.txt');
@@ -128,18 +156,9 @@ classdef DaySummary < handle
                 obj.load_class(class_source);
                 fprintf('%s: Loaded classification from %s\n', datestr(now), class_source);
             end
-            
+                       
             % Other initialization
             obj.behavior_vid = [];
-            
-            % Precompute cell map image, to avoid doing it each time
-            %------------------------------------------------------------
-            [height, width] = size(obj.cells(1).im);
-            ref_image = zeros(height, width);
-            for k = 1:obj.num_cells
-                ref_image = ref_image + obj.cells(k).im;
-            end
-            obj.cell_map_ref_img = ref_image;
         end
         
         % Helper functions
@@ -155,7 +174,7 @@ classdef DaySummary < handle
             else
                 turn = 'right';
             end
-        end
+        end % compute_turn
         
         function filtered_trials = filter_trials(obj, varargin)
             filtered_trials = ones(1, obj.num_trials);
@@ -234,7 +253,7 @@ classdef DaySummary < handle
         end
         
         function is_correct = get_trial_correctness(obj)
-            is_correct = cellfun(@strcmp, {obj.trials.goal}, {obj.trials.end});
+            is_correct = [obj.trials.correct];
         end
         
         function selected_idx = get_cell_by_xy(obj, xy, varargin)
@@ -262,6 +281,29 @@ classdef DaySummary < handle
                     end
                 end
             end
+        end
+        
+        function neighbor_inds = get_nearest_sources(obj, cell_idx, num_neighbors, varargin)
+            % Return the indices of 'num_neighbors' number of sources
+            % closest to the source with 'cell_idx'.
+            
+            classified_cells_only = 0;
+            for i = 1:length(varargin)
+                if ischar(varargin{i})
+                    switch lower(varargin{i})
+                        case {'cells', 'cellsonly'}
+                            classified_cells_only = 1;
+                    end
+                end
+            end
+
+            d = obj.cell_distances(cell_idx,:); % Distance to all cells
+            if classified_cells_only
+                is_not_cell = ~obj.is_cell;
+                d(is_not_cell) = Inf; % Set distances to non-cells as Inf
+            end
+            [~, neighbor_inds] = sort(d); % Ascending order
+            neighbor_inds = neighbor_inds(1:num_neighbors);
         end
         
         % Classification
