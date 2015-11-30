@@ -101,8 +101,8 @@ while (1)
             case {'', 'q'} % "quit"
                 break;
                 
-            case 'a' % "all"
-                display_active_period(1:num_active_periods);
+%             case 'a' % "all"
+%                 display_active_period(1:num_active_periods);
                 
             case 't' % "threshold"
                 fprintf('  Please select a new threshold on the global trace\n');
@@ -211,6 +211,7 @@ end
         t_g = plot(time(1)*[1 1], y_range, 'k'); % Time indicator
         xlabel('Time [s]');
         ylabel('Signal [a.u.]');
+        title(sprintf('Source %d of %d', cell_idx, ds.num_cells));
         hold off;
 
         % Prepare running trace

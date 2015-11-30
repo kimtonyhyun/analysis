@@ -66,7 +66,7 @@ mask_xy = getPosition(h_poly);
 mask_ref = single(poly2mask(mask_xy(:,1), mask_xy(:,2), height, width));
 
 % Turboreg options
-options.rotation_enable = true;
+options.rotation_enable = false;
 options.mingain = 0.0; % Max accuracy
 options.levels = calculate_pyramid_depth(min(height, width));
 
