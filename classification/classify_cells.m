@@ -97,12 +97,12 @@ ds.save_class(output_name);
     %------------------------------------------------------------
     function display_candidate(cell_idx)
         clf;
-        subplot(3,4,[1 2 3]);
+        subplot(3,2,[1 2]);
         ds.plot_trace(cell_idx);
         title(sprintf('Candidate %d of %d', cell_idx, num_candidates));
 
-        subplot(3,4,4);
-        display_neighborhood(cell_idx);
+%         subplot(3,4,4);
+%         display_neighborhood(cell_idx);
         
         subplot(3,2,[3 5]);
         ds.plot_superposed_trials(cell_idx);
