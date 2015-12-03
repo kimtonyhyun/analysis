@@ -291,7 +291,7 @@ classdef DaySummary < handle
             for i = 1:length(varargin)
                 if ischar(varargin{i})
                     switch lower(varargin{i})
-                        case {'cells', 'cellsonly'}
+                        case {'cell', 'cells', 'cellsonly'}
                             classified_cells_only = 1;
                     end
                 end
