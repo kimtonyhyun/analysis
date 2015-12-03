@@ -54,8 +54,8 @@ classdef DaySummary < handle
             data_source = get_most_recent_file(rec_dir, 'rec_*.mat');
             data = load(data_source);
             obj.num_cells = data.info.num_pairs;
-            fprintf('%s: Loaded %d filters and traces from %s\n',...
-                    datestr(now), obj.num_cells, data_source);
+            fprintf('%s: Loaded %d filters and traces (%s) from %s\n',...
+                    datestr(now), obj.num_cells, data.info.type, data_source);
             
             % Check that the length of traces is consistent with the table
             % of trial indices.
@@ -149,7 +149,7 @@ classdef DaySummary < handle
             end
             obj.cell_map_ref_img = ref_image;
             
-            % Load classification
+            % Load classification, if available
             %------------------------------------------------------------
             class_source = get_most_recent_file(rec_dir, 'class_*.txt');
             if ~isempty(class_source)
