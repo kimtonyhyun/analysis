@@ -9,7 +9,6 @@ time = 1/fps*((1:length(trace_orig))-1);
 
 % Some parameters
 ic_filter_threshold = 0.3; % For generating the filter outline
-mad_scale = 10; % Used for coarse detection of activity in the trace
 num_neighbors_to_show = 10;
 
 % Display parameters
@@ -87,10 +86,22 @@ ylim(COM(2)+zoom_half_width*[-1 1]);
 % Compute the active portions of the trace
 %------------------------------------------------------------
 trace = trace_orig; % By default, select the original trace
-thresh = mad_scale * compute_mad(trace);
 
-[active_periods, num_active_periods] =...
-    parse_active_frames(trace > thresh, active_frame_padding);
+mad_scale = 10;
+mad = compute_mad(trace);
+
+% Adjust the threshold until we get at least one active period (up to a
+% limit). Purely for convenience.
+for i = 1:10
+    thresh = mad_scale * mad;
+    [active_periods, num_active_periods] =...
+        parse_active_frames(trace > thresh, active_frame_padding);
+    if (num_active_periods > 0)
+        break;
+    else
+        mad_scale = 0.8*mad_scale;
+    end
+end
 
 setup_traces();
 
