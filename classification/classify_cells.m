@@ -101,11 +101,50 @@ ds.save_class(output_name);
         ds.plot_trace(cell_idx);
         title(sprintf('Candidate %d of %d', cell_idx, num_candidates));
 
+%         subplot(3,4,4);
+%         display_neighborhood(cell_idx);
+        
         subplot(3,2,[3 5]);
         ds.plot_superposed_trials(cell_idx);
 
         subplot(3,2,[4 6]);
         ds.plot_cell_raster(cell_idx, 'draw_correct');
+        
+        function display_neighborhood(cell_idx)
+            % Display the current cell
+            cell_img = ds.cells(cell_idx).im;
+            [height, width] = size(cell_img);
+            zoom_half_width = min([height, width])/15;
+            
+            imagesc(cell_img);
+            axis image;
+            xlabel('x [px]');
+            ylabel('y [px]');
+            com = ds.cells(cell_idx).com;
+            x_range = com(1) + zoom_half_width*[-1 1];
+            x_range(1) = max(1, x_range(1)); x_range(2) = min(width, x_range(2));
+            y_range = com(2) + zoom_half_width*[-1 1];
+            y_range(1) = max(1, y_range(1)); y_range(2) = min(height, y_range(2));
+            xlim(x_range);
+            ylim(y_range);
+            hold on;
+            
+            % Display neighbors
+            num_neighbors_to_show = 5;
+            neighbor_indices = ds.get_nearest_sources(cell_idx, num_neighbors_to_show);
+            for k = 1:num_neighbors_to_show
+                neighbor_idx = neighbor_indices(k);
+                boundary = ds.cells(neighbor_idx).boundary;
+                com = ds.cells(neighbor_idx).com;
+                
+                color = 'w';
+                plot(boundary(:,1), boundary(:,2), color);
+                text(com(1), com(2), num2str(neighbor_idx),...
+                     'HorizontalAlignment', 'center',...
+                     'Color', color,...
+                     'Clipping', 'on');
+            end
+        end % Display neighborhood
     end % display_candidate
 
     function display_map()

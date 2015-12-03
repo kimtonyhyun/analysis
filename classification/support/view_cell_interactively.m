@@ -1,10 +1,6 @@
 function [resp, movie_clim] = view_cell_interactively(ds, cell_idx, movie, fps, movie_clim)
-% Visually inspect the active portions of an IC trace side-by-side with
+% Visually inspect the active portions of a trace side-by-side with
 %   the provided miniscope movie.
-%
-% Do NOT modify the large 'movie' matrix, lest Matlab make a duplicate
-%   in memory!
-%
 
 filter = ds.cells(cell_idx).im;
 trace_orig  = ds.get_trace(cell_idx);
@@ -12,9 +8,11 @@ trace_fixed = fix_baseline(trace_orig);
 time = 1/fps*((1:length(trace_orig))-1);
 
 % Some parameters
-ic_filter_threshold = 0.3; % For generating the IC filter outline
-mad_scale = 10; % Used for coarse detection of activity in the IC trace
-active_frame_padding = 5*fps; % Use 100 for 20 Hz movie
+ic_filter_threshold = 0.3; % For generating the filter outline
+num_neighbors_to_show = 10;
+
+% Display parameters
+active_frame_padding = 5*fps; % Used by 'parse_active_frames'
 time_window = 100/fps; % Width of running window
 
 % Generate the outline of the filter
@@ -34,8 +32,9 @@ end
 
 % Plot boundaries of other cells, and retrieve their handles so that
 %   we can toggle the boundaries on and off
+%------------------------------------------------------------
 other_cells = setdiff(1:ds.num_cells, cell_idx);
-num_other_cells = length(other_cells);
+num_other_cells = ds.num_cells - 1;
 other_cell_handles = zeros(num_other_cells, 1);
 
 for n = 1:num_other_cells
@@ -52,9 +51,28 @@ for n = 1:num_other_cells
     end
     other_cell_handles(n) = plot(boundary(:,1), boundary(:,2), color);
 end
-show_other_cells(false); % Turn off the boundaries of other cells
+show_map(false); % Turn off the boundaries of other cells
 
-% Compute the center of mass of the filter
+% Plot boundaries and indices of the nearest neighbors of the
+% current cell
+%------------------------------------------------------------
+colors = 'ygr';
+neighbor_indices = ds.get_nearest_sources(cell_idx, num_neighbors_to_show);
+neighbor_handles = zeros(num_neighbors_to_show, 2); % [Boundary Text]
+for n = 1:num_neighbors_to_show
+    neighbor_idx = neighbor_indices(n);
+    boundary = ds.cells(neighbor_idx).boundary;
+    com = ds.cells(neighbor_idx).com;
+    
+    color = colors(mod(n,length(colors))+1);
+    neighbor_handles(n,1) = plot(boundary(:,1), boundary(:,2), color);
+    neighbor_handles(n,2) = text(com(1), com(2), num2str(neighbor_idx),...
+                                 'HorizontalAlignment', 'center',...
+                                 'Color', color);
+end
+show_neighbors(false);
+
+% Indicate the center of mass of the filter
 COM = ds.cells(cell_idx).com;
 plot(COM(1), COM(2), 'b.');
 hold off;
@@ -68,10 +86,22 @@ ylim(COM(2)+zoom_half_width*[-1 1]);
 % Compute the active portions of the trace
 %------------------------------------------------------------
 trace = trace_orig; % By default, select the original trace
-thresh = mad_scale * compute_mad(trace);
 
-[active_periods, num_active_periods] =...
-    parse_active_frames(trace > thresh, active_frame_padding);
+mad_scale = 10;
+mad = compute_mad(trace);
+
+% Adjust the threshold until we get at least one active period (up to a
+% limit). Purely for convenience.
+for i = 1:10
+    thresh = mad_scale * mad;
+    [active_periods, num_active_periods] =...
+        parse_active_frames(trace > thresh, active_frame_padding);
+    if (num_active_periods > 0)
+        break;
+    else
+        mad_scale = 0.8*mad_scale;
+    end
+end
 
 setup_traces();
 
@@ -85,7 +115,8 @@ val = str2double(resp);
 % State of interaction loop
 state.last_val = [];
 state.zoomed = true;
-state.show_other_cells = false;
+state.show_map = false;
+state.show_neighbors = false;
 state.baseline_removed = false;
 
 while (1)
@@ -94,7 +125,7 @@ while (1)
             display_active_period(val);
             state.last_val = val;
         else
-            fprintf('  Sorry, %d is not a valid period index for this IC\n', val);
+            fprintf('  Sorry, %d is not a valid period index for this trace\n', val);
         end
     else % Not a number
         switch (resp)
@@ -168,10 +199,14 @@ while (1)
                 end
                 set(gca, 'CLim', movie_clim);
                 
-            case {'n', 'm'} % Show "neighboring" cells
-                state.show_other_cells = ~state.show_other_cells;
-                show_other_cells(state.show_other_cells);
+            case 'm' % Show "map" (i.e. all other cells)
+                state.show_map = ~state.show_map;
+                show_map(state.show_map);
 
+            case 'n' % Show "neighbors"
+                state.show_neighbors = ~state.show_neighbors;
+                show_neighbors(state.show_neighbors);
+                
             otherwise
                 fprintf('  Sorry, could not parse "%s"\n', resp);
         end
@@ -256,7 +291,7 @@ end
         end
     end % display_active_period
 
-    function show_other_cells(show)
+    function show_map(show)
         vis_val = 'off';
         if (show)
             vis_val = 'on';
@@ -265,7 +300,19 @@ end
         for m = 1:num_other_cells
             set(other_cell_handles(m), 'Visible', vis_val);
         end
-    end % show_other_cells
+    end % show_map
+
+    function show_neighbors(show)
+        vis_val = 'off';
+        if (show)
+            vis_val = 'on';
+        end
+        
+        for m = 1:num_neighbors_to_show
+            set(neighbor_handles(m,1), 'Visible', vis_val);
+            set(neighbor_handles(m,2), 'Visible', vis_val);
+        end
+    end
 
 end % main function
 
