@@ -22,7 +22,7 @@ switch (lower(type))
         tagstruct.SampleFormat = Tiff.SampleFormat.UInt;
         tagstruct.BitsPerSample = 16;
     otherwise
-        error('save_movie_to_tif.m: Unrecognized type "%s"\n', type);
+        error('save_movie_to_tif: Unrecognized type "%s"\n', type);
 end
 
 t = Tiff(outname, 'w8'); % BigTiff format
