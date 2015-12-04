@@ -7,7 +7,17 @@ num_frames = length(info);
 width  = info(1).Width;
 height = info(1).Height;
 
-movie = zeros(height, width, num_frames, 'single');
+tif_type = info(1).SampleFormat;
+switch tif_type
+    case 'Unsigned integer'
+        type = 'uint16';
+    case 'IEEE floating point'
+        type = 'single';
+    otherwise
+        error('load_movie_from_tif: Unrecognized type "%s"\n', tif_type);
+end
+
+movie = zeros(height, width, num_frames, type);
 
 % Load into memory
 t = Tiff(source, 'r');
