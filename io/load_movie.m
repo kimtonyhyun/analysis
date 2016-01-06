@@ -10,7 +10,7 @@ ext = lower(ext(2:end)); % Remove the leading dot
 switch ext
     case {'tif', 'tiff'}
         M = load_movie_from_tif(source);
-    case 'hdf5'
+    case {'h5', 'hdf5'}
         M = load_movie_from_hdf5(source);
     otherwise
         % TODO: Handle error!
