@@ -47,7 +47,8 @@ colormap gray;
 xlabel('x [px]');
 ylabel('y [px]');
 
-for r = 1:num_repeats
+num_playbacks = 1;
+while (num_playbacks <= num_repeats) 
     for k = 1:num_frames
         title(sprintf('Frame %d of %d', k, num_frames));
         m = M(:,:,k);
@@ -57,4 +58,5 @@ for r = 1:num_repeats
         set(h, 'CData', m);
         drawnow;
     end
+    num_playbacks = num_playbacks + 1;
 end
