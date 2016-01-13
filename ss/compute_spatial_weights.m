@@ -3,7 +3,6 @@ function [F,cents,inv_qualities] = compute_spatial_weights(svd_source,opts)
 %   solves the sparse source separation problem to find cell spatial weights.
 
 % Some parameters
-corr_thresh = 0.3;
 mag_thresh = 0.05;
 
 verb1=1;
@@ -32,7 +31,7 @@ idx_kept = info.trim.idx_kept;
 num_extracted = size(Q_fine,2);
 F = U*Q_fine;
 
-% Untrim pixels 
+% Untrim pixels
 F_temp = zeros(h*w,num_extracted);
 F_temp(idx_kept,:) = F;
 F = F_temp;
@@ -51,7 +50,7 @@ dispfun(sprintf('%s: Done. Source count: %d.\n',datestr(now),size(F,2)),verb1);
 % Internal functions
 %%%%%%%%%%%%%%%%%%%%
 
-function [Q_fine,inv_qualities] = extract_sources(U,max_num)
+function [Q,goodness_sigs] = extract_sources(U,max_num)
 % Extract sources recursively using the 1-norm criterion
 
     [N,num_pcs] = size(U);
@@ -70,7 +69,7 @@ function [Q_fine,inv_qualities] = extract_sources(U,max_num)
         f = max(avail_mem/4 - N*(num_pcs+2),0); % maximum available element size 
         f = f*opts.mem_occup_ratio_GPU;
         
-        chunk_size = floor(f/ (2*N+num_pcs)); %# of pixels at once
+        chunk_size = floor(f/ (2*N+num_pcs)/2); %# of pixels at once
         use_gpu = chunk_size>=1;
     else
         use_gpu = 0;
@@ -85,6 +84,13 @@ function [Q_fine,inv_qualities] = extract_sources(U,max_num)
         for i = 1:chunk_size:N
             fin = min(chunk_size-1,N-i);
             Q = bsxfun(@times,U(i:i+fin,:),1./norms_U(i:i+fin))';
+            %new
+%             dum = U*Q;
+%             stds = 3*std(dum,0,1);
+%             dum = bsxfun(@minus,dum,stds);
+%             dum = dum>0;
+%             one_norms(i:i+fin) = sum(dum,1);
+            %old
             one_norms(i:i+fin) = sum(abs(U*Q),1);
             clear Q;
         end
@@ -104,114 +110,123 @@ function [Q_fine,inv_qualities] = extract_sources(U,max_num)
         for i = 1:chunk_size:N
             fin = min(chunk_size-1,N-i);
             Q = U_norm(i:i+fin,:)';
-            one_norms(i:i+fin) = sum(abs(U*Q),1);
+            %new
+%             dum = U*Q;
+%             stds = 3*std(dum,0,1);
+%             dum = bsxfun(@minus,dum,stds);
+%             dum = dum>0;
+%             one_norms(i:i+fin) = sum(dum,1);
+            %old
+            one_norms(i:i+fin) = (sum(abs(U*Q),1));
             clear Q;
         end
     end
 
     dispfun(sprintf('\t\t\t Beginning source separation..\n'),verb2);
     idx_possible = 1:N;
-    idx_cells = zeros(1,max_num);
+    goodness_sigs = zeros(1,max_num);
+    Q = zeros(num_pcs,max_num,'single');
+    S = sparse(N,max_num);
+    
     acc=0;
-
-    while true
-        acc = acc+1;
+    w_count = 0;
+    num_sweep = 25;
+    idx_stop = ceil(num_pcs*linspace(0.2,1,num_sweep));
+    num_reject_overlap = 0;
+    num_reject_small = 0;
+    
+    % Statistics for debugging 
+    % 1:is_good , 2:one_norm , 3-4:idx , 5-6:max_loc , 7-8:centroid
+    % 9:cell_size , 10:#pixels left to search
+    debug_stats = zeros(max_num,10);
+    
+    while true        
+        w_count = w_count+1;
+        
         [~,idx_this] = min(one_norms(idx_possible));
         idx_this = idx_possible(idx_this);
-        sig_this = U*U(idx_this,:)'/norms_U(idx_this);
-        correl = sig_this.*(1./norms_U);
-        idx_possible = intersect(find(abs(correl)<corr_thresh),idx_possible);
-        idx_cells(acc) = idx_this;
-        % Termination condition
-        if isempty(idx_possible) || acc==max_num
-            break;
+        
+        [sub_this_y,sub_this_x] = ind2sub([h,w],idx_kept(idx_this));
+        debug_stats(w_count,[3,4]) = [sub_this_x,sub_this_y];        
+        
+        % Find the best #pcs for the chosen signal index
+        q = U_norm(idx_this,:)';
+        q_sweep = repmat(q,1,num_sweep);
+        for i = 1:num_sweep
+            q_sweep(idx_stop(i)+1:end,i) = 0;
         end
-    end
+        norms_q_sweep = sqrt(sum(q_sweep.^2,1));
+        q_sweep = bsxfun(@times,q_sweep,1./norms_q_sweep);
+        sigs_sweep = U*q_sweep;
+        %new
+%         stds = 3*std(sigs_sweep,0,1);
+%         sigs_sweep = bsxfun(@minus,sigs_sweep,stds);
+%         sigs_sweep = sigs_sweep>0;
+%         goodness_sweep = sum(sigs_sweep,1);
 
-    % Truncate in case there are less components than max_num
-    idx_cells = idx_cells(1:acc);
+        %old
+        goodness_sweep = sum(abs(sigs_sweep),1);
+        
+        [goodness_sig,best_idx] = min(goodness_sweep); 
+        
+        debug_stats(w_count,2) = goodness_sig/sqrt(N);
+        
+        sig_this = U*q_sweep(:,best_idx); 
+        std_sig = double(std(sig_this));
+        
+        [~,idx] = max(sig_this);
+        [sub_max_y,sub_max_x] = ind2sub([h,w],idx_kept(idx));
+        debug_stats(w_count,[5,6]) = [sub_max_x,sub_max_y];
+        
+        % Check if it overlaps significantly with any other signal
+        sig_temp = zeros(h*w,1);
+        sig_temp(idx_kept) = sig_this;
+        [sig_temp,cent] = cleanup_source(sig_temp,0.2);
+        pixels_this = find(sig_temp);%sig_this>3*std_sig
+        
+        debug_stats(w_count,[7,8]) = [cent(1),cent(2)];
+        debug_stats(w_count,9) = length(pixels_this);
+        
+        if ~isempty(pixels_this) && length(pixels_this)< h*w/100
+            debug_stats(w_count,1) = 1;
+            sig_temp = sig_temp(idx_kept);
+            sig_temp = sparse(double(sig_temp));
+            sig_temp = sig_temp/norm(sig_temp);
+            overlaps = S'*sig_temp;
 
-    % Q is the coarse linear mapping from U to weights (UQ=F)
-    Q = U_norm(idx_cells,:)';
-    
-    dispfun(sprintf('\t\t\t Found %d sources in the initial pass.\n',acc),verb2);
-    
-    dispfun(sprintf('\t\t\t Fine tuning the sources...\n'),verb2);
-    % Fine tuning: estimate the optimum # of singular vectors to use for each source
-    num_sweep = 25;
-    rat_sweep = linspace(0.2,1,num_sweep);
-    
-    one_norms_F = zeros(acc,num_sweep);    
-    for rat = rat_sweep % forward sweep
-        idx_stop = ceil(num_pcs*rat);
-        Q_trunc = Q(1:idx_stop,:);
-        norms_Q_trunc = sqrt(sum(Q_trunc.^2,1));
-        Q_trunc = bsxfun(@times,Q_trunc,1./norms_Q_trunc);
-        F_trunc = U(:,1:idx_stop)*Q_trunc;
-        one_norms_F(:,rat_sweep==rat) = sum(abs(F_trunc),1)';
-    end
-    
-    % Reconstruct Q (Q_fine)
-    [best_one_norms,idx_best_rat] = min(one_norms_F,[],2);
-    idx_uncertain = find(idx_best_rat==1);
-%     idx_best_rat(idx_best_rat==1) = num_sweep/2;
-
-    % Deal with indices where its not certain which ratio is the best 
-    for ii = idx_uncertain'
-        one_norms_vs_rat = one_norms_F(ii,:)/sqrt(N);
-        x = smooth(one_norms_vs_rat,floor(num_sweep/4));
-        [xmax,imax,xmin,imin] = extrema(x);
-        % Remove the first minimum (first index)
-        xmin = xmin(2:end);
-        imin = imin(2:end);
-        if ~isempty(imin)
-            % Find local minimum with big enough a basin
-            for iii = 1:length(imin) 
-                idx_candid = imin(iii);
-                idx_max_before_this = find((idx_candid-imax)>0,1);
-                if xmax(idx_max_before_this)- xmin(iii) > 3e-3
-                    idx_best_rat(ii) = idx_candid;
-                    best_one_norms(ii) = one_norms_F(ii,idx_candid);
-                    break;
-                end
+            % Add if new signal
+            if ~any(overlaps>0.65)
+                debug_stats(w_count,1) = 2;
+                acc = acc+1;
+                S(sig_temp>0,acc) = sig_temp(sig_temp>0); 
+                Q(:,acc) = q_sweep(:,best_idx);            
+                goodness_sigs(acc) = goodness_sig;                
+                idx_possible = setdiff(idx_possible,pixels_this);
+                
+                debug_stats(w_count,10) = length(idx_possible);
+            else
+                num_reject_overlap = num_reject_overlap+1;
             end
+            
+        elseif length(pixels_this)>= h*w/100
+            debug_stats(w_count,1) = 10;           
         end
-    end
-    
-    best_rat = rat_sweep(idx_best_rat);
-    idx_stop_best = ceil(num_pcs*best_rat);
-    Q_fine = Q;
-    for ii = 1:acc
-        Q_fine(idx_stop_best(ii)+1:end,ii) = 0;
-    end
-    Q_fine = bsxfun(@times,Q_fine,1./sqrt(sum(Q_fine.^2,1)));
+        
+        idx_possible = setdiff(idx_possible,idx_this);
 
-    dispfun(sprintf('\t\t\t Doing a 2nd pass for removing duplicate sources...\n'),verb2);
-    
-    % Eliminate possible duplicate cells by a 2nd step
-    num_cells_step1 = acc;
-    Corr_cells = Q_fine'*Q_fine;
-    
-    idx_possible = 1:num_cells_step1;
-    idx_cells = zeros(1,num_cells_step1);
-    acc=0;
-
-    while true
-        acc = acc+1;
-        [~,idx_this] = min(best_one_norms(idx_possible));
-        idx_this = idx_possible(idx_this);
-        correl = Corr_cells(idx_this,:);
-        idx_possible = intersect(find(abs(correl)<corr_thresh+0.1),idx_possible);
-        idx_cells(acc) = idx_this;
-        % Termination condition
-        if isempty(idx_possible) || acc==max_num
+        if isempty(idx_possible) || w_count==max_num
             break;
         end
+        fprintf('iter:%d, num_sig: %d \n',w_count,acc);
     end
-    idx_cells = idx_cells(1:acc);
-    Q_fine = Q_fine(:,idx_cells);
-    inv_qualities = best_one_norms(idx_cells)'/sqrt(N);
-    size(inv_qualities,1);
+    % Truncate in case there are less components than max_num
+    S = S(:,1:acc);
+    Q = Q(:,1:acc);
+    norms_Q = sqrt(sum(Q.^2,1));
+    Q = bsxfun(@times,Q,1./norms_Q);
+    goodness_sigs = goodness_sigs(1:acc);
+    debug_stats = debug_stats(1:w_count,:);
+    save('debug_stats','debug_stats');
     dispfun(sprintf('\t\t\t Done. Extracted %d potential cells in total. \n',acc),verb2);
 end
 
@@ -273,6 +288,50 @@ function [F_out,cent_out,idx_retained] = cleanup_sources(F_in,mag_thresh)
     F_out = reshape(F_out,h*w,acc);
     idx_retained = setdiff(1:num_cells,idx_elim);
 end
+
+function [F_out,cent] = cleanup_source(F_in,mag_thresh)
+
+    size_thresh = opts.ss_cell_size_threshold;
+   % Initialize output variable
+    F_out = zeros(h,w,'single'); 
+
+    % Reshape into 2D
+    F_in = reshape(F_in,h,w);
+
+    [mx,idx_mx] = max(F_in(:));
+    F_in(F_in<mx*mag_thresh) = 0; % Threshold
+    this_mask = F_in>0;
+    CC = bwconncomp(this_mask);
+
+    % Find the connected component that has idx_mx
+    lens = cellfun(@length, CC.PixelIdxList);
+    [~,idx_sort] = sort(lens,'descend');
+    CC.PixelIdxList = CC.PixelIdxList(idx_sort); 
+
+    acc2 = 0;
+    while 1
+        acc2 = acc2+1;
+        if ~isempty(find(CC.PixelIdxList{acc2}==idx_mx,1))
+            break;
+        end
+    end
+    this_mask = zeros(h,w,'single');
+    this_mask(CC.PixelIdxList{acc2})=1;
+
+    F_out = this_mask.*F_in;
+    cent_x = sum(F_in*(1:w)')/sum(F_in(:));
+    cent_y = sum((1:h)*F_in)/sum(F_in(:));
+    cent = [cent_x,cent_y];
+    % Reshape back into 1D
+    if sum(F_out(:)>mag_thresh*mx) >  size_thresh
+        
+        F_out = reshape(F_out,h*w,1);
+    else
+        F_out = [];
+    end
+    
+end
+
 
 function dispfun(str,state)
     if state == 1
