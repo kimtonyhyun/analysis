@@ -190,6 +190,7 @@ function [Q,goodness_sigs] = extract_sources(U,max_num)
         if ~isempty(pixels_this) && length(pixels_this)< h*w/100
             debug_stats(w_count,1) = 1;
             sig_temp = sig_temp(idx_kept);
+            pixels_this = find(sig_temp);%sig_this>3*std_sig
             sig_temp = sparse(double(sig_temp));
             sig_temp = sig_temp/norm(sig_temp);
             overlaps = S'*sig_temp;
@@ -205,6 +206,7 @@ function [Q,goodness_sigs] = extract_sources(U,max_num)
                 
                 debug_stats(w_count,10) = length(idx_possible);
             else
+                idx_possible = setdiff(idx_possible,pixels_this);
                 num_reject_overlap = num_reject_overlap+1;
             end
             
