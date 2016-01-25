@@ -91,6 +91,22 @@ if ~skip_svd
         num_frames = length(idx_keep);
     end
     
+    % Median filtering for artifact removal (only bad pixels)
+    m = max(M,[],3);
+    m_med = medfilt2(m,[5,5]);
+    rat = m./m_med;
+    idx_bad = find(rat<0.8 | rat > 1.2);
+    length(idx_bad)
+    [y_bad,x_bad] = ind2sub([height,width],idx_bad);
+    
+    for i = 1:length(y_bad) 
+        x_neighbors = max(min(x_bad(i) + (-1:1),width),1);
+        y_neighbors = max(min(y_bad(i) + (-1:1),height),1);
+        M_neighbors = reshape(M(y_neighbors,x_neighbors,:),...
+            length(x_neighbors)*length(y_neighbors),num_frames);
+        M(y_bad(i),x_bad(i),:) = median(M_neighbors,1);
+    end
+    
     % Spatial smoothing
     if opts.spat_medfilt_enabled || opts.spat_linfilt_enabled
         dispfun(sprintf('%s: Beginning spatial filtering...\n', datestr(now)),opts.verbose~=0);
@@ -163,7 +179,31 @@ if ~skip_svd
        
         dispfun(sprintf('%s: Finished smoothing in time.\n',datestr(now)),opts.verbose~=0);
     end
-   
+    
+    %%% NEW: obtain pixels to keep
+%     filt_len = 30;
+%     tmp = conv2(1,ones(1,filt_len),M,'same') / filt_len;
+%     tmp = exp(-abs((M-tmp) ./ tmp));
+%     tmp = reshape(tmp,height,width,num_frames);
+%     m = medfilt2(mean(tmp,3));
+%     mask_retained = m>quantile(m(:),0.4);
+%     clear tmp;
+
+%     localMean_tmp = conv2(1,ones(1,30),M,'same') / 30;
+%     M = conv2(1,ones(1,30),M.^2,'same') / 30 ;
+%     M = M- localMean_tmp.^2;
+%     M = max(M,0);
+%     M = sqrt(M);
+%     M = localMean_tmp./M;
+%     clear localMean_tmp;    
+%     if opts.trim_pixels
+%         M = reshape(M, height,width, num_frames);
+%         max_proj = max(M,[],3);
+%         max_proj = medfilt2(max_proj,[5,5]);
+%         mask_retained = max_proj>quantile(max_proj(:),opts.trim_pixels);
+%         M = reshape(M, num_pixels, num_frames);
+%     end
+    
     % Randomized subsampling in time (from Drineas et.al.)
     if strcmp(opts.subsample_time,'random')
         p = zeros(1,num_frames);
@@ -230,7 +270,7 @@ for idx_partition_x = 1:npx
             if num_partitions == 1
                 clear M;
             end
-
+                        
             % Make M_small zero mean in the spatial dimension
             mean_M_small = mean(M_small,1);
 
@@ -312,11 +352,11 @@ filters = reshape(F,height,width,size(F,2)); %#ok<*NASGU>
 
 % Some statistics
 stats.inv_qualities = inv_qualities;
-val = goodness_trace(traces);
+val = 0;%goodness_trace(traces);
 stats.goodness_traces = val;
 
 info.type = 'SS';
-info.version = '20151105.0.2.0';
+info.version = '20151105.0.1.1';
 info.num_pairs = size(F,2);
 info.movie_source = movie_source;
 info.stats = stats;
@@ -356,56 +396,79 @@ function F = wiener(G,conv_len)
 end
 
 function [filters_out,idx_retained] = remove_duplicate_cells(filters_in,cent_cells,hw)
-% Outputs a cell array with indices to be merged
-
     h = hw(1);w = hw(2);
-    thresh_A = 0.65;
     num_cells = size(filters_in,2);
-    masks = filters_in>0;  
-    cell_sizes = sum(masks,1);
-    
-    % Mask for closeby cells
-    dist_thresh = max(h,w)/40;
-    dist_centroids = compute_dist_matrix(cent_cells);
-    dist_centroids = dist_centroids < dist_thresh; % Retain only the closeby cells
-    
-    % Find overlap between closeby cells
-    A = zeros(num_cells,num_cells); % Weighted adjacency matrix
-    for y = 1:num_cells-1
-        for x = y+1:num_cells
-            if dist_centroids(y,x)>0
-                A(y,x) = comput_overlap(masks(:,y),masks(:,x));
-            end
-        end
-    end
-    
-    % Apply threshold to binarize A
-    A = A > thresh_A;
-    A = sparse(double(A+A'+eye(num_cells)));
-    
-    % do multiple DFSs to get connected components
+    filters_out = reshape(filters_in,h,w,num_cells);
     idx_elim = [];
-    idx_visit = 1:num_cells;
-    while true
-        idx_this = idx_visit(1);
-        [d,~,~,~] = dfs(A,idx_this);
-        cc_this = find(d'>-1);
-        if length(cc_this)>1 
-            these_sizes = cell_sizes(cc_this);
-            [~,idx_sort] = sort(these_sizes,'descend');
-            
-            % Keep the biggest one only
-            idx_elim = [idx_elim,cc_this(idx_sort(2:end))];
-        end
-        idx_visit = setdiff(idx_visit,cc_this);
-        if isempty(idx_visit)
-            break;
+    for i = 1:num_cells
+        y_profile = sum(filters_out(:,:,i),2)';
+        y_n = y_profile(y_profile>0);
+        y_peak = max(y_profile);
+        x_profile = sum(filters_out(:,:,i),1);
+        x_n = x_profile(x_profile>0);
+        x_peak = max(x_profile);
+        if (x_n(end)>x_peak/5 || x_n(1)>x_peak/5 || y_n(end)>y_peak/5 || y_n(1)>y_peak/5)...
+                && ~any([y_profile([1,end]),x_profile([1,end])])
+            idx_elim = [idx_elim,i];
         end
     end
-    filters_out = filters_in;
-    filters_out(:,idx_elim) = [];
+    filters_out(:,:,idx_elim) = [];
     idx_retained = setdiff(1:num_cells,idx_elim);
+    num_cells_retained = length(idx_retained);
+    filters_out = reshape(filters_out,h*w,num_cells_retained);
 end
+% function [filters_out,idx_retained] = remove_duplicate_cells(filters_in,cent_cells,hw)
+% % Outputs a cell array with indices to be merged
+% 
+%     h = hw(1);w = hw(2);
+%     thresh_A = 0.75;
+%     num_cells = size(filters_in,2);
+%     thresh_filters = 0.3*max(filters_in,[],1);    
+%     masks = bsxfun(@gt,filters_in,thresh_filters);  
+%     cell_sizes = sum(masks,1);
+%     
+%     % Mask for closeby cells
+%     dist_thresh = max(h,w)/40;
+%     dist_centroids = compute_dist_matrix(cent_cells);
+%     dist_centroids = dist_centroids < dist_thresh; % Retain only the closeby cells
+%     
+%     % Find overlap between closeby cells
+%     A = zeros(num_cells,num_cells); % Weighted adjacency matrix
+%     for y = 1:num_cells-1
+%         for x = y+1:num_cells
+%             if dist_centroids(y,x)>0
+%                 A(y,x) = comput_overlap(masks(:,y),masks(:,x));
+%             end
+%         end
+%     end
+%     
+%     % Apply threshold to binarize A
+%     A = A > thresh_A;
+%     A = sparse(double(A+A'+eye(num_cells)));
+%     
+%     % do multiple DFSs to get connected components
+%     idx_elim = [];
+%     idx_visit = 1:num_cells;
+%     while true
+%         idx_this = idx_visit(1);
+%         [d,~,~,~] = dfs(A,idx_this);
+%         cc_this = find(d'>-1);
+%         if length(cc_this)>1 
+%             these_sizes = cell_sizes(cc_this);
+%             [~,idx_sort] = sort(these_sizes,'descend');
+%             
+%             % Keep the biggest one only
+%             idx_elim = [idx_elim,cc_this(idx_sort(2:end))];
+%         end
+%         idx_visit = setdiff(idx_visit,cc_this);
+%         if isempty(idx_visit)
+%             break;
+%         end
+%     end
+%     filters_out = filters_in;
+%     filters_out(:,idx_elim) = [];
+%     idx_retained = setdiff(1:num_cells,idx_elim);
+% end
 
 function overlap = comput_overlap(mask1, mask2)
     intrsct = nnz(mask1 & mask2);
