@@ -137,8 +137,8 @@ function [Q,goodness_sigs] = extract_sources(U,max_num)
     
     % Statistics for debugging 
     % 1:is_good , 2:one_norm , 3-4:idx , 5-6:max_loc , 7-8:centroid
-    % 9:cell_size , 10:#pixels left to search
-    debug_stats = zeros(max_num,10);
+    % 9:cell_size , 10:#pixels left to search 11:neighbor_one_norms
+    debug_stats = zeros(max_num,11);
     
     while true        
         w_count = w_count+1;
@@ -167,7 +167,7 @@ function [Q,goodness_sigs] = extract_sources(U,max_num)
         %old
         goodness_sweep = sum(abs(sigs_sweep),1);
         
-        [goodness_sig,best_idx] = min(goodness_sweep); 
+        [goodness_sig,best_idx] = min(goodness_sweep);
         
         debug_stats(w_count,2) = goodness_sig/sqrt(N);
         
@@ -177,6 +177,31 @@ function [Q,goodness_sigs] = extract_sources(U,max_num)
         [~,idx] = max(sig_this);
         [sub_max_y,sub_max_x] = ind2sub([h,w],idx_kept(idx));
         debug_stats(w_count,[5,6]) = [sub_max_x,sub_max_y];
+        
+        % Calculate the signal goodness if neighbors of max-location were
+        % selected
+        idx_neighbors = [];
+        for x = -1:1
+            for y = -1:1
+                if  (x+y~=0)% only upper,lower,left,right
+                    neighbor = [sub_max_y+y,sub_max_x+x];
+                    if ~any(neighbor==0) && ~any(neighbor==h) && ~any(neighbor==w) %check if in range
+                        idx = sub2ind([h,w],neighbor(1),neighbor(2));
+                        idx_trimmed = find(idx_kept==idx);
+                        if idx_trimmed>0
+                            idx_neighbors(end+1) = idx_trimmed;
+                        end
+                    end
+                end
+            end
+        end
+        q_neighbor = U(idx_neighbors,1:idx_stop(best_idx))';
+        norm_q_neighbor = sqrt(sum(q_neighbor.^2,1));
+        q_neighbor = bsxfun(@times,q_neighbor,1./norm_q_neighbor);
+        dum = U(:,1:idx_stop(best_idx))*q_neighbor;
+        one_norms_neighbors = sum(abs(dum),1)/sqrt(N);
+        debug_stats(w_count,11) = max(one_norms_neighbors);
+        debug_stats(w_count,12) = mean(one_norms_neighbors);
         
         % Check if it overlaps significantly with any other signal
         sig_temp = zeros(h*w,1);
@@ -199,9 +224,9 @@ function [Q,goodness_sigs] = extract_sources(U,max_num)
             if ~any(overlaps>0.65)
                 debug_stats(w_count,1) = 2;
                 acc = acc+1;
-                S(sig_temp>0,acc) = sig_temp(sig_temp>0); 
-                Q(:,acc) = q_sweep(:,best_idx);            
-                goodness_sigs(acc) = goodness_sig;                
+                S(sig_temp>0,acc) = sig_temp(sig_temp>0);
+                Q(:,acc) = q_sweep(:,best_idx);        
+                goodness_sigs(acc) = goodness_sig;           
                 idx_possible = setdiff(idx_possible,pixels_this);
                 
                 debug_stats(w_count,10) = length(idx_possible);
@@ -228,6 +253,9 @@ function [Q,goodness_sigs] = extract_sources(U,max_num)
     Q = bsxfun(@times,Q,1./norms_Q);
     goodness_sigs = goodness_sigs(1:acc);
     debug_stats = debug_stats(1:w_count,:);
+    %sort debug_stats by their inv_qualities
+    [~,idx] = sort(debug_stats(:,2),'ascend');
+    debug_stats = debug_stats(idx,:);
     save('debug_stats','debug_stats');
     dispfun(sprintf('\t\t\t Done. Extracted %d potential cells in total. \n',acc),verb2);
 end
