@@ -183,9 +183,9 @@ function [Q,goodness_sigs] = extract_sources(U,max_num)
         idx_neighbors = [];
         for x = -1:1
             for y = -1:1
-                if  (x+y~=0)% only upper,lower,left,right
+                if  (x~=0) || (y~=0)
                     neighbor = [sub_max_y+y,sub_max_x+x];
-                    if ~any(neighbor==0) && ~any(neighbor==h) && ~any(neighbor==w) %check if in range
+                    if ~any(neighbor<=0) && ~any(neighbor>h) && ~any(neighbor>w) %check if in range
                         idx = sub2ind([h,w],neighbor(1),neighbor(2));
                         idx_trimmed = find(idx_kept==idx);
                         if idx_trimmed>0
@@ -195,13 +195,15 @@ function [Q,goodness_sigs] = extract_sources(U,max_num)
                 end
             end
         end
-        q_neighbor = U(idx_neighbors,1:idx_stop(best_idx))';
-        norm_q_neighbor = sqrt(sum(q_neighbor.^2,1));
-        q_neighbor = bsxfun(@times,q_neighbor,1./norm_q_neighbor);
-        dum = U(:,1:idx_stop(best_idx))*q_neighbor;
-        one_norms_neighbors = sum(abs(dum),1)/sqrt(N);
-        debug_stats(w_count,11) = max(one_norms_neighbors);
-        debug_stats(w_count,12) = mean(one_norms_neighbors);
+       % if ~isempty(idx_neighbors)
+            q_neighbor = U(idx_neighbors,1:idx_stop(best_idx))';
+            norm_q_neighbor = sqrt(sum(q_neighbor.^2,1));
+            q_neighbor = bsxfun(@times,q_neighbor,1./norm_q_neighbor);
+            dum = U(:,1:idx_stop(best_idx))*q_neighbor;
+            one_norms_neighbors = sum(abs(dum),1)/sqrt(N);
+            debug_stats(w_count,11) = max(one_norms_neighbors);
+            debug_stats(w_count,12) = mean(one_norms_neighbors);
+    %    end
         
         % Check if it overlaps significantly with any other signal
         sig_temp = zeros(h*w,1);

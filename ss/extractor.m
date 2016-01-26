@@ -19,8 +19,8 @@ if ~isfield(opts,'spat_linfilt_enabled'), opts.spat_linfilt_enabled=0; end
 if ~isfield(opts,'spat_medfilt_halfwidth'), opts.spat_medfilt_halfwidth=1; end
 if ~isfield(opts,'spat_linfilt_halfwidth'), opts.spat_linfilt_halfwidth=4; end
 if ~isfield(opts,'temporal_smooth_enabled'), opts.temporal_smooth_enabled=0; end
-if ~isfield(opts,'temporal_smooth_filter'), opts.temporal_smooth_filter='gauss'; end
-if ~isfield(opts,'temporal_smooth_len'), opts.temporal_smooth_len=21; end
+if ~isfield(opts,'temporal_smooth_filter'), opts.temporal_smooth_filter='step'; end
+if ~isfield(opts,'temporal_smooth_len'), opts.temporal_smooth_len=5; end
 if ~isfield(opts,'trim_pixels'), opts.trim_pixels = 0; end
 if ~isfield(opts,'subsample_time'), opts.subsample_time = 'off'; end
 if ~isfield(opts,'subsample_time_ratio'), opts.subsample_time_ratio = 0.5; end
@@ -80,17 +80,7 @@ if ~skip_svd
     
     [height, width, num_frames] = size(M);
     num_pixels = height * width;
-    
-    %Uniform subsampling in time
-    if strcmp(opts.subsample_time,'uniform')
-        samp_freq = floor(1/opts.subsample_time_ratio);
-        idx_end = floor((num_frames-1)/samp_freq)*samp_freq+1;
-        idx_keep = 1:samp_freq:idx_end;
-        idx_trash = setdiff(1:num_frames,idx_keep);
-        M(:,:,idx_trash) = [];
-        num_frames = length(idx_keep);
-    end
-    
+       
     % Median filtering for artifact removal (only bad pixels)
     m = max(M,[],3);
     m_med = medfilt2(m,[5,5]);
@@ -141,17 +131,18 @@ if ~skip_svd
 
     % Temporal smoothing
     if opts.temporal_smooth_enabled
-        if strcmp(opts.subsample_time,'uniform') % Subsampling was done before
-            filt_len = ceil(opts.temporal_smooth_len*opts.subsample_time_ratio);
-        else
-            filt_len = opts.temporal_smooth_len;
-        end
+
+        filt_len = opts.temporal_smooth_len; %shorthand
+
         dispfun(sprintf('%s: Smoothing in time...\n',datestr(now)),opts.verbose~=0);
         if strcmp(opts.temporal_smooth_filter,'gauss')
             idx_filt = -floor(filt_len/2):floor(filt_len/2);
             filt = normpdf(idx_filt,0,2);
             filt = filt/sum(filt);
             mem_factor = 2; % Need this x movie size for gauss filter
+        elseif strcmp(opts.temporal_smooth_filter,'step')
+            filt = ones(1,filt_len)/filt_len;
+            mem_factor = 2; % Need this x movie size for step filter
         else
             mem_factor = 5; % Need this x movie size for wiener filter
         end
@@ -160,7 +151,7 @@ if ~skip_svd
         blocksize_M = floor(usable_mem_CPU/4 / num_frames /mem_factor);
         
         if blocksize_M >= num_pixels
-           if strcmp(opts.temporal_smooth_filter,'gauss')
+           if any(strcmp(opts.temporal_smooth_filter,{'gauss','step'}))
                M= conv2(1,filt,M,'same');
            else
                M = wiener(M,filt_len);
@@ -203,12 +194,19 @@ if ~skip_svd
 %         mask_retained = max_proj>quantile(max_proj(:),opts.trim_pixels);
 %         M = reshape(M, num_pixels, num_frames);
 %     end
-    
+
+    %Uniform subsampling in time
+    if strcmp(opts.subsample_time,'uniform')
+        samp_freq = floor(1/opts.subsample_time_ratio);
+        idx_end = floor((num_frames-1)/samp_freq)*samp_freq+1;
+        idx_keep = 1:samp_freq:idx_end;
+        M = M(:,idx_keep);
+        num_frames = length(idx_keep);
     % Randomized subsampling in time (from Drineas et.al.)
-    if strcmp(opts.subsample_time,'random')
+    elseif strcmp(opts.subsample_time,'random')
         p = zeros(1,num_frames);
-        for i =1:num_frames
-            p(i) = sum(M(:,i).^2);
+        for j =1:num_frames
+            p(j) = sum(M(:,j).^2);
         end
         p = p/sum(p);
         num_keep = ceil(opts.subsample_time_ratio*num_frames);
@@ -335,6 +333,7 @@ clear M;
 dispfun(sprintf('%s: Loading the movie again for extracting temporal traces...\n',...
     datestr(now)),opts.verbose~=0);
 M = load_movie_from_hdf5(movie_source,opts.movie_dataset);
+num_frames = size(M,3); %num_frames might have changed
 M = reshape(M,height*width,num_frames);
 
 dispfun(sprintf('%s: Extracting traces...\n',datestr(now)),opts.verbose~=0);
