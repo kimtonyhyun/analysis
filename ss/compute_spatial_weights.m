@@ -195,7 +195,7 @@ function [Q,goodness_sigs] = extract_sources(U,max_num)
                 end
             end
         end
-       % if ~isempty(idx_neighbors)
+       if ~isempty(idx_neighbors)
             q_neighbor = U(idx_neighbors,1:idx_stop(best_idx))';
             norm_q_neighbor = sqrt(sum(q_neighbor.^2,1));
             q_neighbor = bsxfun(@times,q_neighbor,1./norm_q_neighbor);
@@ -203,7 +203,7 @@ function [Q,goodness_sigs] = extract_sources(U,max_num)
             one_norms_neighbors = sum(abs(dum),1)/sqrt(N);
             debug_stats(w_count,11) = max(one_norms_neighbors);
             debug_stats(w_count,12) = mean(one_norms_neighbors);
-    %    end
+       end
         
         % Check if it overlaps significantly with any other signal
         sig_temp = zeros(h*w,1);
