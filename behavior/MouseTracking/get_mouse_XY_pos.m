@@ -52,6 +52,10 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
                     else
                         error('trialAware input must be .txt file.');
                     end
+                case 'threshold'
+                    threshold_provided = 1;
+                    thresh = varargin{k+1};
+                    fprintf('Threshold for detection provided')
             end
         end
     end
@@ -129,7 +133,10 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
             end
            
             % Find the mouse blob using findMouse helper function
-            thresh = 20; % assumes that black mouse has RGB values <20
+            if threshold_provided
+            else
+                thresh = 20; % assumes that black mouse has RGB values <20
+            end
             [final_image,s] = findMouse(bg_image,image,thresh);
             area_vector = [s.Area];
             length_vector = [s.MinorAxisLength];
