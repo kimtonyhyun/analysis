@@ -79,8 +79,8 @@ frame_chunk_size = 2500;
 if use_projection || use_automin
     ref_frame = zeros(height, width);
     for i = 1:num_chunks
-        fprintf('%s: Reading frames %d to %d for minimum projection (out of %d)...\n',...
-            datestr(now), frame_chunks(i,1), frame_chunks(i,2), num_frames);
+        fprintf('%s: Reading frames %d to %d for %s projection (out of %d)...\n',...
+            datestr(now), frame_chunks(i,1), frame_chunks(i,2), projection_type, num_frames);
         
         chunk_start = frame_chunks(i,1);
         chunk_count = frame_chunks(i,2) - frame_chunks(i,1) + 1;
