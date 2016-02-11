@@ -38,7 +38,9 @@ num_frames = movie_size(3);
 
 % Begin crop processing
 %------------------------------------------------------------
-use_min_projection = 0;
+use_projection = 0;
+projection_type = 'min';
+
 use_automin = 0;
 
 % Optional specification of the cropping ROI
@@ -47,7 +49,8 @@ y_bounds = [];
 if ~isempty(varargin)
     for k = 1:length(varargin)
         if ischar(varargin{k})
-            switch lower(varargin{k})
+            vararg = lower(varargin{k});
+            switch vararg
                 case 'trim' % Trim borders
                     trim = varargin{k+1};
                     x_bounds = [1+trim width-trim];
@@ -56,13 +59,15 @@ if ~isempty(varargin)
                     bounds = varargin{k+1};
                     x_bounds = bounds(1:2);
                     y_bounds = bounds(3:4);
-                case 'min' % Compute minimum projection
-                    use_min_projection = 1;
+                case {'min', 'max'} % Compute projection image
+                    use_projection = 1;
+                    projection_type = vararg;
                 case 'automin'
                     % Automatically computes the crop bounds, assuming 
                     % TurboReg registration (fills borders with 0's) with
                     % rotation _disabled_
                     use_automin = 1;
+                    projection_type = 'min';
             end
         end
     end
@@ -71,11 +76,11 @@ end
 frame_chunk_size = 2500;
 [frame_chunks, num_chunks] = make_frame_chunks(num_frames, frame_chunk_size);
 
-if use_min_projection || use_automin
-    ref_frame = Inf*ones(height, width);
+if use_projection || use_automin
+    ref_frame = zeros(height, width);
     for i = 1:num_chunks
-        fprintf('%s: Reading frames %d to %d for minimum projection (out of %d)...\n',...
-            datestr(now), frame_chunks(i,1), frame_chunks(i,2), num_frames);
+        fprintf('%s: Reading frames %d to %d for %s projection (out of %d)...\n',...
+            datestr(now), frame_chunks(i,1), frame_chunks(i,2), projection_type, num_frames);
         
         chunk_start = frame_chunks(i,1);
         chunk_count = frame_chunks(i,2) - frame_chunks(i,1) + 1;
@@ -83,9 +88,26 @@ if use_min_projection || use_automin
         movie_chunk = h5read(movie_in, movie_dataset,...
                              [1 1 chunk_start],...
                              [height width chunk_count]);
-                         
-        movie_chunk_min = min(movie_chunk, [], 3);
-        ref_frame = min(ref_frame, movie_chunk_min);
+        
+        % Actual operation depends on projection type
+        switch projection_type
+            case 'min'
+                movie_chunk_min = min(movie_chunk, [], 3);
+                if (i == 1) % Need to initialize
+                    ref_frame = movie_chunk_min;
+                else
+                    ref_frame = min(ref_frame, movie_chunk_min);
+                end
+
+            case 'max'
+                movie_chunk_max = max(movie_chunk, [], 3);
+                if (i == 1)
+                    ref_frame = movie_chunk_max;
+                else
+                    ref_frame = max(ref_frame, movie_chunk_max);
+                end
+        end
+        
     end
     
     if use_automin
