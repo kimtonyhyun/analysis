@@ -1,9 +1,25 @@
 function p_mat = get_cell_types(ds,visualize)
+%
+% Finds cell types by testing population mean difference for trials in and out of
+% each defined category.
+% There are 14 categories (se sw en es c i se-c se-i sw-c sw-i en-c en-i
+% es-c es-i).
+%
+% Inputs:
+%   ds: DaySummary object
+%   visualize (optional): Set to 1 for plotting a detailed visualization
+%   for each cell that passes the test at level 1e-9 for at least one
+%   category.
+%
+% Output:
+%   p_mat : [# of classified cells]x[# of categories] array containing
+%   p-values for each cell and for each category.
+%
 
     idx_cells = find(ds.is_cell);
     num_cells = length(idx_cells);
     num_trials = ds.num_trials;
-    num_categ = 14; % There are 14 categories (se sw en es c i se-c se-i sw-c sw-i en-c en-i es-c es-i)
+    num_categ = 14; 
     feature_mat = zeros(num_trials,num_cells);
     categ_mat = zeros(num_trials,num_categ);
 
@@ -88,7 +104,7 @@ function p_mat = get_cell_types(ds,visualize)
         categ_strs = {'se','sw','en','es','c','i','se-c','se-i','sw-c','sw-i','en-c','en-i','es-c','es-i'};
         [ps,idx_categs] = min(p_mat,[],2);
 
-        alph = 1e-9; % Significant threshold (test level)
+        alph = 1e-9; % Significance threshold (test level)
 
         for i = 1:length(ps)
             if ps(i) < alph
