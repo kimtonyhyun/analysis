@@ -85,33 +85,27 @@ function [ centroids ] = get_mouse_XY_pos( behavior_source, varargin )
     fprintf('Done!\n');
     
     
-    % Show the background image, and ask the user to define a ROI over the
-    % main part of the maze
+    % Show the background image, and ask the user to define a polygonal
+    % ROI over the main part of the maze
     h_bg = imagesc(bg_image);
     axis image;
     colormap gray;
     title(sprintf('%s: Background image',...
                   strrep(behavior_source, '_', '\_')));
-    fprintf('%s: Please draw a rectangular ROI over the maze.\n', datestr(now));
-    fprintf('  Double click on the rectangle when done.\n');
+    fprintf('%s: Please draw a polygonal ROI over the maze.\n', datestr(now));
     
-    h_rect = imrect;
-    rect_params = round(wait(h_rect));
-    x_bounds = [rect_params(1) rect_params(1)+rect_params(3)-1];
-    y_bounds = [rect_params(2) rect_params(2)+rect_params(4)-1];
-    
-    x_bounds(1) = max(1, x_bounds(1));
-    x_bounds(2) = min(x_bounds(2), width);
-    y_bounds(1) = max(1, y_bounds(1));
-    y_bounds(2) = min(y_bounds(2), height);
-    
-    mask = 255*ones(height, width, 'uint8');
-    mask(y_bounds(1):y_bounds(2), x_bounds(1):x_bounds(2)) = 0;
+    h_poly = impoly;
+    mask_xy = getPosition(h_poly);
+    pixels_to_omit = ~poly2mask(mask_xy(:,1), mask_xy(:,2), height, width);
     
     masked_bg = bg_image;
-    masked_bg(logical(mask)) = 0;
+    masked_bg(pixels_to_omit) = 0;
     set(h_bg, 'CData', masked_bg);
     input('  Showing tracking ROI. Press enter to proceed >> ');
+    
+    % Convert the logical "off" pixels into max white in uint8, i.e. so
+    % that they will not be included in the detection of a black object.
+    pixels_to_omit = 255*uint8(pixels_to_omit);
     
     c_old = [0 0];
     
@@ -154,7 +148,7 @@ function [ centroids ] = get_mouse_XY_pos( behavior_source, varargin )
         for frame_idx = 1:size(video,3)
            
             image = video(:,:,frame_idx);
-            image = max(image, mask); % Masked regions are replaced with white
+            image = max(image, pixels_to_omit); % Masked regions are replaced with white
             
             if display_tracking
                 set(h,'CData',image);
