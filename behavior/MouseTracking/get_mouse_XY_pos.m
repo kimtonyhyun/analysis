@@ -55,7 +55,7 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
                 case 'threshold'
                     threshold_provided = 1;
                     thresh = varargin{k+1};
-                    fprintf('Threshold for detection provided')
+                    fprintf('Threshold for detection provided.\n')
             end
         end
     end
