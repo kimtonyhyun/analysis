@@ -34,6 +34,7 @@ function [ centroids ] = get_mouse_XY_pos( behavior_source, varargin )
     % Default settings
     display_tracking = 0;
     trial_aware = 0;
+    thresh = 20; % assumes that black mouse has RGB values <20
     
     % Check varargins
     if ~isempty(varargin)
@@ -53,6 +54,9 @@ function [ centroids ] = get_mouse_XY_pos( behavior_source, varargin )
                     else
                         error('trialAware input must be .txt file.');
                     end
+                case 'threshold'
+                    thresh = varargin{k+1};
+                    fprintf('Threshold for mouse detection provided.\n');                    
             end
         end
     end
@@ -156,7 +160,6 @@ function [ centroids ] = get_mouse_XY_pos( behavior_source, varargin )
             end
            
             % Find the mouse blob using findMouse helper function
-            thresh = 20; % assumes that black mouse has RGB values <20
             [final_image,s] = findMouse(bg_image,image,thresh);
             area_vector = [s.Area];
             length_vector = [s.MinorAxisLength];
