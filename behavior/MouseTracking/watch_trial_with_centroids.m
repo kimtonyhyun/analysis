@@ -1,9 +1,9 @@
-function watch_trial_with_centroids( movie, centroids_mat, trial, varargin )
+function watch_trial_with_centroids( movie, centroids_xy, trial, varargin )
 % Plays behavior video with centroid on top for specified trial
 % 
 % Input:
 %     movie: behavior video
-%     centroids_mat: position data from get_mouse_XY_pos
+%     centroids_xy: position data from get_mouse_XY_pos
 %     trial: matrix of trial(s) to watch, e.g. [1 4 5 8]
 %     varargin: plusmaze txt file, e.g. 'mouse7_day09_allo-south.txt' or
 %               trimmed/binned version
@@ -22,7 +22,7 @@ function watch_trial_with_centroids( movie, centroids_mat, trial, varargin )
         trial_indices = get_trial_frame_indices(trial_indices);
         trial_indices = [trial_indices(:,1) trial_indices(:,4)];
     else
-        [trial_indices,~] = find_start_end_of_trials(centroids_mat);
+        [trial_indices,~] = find_start_end_of_trials(centroids_xy);
     end
 
     % read in behavior movie
@@ -30,7 +30,7 @@ function watch_trial_with_centroids( movie, centroids_mat, trial, varargin )
     behavior_vid = VideoReader(movie);
     
     % load centroids
-    load(centroids_mat)
+    centroids = load(centroids_xy);
     
     % initialize plot
     figure;

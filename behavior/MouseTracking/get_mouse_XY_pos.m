@@ -1,4 +1,4 @@
-function [ centroids ] = get_mouse_XY_pos( movie, varargin )
+function [ centroids ] = get_mouse_XY_pos( behavior_source, varargin )
 % Extract the X,Y positions ( centroids ) of the mouse from the behavior
 %   video ( movie ), with live monitor option (specify 'displayTracking')
 %  
@@ -11,8 +11,7 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
 %       centroids = get_mouse_XY_pos('c9m7d08_ti2-sub.mp4','trialAware','c9m7d08_cr_ti2.txt');
 % 
 % Input:
-%   - movie: Behavior video (m4v); movie should be cropped (wavy curtain
-%   leads to fall centroids (haven't found another way to fix this)
+%   - behavior_source: Behavior video (e.g. mp4, m4v)
 %   - varargin:
 %     'displayTracking': Displays side-by-side of original movie and
 %           processing movie, along with centroid on each. blue * means good
@@ -21,7 +20,8 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
 %           trial boundary (to be reassigned same as next centroid)
 %     'trialAware','trial_indices.txt': If 'trialAware' and .txt file provided,
 %           will not use prev_centroid method at the trial boundaries to avoid
-%           bleed-through across trials
+%           bleed-through across trials (i.e. taking the position of the
+%           last frame -- in a previous trial -- when mouse is not detected).
 %
 % Returns matrix centroids where each row is an (x,y) coordinate of the
 %   mouse. 1st column = X, 2nd column = Y. Length of matrix =
@@ -32,7 +32,8 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
 % Updated 2015-03-10 Fori Wang
 
     % Default settings
-    display_tracking = 0; trial_aware = 0;
+    display_tracking = 0;
+    trial_aware = 0;
     
     % Check varargins
     if ~isempty(varargin)
@@ -56,9 +57,10 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
         end
     end
     
-    fprintf('Reading in behavior video...\n');
-    behavior_vid = VideoReader(movie);
+    fprintf('%s: Initializing behavior video... ', datestr(now));
+    behavior_vid = VideoReader(behavior_source);
     num_frames = behavior_vid.NumberofFrames;
+    fprintf('Done!\n');
 
     % initialize centroids
     centroids = zeros(num_frames,2);
@@ -71,19 +73,46 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
     chunk_size = 1000;
     frame_chunks = make_frame_chunks(num_frames,chunk_size);
     
-    % setup background image: average of 5000 frames
-    bg_vid = read(behavior_vid,[1 5000]);
+    % setup background image: average of N frames
+    num_frames_for_bg = 5000;
+    fprintf('%s: Reading %d frames for background image computation... ',...
+            datestr(now), num_frames_for_bg);
+    bg_vid = read(behavior_vid, [1 num_frames_for_bg]);
     bg_vid = squeeze(bg_vid(:,:,1,:)); % 3D movie stack
-%     bg_image = mean(bg_vid,4);
     bg_image = mean(bg_vid,3);
     bg_image = uint8(bg_image);
+    [height, width] = size(bg_image);
+    fprintf('Done!\n');
+    
+    
+    % Show the background image, and ask the user to define a polygonal
+    % ROI over the main part of the maze
+    h_bg = imagesc(bg_image);
+    axis image;
+    colormap gray;
+    title(sprintf('%s: Background image',...
+                  strrep(behavior_source, '_', '\_')));
+    fprintf('%s: Please draw a polygonal ROI over the maze.\n', datestr(now));
+    
+    h_poly = impoly;
+    mask_xy = getPosition(h_poly);
+    pixels_to_omit = ~poly2mask(mask_xy(:,1), mask_xy(:,2), height, width);
+    
+    masked_bg = bg_image;
+    masked_bg(pixels_to_omit) = 0;
+    set(h_bg, 'CData', masked_bg);
+    input('  Showing tracking ROI. Press enter to proceed >> ');
+    
+    % Convert the logical "off" pixels into max white in uint8, i.e. so
+    % that they will not be included in the detection of a black object.
+    pixels_to_omit = 255*uint8(pixels_to_omit);
     
     c_old = [0 0];
     
     for idx = 1:length(frame_chunks)
 
-        fprintf('  Processing frames %d to %d (%s)\n',...
-            frame_chunks(idx,1), frame_chunks(idx,2), datestr(clock));
+        fprintf('%s: Processing frames %d to %d...\n',...
+            datestr(now), frame_chunks(idx,1), frame_chunks(idx,2));
 
         % read in all of the frames for the trial at the beginning
         frame_range = frame_chunks(idx,:);
@@ -94,7 +123,6 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
             
             % plot original image on the left
             subplot(121);
-%             image = video(:,:,:,1);
             image = video(:,:,1);
             h = imagesc(image);
             title(sprintf('Original: Frames %d - %d',...
@@ -117,12 +145,11 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
             l = plot(0,0,'k*');
         end
 
-%         for frame_idx = 1:size(video,4)
         for frame_idx = 1:size(video,3)
            
-           % Update original image CData
-%             image = video(:,:,:,frame_idx);
             image = video(:,:,frame_idx);
+            image = max(image, pixels_to_omit); % Masked regions are replaced with white
+            
             if display_tracking
                 set(h,'CData',image);
                 pause(0.00001);
@@ -188,5 +215,16 @@ function [ centroids ] = get_mouse_XY_pos( movie, varargin )
     
     centroids(1,:)=centroids(2,:); %get rid of c_old [0 0] start
 
-end
+    % Save centroids into output text file, with "xy" extension
+    [~, stem, ~] = fileparts(behavior_source);
+    savename = sprintf('%s.xy', stem);
+    fprintf('%s: Saving tracking results to "%s"... ', datestr(now), savename);
+    fid = fopen(savename, 'w');
+    for k = 1:size(centroids,1)
+        fprintf(fid, '%.1f %.1f\n', centroids(k,1), centroids(k,2));
+    end
+    fclose(fid);
+    fprintf('Done!\n');
+    
+end % get_mouse_XY_pos
 
