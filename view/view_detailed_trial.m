@@ -130,6 +130,14 @@ end
         colormap gray;
         title(sprintf('Frame 1 of %d', num_trials_in_frame));
         
+        % If tracking data loaded, overlay the positional information
+        if (ds.is_tracking_loaded)
+            hold on;
+            centroids = ds.trials(trial_idx).centroids;
+            plot(centroids(:,1), centroids(:,2), '.-');
+            htrack = plot(centroids(1,1), centroids(1,2), 'ro');
+        end
+        
         function start_drag(~, ~)
             set(f, 'WindowButtonMotionFcn', @update_frame);
         end
@@ -152,6 +160,11 @@ end
             
             subplot(3,4,[7 8 11 12]);
             title(sprintf('Frame %d of %d', sel_frame, num_trials_in_frame));
+            
+            if (ds.is_tracking_loaded)
+                centroid = ds.trials(trial_idx).centroids(sel_frame, :);
+                set(htrack, 'XData', centroid(1), 'YData', centroid(2));
+            end
         end % update_frame
     end % draw_cell_trial
 

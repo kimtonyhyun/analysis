@@ -22,6 +22,8 @@ classdef DaySummary < handle
         
         trial_indices
         full_num_frames
+        
+        is_tracking_loaded
     end
     
     properties (Access = private)
@@ -75,11 +77,14 @@ classdef DaySummary < handle
             num_trials = size(trial_indices, 1);
             turns = cell(num_trials, 1);
             traces = cell(num_trials, 1);
+            centroids = cell(num_trials, 1);
             for k = 1:num_trials
                 trial_frames = trial_indices(k,1):...
                                trial_indices(k,end);
+                num_frames_in_trial = length(trial_frames);
                 traces{k} = data.traces(trial_frames, :)';
                 turns{k} = obj.compute_turn(loc_info{k,1}, loc_info{k,3});
+                centroids{k} = zeros(num_frames_in_trial, 2);
             end
             
             obj.num_trials = num_trials;
@@ -91,7 +96,8 @@ classdef DaySummary < handle
                 'correct', cellfun(@strcmp, loc_info(:,2), loc_info(:,3), 'UniformOutput', false),...
                 'turn',  turns,...
                 'time',  num2cell(trial_durations),...
-                'traces', traces);
+                'traces', traces,...
+                'centroids', centroids);
             
             % Parse cell data
             %------------------------------------------------------------
@@ -159,6 +165,7 @@ classdef DaySummary < handle
                        
             % Other initialization
             obj.behavior_vid = [];
+            obj.is_tracking_loaded = false;
         end
         
         % Helper functions
@@ -354,6 +361,19 @@ classdef DaySummary < handle
             trial_frames = obj.trial_indices(trial_idx, [1 end]); % [Start end]
             Mb = obj.behavior_vid.read(trial_frames);
             Mb = squeeze(Mb(:,:,1,:)); % Movie is actually grayscale!
+        end
+        
+        % Load tracking data
+        %------------------------------------------------------------
+        function load_tracking(obj, tracking_source)
+            centroids = load(tracking_source);
+            for k = 1:obj.num_trials
+                trial_indices = obj.trial_indices(k,1):obj.trial_indices(k,end);
+                obj.trials(k).centroids = centroids(trial_indices, :);
+            end
+            fprintf('%s: Loaded tracking data from "%s"\n',...
+                datestr(now), tracking_source);
+            obj.is_tracking_loaded = true;
         end
     end
 end
