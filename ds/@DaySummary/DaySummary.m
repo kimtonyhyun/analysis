@@ -1,7 +1,13 @@
 % Summary of PlusMaze data for a single day.
 %
 % Inputs:
-%   plusmaze_txt: Name of the PlusMaze output text file.
+%   ds_source: Two possibilities:
+%       1) Plus maze text file
+%       2) Struct containing the following fields:
+%           - s.maze: Path to plus maze text file
+%           - s.behavior: Path to behavioral video (e.g. mp4 or m4v)
+%           - s.tracking: Path to tracking text file (*.xy)
+%
 %   rec_dir: Directory containing 
 %       - Filters and traces in a "rec_*.mat" file (required)
 %       - Classification results in a "class_*.txt" file (optional)
@@ -33,7 +39,7 @@ classdef DaySummary < handle
     end
         
     methods
-        function obj = DaySummary(plusmaze_txt, rec_dir, varargin)
+        function obj = DaySummary(ds_source, rec_dir, varargin)
             % Handle optional input
             exclude_probe_trials = 0;
             for k = 1:length(varargin)
@@ -45,13 +51,19 @@ classdef DaySummary < handle
                 end
             end
             
-            % Parse trial metadata
+            % Check if DaySummary session data is provided as a struct
             %------------------------------------------------------------
-            [trial_indices, loc_info, trial_durations] =...
-                parse_plusmaze(plusmaze_txt); %#ok<*PROP>
+            if isstruct(ds_source)
+                plusmaze_txt = ds_source.maze;
+            else
+                plusmaze_txt = ds_source;
+            end
+            
+            % Parse trial metadata
+            [trial_indices, loc_info, trial_durations] = parse_plusmaze(plusmaze_txt); %#ok<*PROP>
             fprintf('%s: Loaded trial metadata from %s\n', datestr(now), plusmaze_txt);
             
-            % Load data
+            % Load cell data (i.e. filters & traces)
             %------------------------------------------------------------
             data_source = get_most_recent_file(rec_dir, 'rec_*.mat');
             data = load(data_source);
@@ -65,6 +77,9 @@ classdef DaySummary < handle
             assert(size(data.traces,1) == obj.full_num_frames,...
                 'Error: Length of traces does not match trial index table!');
             
+            % Optional exclusion of probe trials. Effectively, we are
+            % "deleting" the lines of the plus maze text file that
+            % correspond to probe trials.
             if (exclude_probe_trials)
                 is_probe = strcmp(loc_info(:,1), 'north') | ...
                            strcmp(loc_info(:,1), 'south');
@@ -74,6 +89,8 @@ classdef DaySummary < handle
                 trial_durations = trial_durations(~is_probe);
             end
             
+            % Parse TRIAL data
+            %------------------------------------------------------------
             num_trials = size(trial_indices, 1);
             turns = cell(num_trials, 1);
             traces = cell(num_trials, 1);
@@ -81,6 +98,7 @@ classdef DaySummary < handle
             for k = 1:num_trials
                 trial_frames = trial_indices(k,1):...
                                trial_indices(k,end);
+
                 num_frames_in_trial = length(trial_frames);
                 traces{k} = data.traces(trial_frames, :)';
                 turns{k} = obj.compute_turn(loc_info{k,1}, loc_info{k,3});
@@ -99,23 +117,22 @@ classdef DaySummary < handle
                 'traces', traces,...
                 'centroids', centroids);
             
-            % Parse cell data
+            % Parse CELL data
             %------------------------------------------------------------
             class = cell(obj.num_cells,1);
             
             images = squeeze(num2cell(data.filters, [1 2])); % images{k} is the 2D image of cell k
-            [height, width] = size(images{1});
             boundaries = cell(size(images));
             masks = cell(size(images));
             coms = cell(size(images)); % Center of mass
 
             fprintf('  Computing auxiliary spatial parameters...');
             tic;
+            [height, width] = size(images{1});
             for k = 1:obj.num_cells
                 boundary = compute_ic_boundary(images{k}, 0.3);
                 boundaries{k} = boundary{1}; % Keep only the longest boundary!
-                masks{k} = poly2mask(boundaries{k}(:,1), boundaries{k}(:,2),...
-                                     height, width);
+                masks{k} = poly2mask(boundaries{k}(:,1), boundaries{k}(:,2), height, width);
                 
                 % Compute the center of mass
                 masked_filter = masks{k}.*images{k};
@@ -134,6 +151,7 @@ classdef DaySummary < handle
                 'label', class);
             
             % Compute distances among all sources
+            %------------------------------------------------------------
             fprintf('  Computing distances between all sources...');
             tic;
             D = Inf*ones(obj.num_cells);
@@ -148,6 +166,7 @@ classdef DaySummary < handle
             fprintf(' Done (%.1f sec)\n', t);
             
             % Precompute cell map image, to avoid doing it each time
+            %------------------------------------------------------------
             [height, width] = size(obj.cells(1).im);
             ref_image = zeros(height, width);
             for k = 1:obj.num_cells
@@ -164,6 +183,7 @@ classdef DaySummary < handle
             end
                        
             % Other initialization
+            %------------------------------------------------------------
             obj.behavior_vid = [];
             obj.is_tracking_loaded = false;
         end
