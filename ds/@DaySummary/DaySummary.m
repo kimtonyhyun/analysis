@@ -59,7 +59,7 @@ classdef DaySummary < handle
                 plusmaze_txt = ds_source;
             end
             
-            % Parse trial metadata
+            % Read trial metadata
             [trial_indices, loc_info, trial_durations] = parse_plusmaze(plusmaze_txt); %#ok<*PROP>
             fprintf('%s: Loaded trial metadata from %s\n', datestr(now), plusmaze_txt);
             
@@ -89,7 +89,7 @@ classdef DaySummary < handle
                 trial_durations = trial_durations(~is_probe);
             end
             
-            % Parse TRIAL data
+            % Parse by TRIAL
             %------------------------------------------------------------
             num_trials = size(trial_indices, 1);
             turns = cell(num_trials, 1);
@@ -117,7 +117,7 @@ classdef DaySummary < handle
                 'traces', traces,...
                 'centroids', centroids);
             
-            % Parse CELL data
+            % Parse by CELL
             %------------------------------------------------------------
             class = cell(obj.num_cells,1);
             
@@ -186,6 +186,15 @@ classdef DaySummary < handle
             %------------------------------------------------------------
             obj.behavior_vid = [];
             obj.is_tracking_loaded = false;
+            
+            if isstruct(ds_source)
+                if isfield(ds_source, 'behavior')
+                    obj.load_behavior_movie(ds_source.behavior);
+                end
+                if isfield(ds_source, 'tracking')
+                    obj.load_tracking(ds_source.tracking);
+                end
+            end
         end
         
         % Helper functions
