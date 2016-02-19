@@ -3,10 +3,10 @@
 % Inputs:
 %   ds_source: Two possibilities:
 %       1) Plus maze text file
-%       2) Struct containing the following fields:
-%           - s.maze: Path to plus maze text file
-%           - s.behavior: Path to behavioral video (e.g. mp4 or m4v)
-%           - s.tracking: Path to tracking text file (*.xy)
+%       2) Struct 's' containing the following fields:
+%           - s.maze: Path to plus maze text file (required)
+%           - s.behavior: Path to behavioral video (optional; e.g. mp4)
+%           - s.tracking: Path to tracking text file (optional; *.xy)
 %
 %   rec_dir: Directory containing 
 %       - Filters and traces in a "rec_*.mat" file (required)
@@ -187,6 +187,7 @@ classdef DaySummary < handle
             obj.behavior_vid = [];
             obj.is_tracking_loaded = false;
             
+            % Load behavior video and tracking data if available
             if isstruct(ds_source)
                 if isfield(ds_source, 'behavior')
                     obj.load_behavior_movie(ds_source.behavior);
