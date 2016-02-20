@@ -59,7 +59,7 @@ num_expected_trials = length(expected_frames_per_trial);
 for i=1:num_files
     % Load recording
     %------------------------------------------------------------
-    fprintf('%d: File "%s"...\n', i, tifFiles(i).name);
+    fprintf('File "%s"...\n', tifFiles(i).name);
     tifName = fullfile(tifDir,tifFiles(i).name);
     
     if use_xml
@@ -99,7 +99,6 @@ end
 
 assert(trialCount == num_expected_trials,...
     '  Not all trials have been accounted for!');
-
 
 h5create(hdf5_filename,'/Params/TrimVals',[1 2],'Datatype','double');
 h5write(hdf5_filename,'/Params/TrimVals',trim);
