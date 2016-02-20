@@ -1,9 +1,8 @@
 function concatenateHDF5(tifDir, outputDir, hdf5Name, plusmazeName, trim, varargin)
-% Concatenates all tif files in the specified directory into a single
+% Concatenates all TIF files in the specified directory into a single
 % hdf5 file. The number of frames to be dropped from the beginning 
-% and end of each trial is set in 'trim'. Bad trials are removed (using the
-% plusmaze text file) and if frames were dropped during a good trial, the 
-% previous frame is used to fill the gap.
+% and end of each trial is set in 'trim'. Bad trials are identified using
+% the plusmaze text file, and are removed.
 %
 % Example arguments:
 % tifDir = '/Volumes/COHORT9/cohort9-herrin224/mouse5/day20_ego-right';
@@ -11,9 +10,6 @@ function concatenateHDF5(tifDir, outputDir, hdf5Name, plusmazeName, trim, vararg
 % hdf5Name = 'test.hdf5';
 % plusmazeName = 'mouse5_day20_ego-right.txt';
 % trim = [10,5];
-%
-% To Do: 
-% Write a more efficient method to replace dropped frames
 %
 
 use_xml = 1;
