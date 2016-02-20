@@ -15,17 +15,17 @@ function match_dual(dir1, dir2)
 
 % We take the frame counts from XML to be the ground truth (over TIF). This
 % way, we account for dropped frames in both 'dir1' and 'dir2'.
-frames1 = count_frames_in_xml(dir1);
-[frames2, xml_filenames2] = count_frames_in_xml(dir2);
+xml_frames1 = count_frames_in_xml(dir1);
+[xml_frames2, xml_filenames2] = count_frames_in_xml(dir2);
 
-frames1 = sum(frames1, 2); % Combine recorded and dropped frames
-frames2 = sum(frames2, 2);
+frames1 = sum(xml_frames1, 2); % Combine recorded and dropped frames
+frames2 = sum(xml_frames2, 2);
 
 num_files1 = length(frames1);
 num_files2 = length(frames2);
 
 assert(num_files1 == num_files2,...
-       'Error, number of TIF files in "%s" (%d) does not match "%s" (%d)!',...
+       'Error, number of XML/TIF files in "%s" (%d) does not match that in "%s" (%d)!',...
        dir1, num_files1, dir2, num_files2);
 num_files = num_files1;
 clear num_files1 num_files2;
@@ -44,29 +44,38 @@ fprintf('match_dual: WARNING! This function will modify TIF files in place ("%s"
 input('  Press enter to proceed >> ');
 
 % Begin editing of TIF files
+%------------------------------------------------------------
 for k = 1:num_files
     tif_filename2 = convert_extension(xml_filenames2{k}, 'tif');
-    
     mismatch = frame_mismatch(k);
-    if (mismatch ~= 0)
-        fprintf('%s: Editing file "%s" with %d extra frames...\n',...
-            datestr(now), tif_filename2, mismatch);
-        M_orig = load_movie_from_tif(tif_filename2, 'usexml'); % Dropped frames are corrected
+    
+    % We need to perform overwrite of TIF in 'dir2' if there is a mismatch
+    % against 'dir1', OR if there are dropped frames in the 'dir2' TIF.
+    if (mismatch ~= 0) || (xml_frames2(k,2) ~= 0)
+        fprintf('%s: Editing file "%s" with %d extra and %d dropped frames...\n',...
+            datestr(now), tif_filename2, mismatch, xml_frames(k,2));
+        M = load_movie_from_tif(tif_filename2, 'usexml'); % Dropped frames are corrected
+        
+        assert(size(M,3) == frames2(k),...
+            '  Unexpected number of frames! Error in dropped-frame corretion?');
         
         if (mismatch > 0)
             % File2 has extra frames. In this case, we chop off the extra
             % frames from the beginning of the trial.
-            M_repl = M_orig(:,:,(1+mismatch):end);
+            M = M(:,:,(1+mismatch):end);
         elseif (mismatch < 0)
             % File2 has fewer frames. In this case, we duplicate extra
             % frames at the end of the trial.
-            frame = M_orig(:,:,end);
+            frame = M(:,:,end);
             M_extra = repmat(frame, 1, 1, abs(mismatch));
-            M_repl = cat(3, M_orig, M_extra);
+            M = cat(3, M, M_extra);
         end
+        
+        assert(size(M,3) == frames1(k),...
+            '  Incorrect number of frames after adjustment!');
         
         % Replace TIF file!
         delete(tif_filename2);
-        save_movie_to_tif(M_repl, tif_filename2);
+        save_movie_to_tif(M, tif_filename2);
     end
 end
