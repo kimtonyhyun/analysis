@@ -28,8 +28,6 @@ for k = 1:length(varargin)
     end
 end
 
-[frame_indices, ~, ~] = parse_plusmaze(fullfile(tifDir,plusmazeName));
-
 list = dir(fullfile(tifDir,'*.tif'));
 num_files = length(list);
 
@@ -52,6 +50,7 @@ h5create(fullfile(outputDir,hdf5Name), movie_dataset, [Inf Inf Inf],...
 trialCount = 0;  % Number of trials saved to HDF5
 totalFrames = 0; % Number of frames saved to HDF5
 
+[frame_indices, ~, ~] = parse_plusmaze(fullfile(tifDir,plusmazeName));
 startFrames = frame_indices(:,1);
 testFrame = 1;
 
