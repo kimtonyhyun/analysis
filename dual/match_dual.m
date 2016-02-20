@@ -45,13 +45,13 @@ input('  Press enter to proceed >> ');
 
 % Begin editing of TIF files
 for k = 1:num_files
-    filename2 = convert_extension(xml_filenames2{k}, 'tif');
+    tif_filename2 = convert_extension(xml_filenames2{k}, 'tif');
     
     mismatch = frame_mismatch(k);
     if (mismatch ~= 0)
         fprintf('%s: Editing file "%s" with %d extra frames...\n',...
-            datestr(now), filename2, mismatch);
-        M_orig = load_movie_from_tif(filename2, 'usexml');
+            datestr(now), tif_filename2, mismatch);
+        M_orig = load_movie_from_tif(tif_filename2, 'usexml'); % Dropped frames are corrected
         
         if (mismatch > 0)
             % File2 has extra frames. In this case, we chop off the extra
@@ -66,7 +66,7 @@ for k = 1:num_files
         end
         
         % Replace TIF file!
-        delete(filename2);
-        save_movie_to_tif(M_repl, filename2);
+        delete(tif_filename2);
+        save_movie_to_tif(M_repl, tif_filename2);
     end
 end
