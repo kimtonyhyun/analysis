@@ -1,4 +1,4 @@
-function xml_frames = count_frames_in_xml(path_to_xml)
+function [xml_frames, xml_filenames] = count_frames_in_xml(path_to_xml)
 % Computes the number of frames contained in all Miniscope XML files
 %   of the specified directory. Gives a warning if the XML file is not
 %   matched by a corresponding RAW or TIF file.
@@ -14,15 +14,18 @@ function xml_frames = count_frames_in_xml(path_to_xml)
 
 xml_files = dir(fullfile(path_to_xml,'*.xml'));
 num_files = length(xml_files);
-xml_frames = zeros(num_files,2); % [Regular-frames Dropped-frames]
 fprintf('Found %d XML files in "%s"\n', num_files, path_to_xml);
+
+xml_frames = zeros(num_files,2); % [Recorded-frames Dropped-frames]
+xml_filenames = cell(num_files,1);
 
 total_frames = 0;
 total_dropped_frames = 0;
 for i = 1:num_files
     xml_filename = fullfile(path_to_xml, xml_files(i).name);
     xml_struct = parse_miniscope_xml(xml_filename);
-
+    xml_filenames{i} = xml_filename;
+    
     % Count frames
     num_frames = str2double(xml_struct.frames);
     num_dropped_frames = str2double(xml_struct.dropped_count);

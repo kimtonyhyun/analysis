@@ -4,16 +4,22 @@ function match_dual(dir1, dir2)
 % frame counts determined from 'dir1'.
 %
 % Inputs:
-%   - dir1: Directory containing TIF files from the "master" microscope.
-%           The TIF files in this directory will NOT be altered.
-%   - dir2: Directory containing TIF files from the "slave" microscope.
+%   - dir1: Directory containing XML/TIF files from the "master" microscope.
+%           Files in this directory will NOT be altered.
+%
+%   - dir2: Directory containing XML/TIF files from the "slave" microscope.
 %           WARNING: TIF files in this directory may be edited so that the
 %           frame counts align exactly to those in 'dir1'! Advice: Always
 %           make a copy of the source data before applying this function!
 %
 
-frames1 = count_frames_in_tif(dir1);
-[frames2, filenames2] = count_frames_in_tif(dir2);
+% We take the frame counts from XML to be the ground truth (over TIF). This
+% way, we account for dropped frames in both 'dir1' and 'dir2'.
+frames1 = count_frames_in_xml(dir1);
+[frames2, xml_filenames2] = count_frames_in_xml(dir2);
+
+frames1 = sum(frames1, 2); % Combine recorded and dropped frames
+frames2 = sum(frames2, 2);
 
 num_files1 = length(frames1);
 num_files2 = length(frames2);
@@ -34,17 +40,18 @@ xlabel(sprintf('Frame mismatch ("%s"-"%s")', dir2, dir1));
 ylabel('Number of instances');
 title(sprintf('Num file pairs=%d; Max mismatch=%d frames', num_files, max_mismatch));
 
-fprintf('match_tifs_dual: WARNING! This function will modify TIF files in place!\n');
-input('match_tifs_dual: Press enter to proceed >> ');
+fprintf('match_dual: WARNING! This function will modify TIF files in place ("%s")!\n', dir2);
+input('  Press enter to proceed >> ');
 
 % Begin editing of TIF files
 for k = 1:num_files
-    filename2 = filenames2{k};
+    filename2 = convert_extension(xml_filenames2{k}, 'tif');
+    
     mismatch = frame_mismatch(k);
     if (mismatch ~= 0)
         fprintf('%s: Editing file "%s" with %d extra frames...\n',...
             datestr(now), filename2, mismatch);
-        M_orig = load_movie(filename2);
+        M_orig = load_movie_from_tif(filename2, 'usexml');
         
         if (mismatch > 0)
             % File2 has extra frames. In this case, we chop off the extra
