@@ -48,12 +48,13 @@ input('  Press enter to proceed >> ');
 for k = 1:num_files
     tif_filename2 = convert_extension(xml_filenames2{k}, 'tif');
     mismatch = frame_mismatch(k);
+    dropped_frames = xml_frames2(k,2);
     
     % We need to perform overwrite of TIF in 'dir2' if there is a mismatch
     % against 'dir1', OR if there are dropped frames in the 'dir2' TIF.
-    if (mismatch ~= 0) || (xml_frames2(k,2) ~= 0)
+    if (mismatch ~= 0) || (dropped_frames ~= 0)
         fprintf('%s: Editing file "%s" with %d extra and %d dropped frames...\n',...
-            datestr(now), tif_filename2, mismatch, xml_frames(k,2));
+            datestr(now), tif_filename2, mismatch, dropped_frames);
         M = load_movie_from_tif(tif_filename2, 'usexml'); % Dropped frames are corrected
         
         assert(size(M,3) == frames2(k),...
