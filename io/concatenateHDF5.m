@@ -1,5 +1,4 @@
 function concatenateHDF5(tifDir,outputDir,hdf5Name,plusmazeName,trim)
-
 % Concatenates all tif files in the specified directory into a single
 % hdf5 file. The number of frames to be dropped from the beginning 
 % and end of each trial is set in 'trim'. Bad trials are removed (using the
@@ -18,21 +17,30 @@ function concatenateHDF5(tifDir,outputDir,hdf5Name,plusmazeName,trim)
 %
 
 [frame_indices, ~, ~] = parse_plusmaze(fullfile(tifDir,plusmazeName));
-startFrames = frame_indices(:,1);
 
 list = dir(fullfile(tifDir,'*.tif'));
 num_files = length(list);
 
+% Determine the image size and recording FPS
+%------------------------------------------------------------
 firstName = fullfile(tifDir,list(1).name);
 [rows,cols] = size(imread(firstName));
 
-totalFrames = 1;
+xmlName = convert_extension(firstName, 'xml');
+xmlData = parse_miniscope_xml(xmlName);
+frameRate = str2double(xmlData.fps);
 
+% Initialize output HDF5 datset
+movie_dataset = '/Data/Images';
 chunkSize = [rows cols 1];
-h5create(fullfile(outputDir,hdf5Name),'/Data/Images',[Inf Inf Inf],'ChunkSize',chunkSize,'Datatype','uint16');
-badTrial = 0;
-testFrames = startFrames(1,1);
+h5create(fullfile(outputDir,hdf5Name),movie_dataset,[Inf Inf Inf],'ChunkSize',chunkSize,'Datatype','uint16');
+
+% Indexing variables
 trialCount = 0;
+totalFrames = 0;
+
+startFrames = frame_indices(:,1);
+testFrames = startFrames(1,1);
 
 for i=1:num_files
     if(i ~= 1)
@@ -65,15 +73,15 @@ for i=1:num_files
     if (badTrial)
         fprintf('  %d: File "%s" skipped\n', i, list(i).name);
     else
-        %%% Add the good trial to the hdf5 file
+        % Add the good trial to the hdf5 file
         trialCount = trialCount+1;
-        tifName = fullfile(tifDir,list(i).name);
-        tifInfo = imfinfo(tifName);
-        tifFile = Tiff(tifName,'r');
-        oriFrames = length(tifInfo);
         
-        [~,name,~] = fileparts(tifName);
-        xmlName = [fullfile(tifDir,name),'.xml'];
+        % Read in the images
+        tifName = fullfile(tifDir,list(i).name);
+        imageStack = load_movie_from_tif(tifName);
+        oriFrames = size(imageStack, 3);
+        
+        xmlName = convert_extension(tifName, 'xml');
         xmlData = parse_miniscope_xml(xmlName);
         
         %%% Determine if frames were dropped by the miniscope during the
@@ -81,19 +89,9 @@ for i=1:num_files
         if(str2num(xmlData.dropped_count) ~= 0)
             droppedFrames = str2num(xmlData.dropped);
         else
-            numFrames = oriFrames;
             droppedFrames = 0;
         end
         
-        %%% Read in the images, trim the frames at the beginning and end 
-        %%% of the trial (set by the 'trim' argument), and downsample by the 
-        %%% 'downsmpFactor' argument
-        imageStack = zeros(rows,cols,oriFrames,'uint16');
-        for j=1:oriFrames
-            tifFile.setDirectory(j);
-            imageStack(:,:,j) = uint16(tifFile.read());
-        end
-
         %%% Replace any dropped frames with the frame immediately
         %%% preceeding it
         numDroppedFrames = 0;
@@ -110,12 +108,13 @@ for i=1:num_files
                 numDroppedFrames = numDroppedFrames+1;
             end
         end
-        finalImageStack = imageStack(:,:,trim(1)+1:end-trim(2));
+        
+        % Trim frames from the beginning and end
+        finalImageStack = imageStack(:,:,1+trim(1):end-trim(2));
         numFrames = size(finalImageStack,3);
         [dRows,dCols] = size(finalImageStack(:,:,1));
         
-        h5write(fullfile(outputDir,hdf5Name),'/Data/Images',finalImageStack,[1,1,totalFrames],[dRows,dCols,numFrames]);      
-               
+        h5write(fullfile(outputDir,hdf5Name),movie_dataset,finalImageStack,[1,1,1+totalFrames],[dRows,dCols,numFrames]);      
         fprintf('  %d: File "%s" stored\n', i, list(i).name);
         
         %%% Total frame count stored in hdf5 file
@@ -123,20 +122,13 @@ for i=1:num_files
         
         %%% Total frame count corresponding to behavior text file
         testFrames = testFrames+oriFrames+numDroppedFrames;
+        
         clear imageStack tifName tifInfo tifFile droppedFrames newImageStack
     end
 end
 
-[path,name,ext] = fileparts(list(1).name);
-xmlName = [fullfile(tifDir,name),'.xml'];
-xmlData = parse_miniscope_xml(xmlName);
-frameRate = str2num(xmlData.fps);
-
-%%% Remove the extra frame count needed to index the hdf5 file
-totalFrames = totalFrames-1;
-
-h5create(fullfile(outputDir,hdf5Name),'/Params/TrimVals',[1 2],'Datatype','uint16');
-h5write(fullfile(outputDir,hdf5Name),'/Params/TrimVals',uint16(trim));
+h5create(fullfile(outputDir,hdf5Name),'/Params/TrimVals',[1 2],'Datatype','double');
+h5write(fullfile(outputDir,hdf5Name),'/Params/TrimVals',trim);
 h5create(fullfile(outputDir,hdf5Name),'/Params/FrameRate',1,'Datatype','double');
 h5write(fullfile(outputDir,hdf5Name),'/Params/FrameRate',frameRate);
 
