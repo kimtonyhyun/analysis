@@ -81,32 +81,26 @@ for i=1:num_files
         imageStack = load_movie_from_tif(tifName);
         oriFrames = size(imageStack, 3);
         
+        % Check XML for dropped frames
         xmlName = convert_extension(tifName, 'xml');
         xmlData = parse_miniscope_xml(xmlName);
         
-        %%% Determine if frames were dropped by the miniscope during the
-        %%% trial
-        if(str2num(xmlData.dropped_count) ~= 0)
+        numDroppedFrames = str2double(xmlData.dropped_count);
+        if(numDroppedFrames ~= 0)
             droppedFrames = str2num(xmlData.dropped);
         else
-            droppedFrames = 0;
+            droppedFrames = [];
         end
         
         %%% Replace any dropped frames with the frame immediately
         %%% preceeding it
-        numDroppedFrames = 0;
-        if(droppedFrames ~= 0)
-            for j=1:length(droppedFrames)
-                fprintf('DroppedFrame: %i\n',droppedFrames(j));
-                droppedFrame = droppedFrames(j);
-                frontStack = imageStack(:,:,1:droppedFrame-1);
-                frontStack = cat(3,frontStack,imageStack(:,:,droppedFrame-1));
-                backStack = imageStack(:,:,droppedFrame:end);
-                newImageStack = cat(3,frontStack,backStack);
-                clear imageStack
-                imageStack = newImageStack;
-                numDroppedFrames = numDroppedFrames+1;
-            end
+        for j=1:length(droppedFrames)
+            fprintf('DroppedFrame: %i\n',droppedFrames(j));
+            droppedFrame = droppedFrames(j);
+            frontStack = imageStack(:,:,1:droppedFrame-1);
+            frontStack = cat(3,frontStack,imageStack(:,:,droppedFrame-1));
+            backStack = imageStack(:,:,droppedFrame:end);
+            imageStack = cat(3,frontStack,backStack);
         end
         
         % Trim frames from the beginning and end
@@ -133,3 +127,5 @@ h5create(fullfile(outputDir,hdf5Name),'/Params/FrameRate',1,'Datatype','double')
 h5write(fullfile(outputDir,hdf5Name),'/Params/FrameRate',frameRate);
 
 h5disp(fullfile(outputDir,hdf5Name));
+
+end % concatenateHDF5
