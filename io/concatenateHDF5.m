@@ -1,27 +1,21 @@
-function concatenateHDF5(tifDir,outputDir,hdf5Name,downsmpFactor,plusmazeName,trim)
+function concatenateHDF5(tifDir,outputDir,hdf5Name,plusmazeName,trim)
 
 % Concatenates all tif files in the specified directory into an
-% hdf5 file. The stored files are all downsampled by the factor set in 
-% 'downsmpFactor'. The number of frames to be dropped from the beginning 
+% hdf5 file. The number of frames to be dropped from the beginning 
 % and end of each trial is set in 'trim'. Bad trials are removed (using the
 % plusmaze text file) and if frames were dropped during a good trial, the 
-% previous frame is used to fill the gap. A new text file is produced
-% indicating the start and stop frames for each trial (as well as the gate
-% up/down frames, the direcitons of the trial and time to complete each
-% trial).
+% previous frame is used to fill the gap.
 %
 % Example arguments:
 % tifDir = '/Volumes/COHORT9/cohort9-herrin224/mouse5/day20_ego-right';
 % outputDir = '/Users/jmaxey/Documents/MATLAB/PreFrontal';
 % hdf5Name = 'test.hdf5';
-% downsmpFactor = 0.5;
 % plusmazeName = 'mouse5_day20_ego-right.txt';
 % trim = [10,5];
 %
 % To Do: 
 % Write a more efficient method to replace dropped frames
 %
-% 2015-02-03 Jessica Maxey
 
 [frame_indices,location_info,time] = parse_plusmaze(fullfile(tifDir,plusmazeName));
 startFrames = frame_indices(:,1);
@@ -36,9 +30,7 @@ totalFrames = 1;
 
 locLUT = {'north';'south';'east';'west'};
 
-downsmpRows = floor(rows*downsmpFactor);
-downsmpCols = floor(cols*downsmpFactor);
-chunkSize = [downsmpRows downsmpCols 1];
+chunkSize = [rows cols 1];
 h5create(fullfile(outputDir,hdf5Name),'/Data/Images',[Inf Inf Inf],'ChunkSize',chunkSize,'Datatype','uint16');
 h5create(fullfile(outputDir,hdf5Name),'/TrialInfo/Frames',[Inf,4],'ChunkSize',[1,4]);
 h5create(fullfile(outputDir,hdf5Name),'/TrialInfo/Locations',[Inf,3],'ChunkSize',[1,3],'Datatype','uint8');
@@ -101,19 +93,12 @@ for i=1:num_files
         %%% Read in the images, trim the frames at the beginning and end 
         %%% of the trial (set by the 'trim' argument), and downsample by the 
         %%% 'downsmpFactor' argument
-        imageStack = zeros(downsmpRows,downsmpCols,oriFrames,'uint16');
-        if(downsmpFactor == 1)
-            for j=1:oriFrames
-                tifFile.setDirectory(j);
-                imageStack(:,:,j) = uint16(tifFile.read());
-            end
-        else
-            for j=1:oriFrames
-                tifFile.setDirectory(j);
-                imageStack(:,:,j) = uint16(imresize(tifFile.read(),downsmpFactor,'bilinear'));
-            end
+        imageStack = zeros(rows,cols,oriFrames,'uint16');
+        for j=1:oriFrames
+            tifFile.setDirectory(j);
+            imageStack(:,:,j) = uint16(tifFile.read());
         end
-        
+
         %%% Replace any dropped frames with the frame immediately
         %%% preceeding it
 
@@ -182,8 +167,6 @@ h5create(fullfile(outputDir,hdf5Name),'/Params/NumCols',1,'Datatype','uint16');
 h5write(fullfile(outputDir,hdf5Name),'/Params/NumCols',uint16(dCols));
 h5create(fullfile(outputDir,hdf5Name),'/Params/TrimVals',[1 2],'Datatype','uint16');
 h5write(fullfile(outputDir,hdf5Name),'/Params/TrimVals',uint16(trim));
-h5create(fullfile(outputDir,hdf5Name),'/Params/DownsmpFactor',1,'Datatype','double');
-h5write(fullfile(outputDir,hdf5Name),'/Params/DownsmpFactor',downsmpFactor);
 h5create(fullfile(outputDir,hdf5Name),'/Params/FrameRate',1,'Datatype','double');
 h5write(fullfile(outputDir,hdf5Name),'/Params/FrameRate',frameRate);
 
