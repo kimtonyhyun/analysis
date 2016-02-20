@@ -1,6 +1,7 @@
-function match_tifs_dual(dir1, dir2)
+function match_dual(dir1, dir2)
 % Examine frame count synchronicity between simultaneously acquired
-% sessions in the PlusMaze experiment.
+% Miniscope recordings. Overwrite the TIF files in 'dir2' to match the
+% frame counts determined from 'dir1'.
 %
 % Inputs:
 %   - dir1: Directory containing TIF files from the "master" microscope.
