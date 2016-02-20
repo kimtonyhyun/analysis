@@ -1,190 +1,119 @@
-function concatenateHDF5(tifDir,outputDir,hdf5Name,downsmpFactor,plusmazeName,trim)
-
-% Concatenates all tif files in the specified directory into an
-% hdf5 file. The stored files are all downsampled by the factor set in 
-% 'downsmpFactor'. The number of frames to be dropped from the beginning 
-% and end of each trial is set in 'trim'. Bad trials are removed (using the
-% plusmaze text file) and if frames were dropped during a good trial, the 
-% previous frame is used to fill the gap. A new text file is produced
-% indicating the start and stop frames for each trial (as well as the gate
-% up/down frames, the direcitons of the trial and time to complete each
-% trial).
+function concatenateHDF5(tifDir, outputDir, hdf5Name, plusmazeName, trim, varargin)
+% Concatenates all TIF files in the specified directory into a single
+% hdf5 file. The number of frames to be dropped from the beginning 
+% and end of each trial is set in 'trim'. Bad trials are identified using
+% the plusmaze text file, and are removed.
 %
 % Example arguments:
 % tifDir = '/Volumes/COHORT9/cohort9-herrin224/mouse5/day20_ego-right';
 % outputDir = '/Users/jmaxey/Documents/MATLAB/PreFrontal';
 % hdf5Name = 'test.hdf5';
-% downsmpFactor = 0.5;
 % plusmazeName = 'mouse5_day20_ego-right.txt';
 % trim = [10,5];
 %
-% To Do: 
-% Write a more efficient method to replace dropped frames
-%
-% 2015-02-03 Jessica Maxey
 
-[frame_indices,location_info,time] = parse_plusmaze(fullfile(tifDir,plusmazeName));
-startFrames = frame_indices(:,1);
-
-list = dir(fullfile(tifDir,'*.tif'));
-num_files = length(list);
-
-firstName = fullfile(tifDir,list(1).name);
-[rows,cols] = size(imread(firstName));
-
-totalFrames = 1;
-
-locLUT = {'north';'south';'east';'west'};
-
-downsmpRows = floor(rows*downsmpFactor);
-downsmpCols = floor(cols*downsmpFactor);
-chunkSize = [downsmpRows downsmpCols 1];
-h5create(fullfile(outputDir,hdf5Name),'/Data/Images',[Inf Inf Inf],'ChunkSize',chunkSize,'Datatype','uint16');
-h5create(fullfile(outputDir,hdf5Name),'/TrialInfo/Frames',[Inf,4],'ChunkSize',[1,4]);
-h5create(fullfile(outputDir,hdf5Name),'/TrialInfo/Locations',[Inf,3],'ChunkSize',[1,3],'Datatype','uint8');
-h5create(fullfile(outputDir,hdf5Name),'/TrialInfo/Time',[Inf,1],'ChunkSize',[1,1]);
-badTrial = 0;
-testFrames = startFrames(1,1);
-trialCount = 0;
-
-for i=1:num_files
-    if(i ~= 1)
-        %%% Find if the start frame of the next recording matches one of
-        %%% the start frame indicies
-        idx = find(testFrames == startFrames);
-        if(isempty(idx))
-            %%% Bad trial
-            badTrial = 1;
-            tif_info = imfinfo(fullfile(tifDir,list(i).name));
-            numBadFrames = length(tif_info);
-            testFrames = testFrames + numBadFrames;
-        else
-            %%% Good trial
-            badTrial = 0;
+use_xml = 1;
+for k = 1:length(varargin)
+    if ischar(varargin{k})
+        vararg = lower(varargin{k});
+        switch vararg
+            case {'noxml', 'ignorexml', 'tif'}
+                fprintf('concatenateHDF5: Ignoring XMLs (i.e. no dropped frame correction)!\n');
+                use_xml = 0;
         end
-    else
-        if(testFrames ~= 1)
-            %%% Bad trial
-            badTrial = 1;
-            tif_info = imfinfo(fullfile(tifDir,list(i).name));
-            numBadFrames = length(tif_info);
-            testFrames = 1 + numBadFrames;
-        else
-            %%% Good trial
-            badTrial = 0;
-        end
-    end
-
-    if (badTrial)
-        fprintf('  %d: File "%s" skipped\n', i, list(i).name);
-    else
-        %%% Add the good trial to the hdf5 file
-        trialCount = trialCount+1;
-        tifName = fullfile(tifDir,list(i).name);
-        tifInfo = imfinfo(tifName);
-        tifFile = Tiff(tifName,'r');
-        oriFrames = length(tifInfo);
-        
-        [path,name,ext] = fileparts(tifName);
-        xmlName = [fullfile(tifDir,name),'.xml'];
-        xmlData = parse_miniscope_xml(xmlName);
-        
-        %%% Determine if frames were dropped by the miniscope during the
-        %%% trial
-        if(str2num(xmlData.dropped_count) ~= 0)
-            droppedFrames = str2num(xmlData.dropped);
-        else
-            numFrames = oriFrames;
-            droppedFrames = 0;
-        end
-        
-        %%% Read in the images, trim the frames at the beginning and end 
-        %%% of the trial (set by the 'trim' argument), and downsample by the 
-        %%% 'downsmpFactor' argument
-        imageStack = zeros(downsmpRows,downsmpCols,oriFrames,'uint16');
-        if(downsmpFactor == 1)
-            for j=1:oriFrames
-                tifFile.setDirectory(j);
-                imageStack(:,:,j) = uint16(tifFile.read());
-            end
-        else
-            for j=1:oriFrames
-                tifFile.setDirectory(j);
-                imageStack(:,:,j) = uint16(imresize(tifFile.read(),downsmpFactor,'bilinear'));
-            end
-        end
-        
-        %%% Replace any dropped frames with the frame immediately
-        %%% preceeding it
-
-        numDroppedFrames = 0;
-        if(droppedFrames ~= 0)
-            for j=1:length(droppedFrames)
-                fprintf('DroppedFrame: %i\n',droppedFrames(j));
-                droppedFrame = droppedFrames(j);
-                frontStack = imageStack(:,:,1:droppedFrame-1);
-                frontStack = cat(3,frontStack,imageStack(:,:,droppedFrame-1));
-                backStack = imageStack(:,:,droppedFrame:end);
-                newImageStack = cat(3,frontStack,backStack);
-                clear imageStack
-                imageStack = newImageStack;
-                numDroppedFrames = numDroppedFrames+1;
-            end
-        end
-        finalImageStack = imageStack(:,:,trim(1)+1:end-trim(2));
-        numFrames = size(finalImageStack,3);
-        [dRows,dCols] = size(finalImageStack(:,:,1));
-        
-        h5write(fullfile(outputDir,hdf5Name),'/Data/Images',finalImageStack,[1,1,totalFrames],[dRows,dCols,numFrames]);
-        
-        %%% Find frames that correspond to the gate going up and down for
-        %%% the current trial
-        gateUpFrame = totalFrames + (frame_indices(trialCount,2) - frame_indices(trialCount,1) - trim(1));
-        gateDownFrame = totalFrames + (frame_indices(trialCount,3) - frame_indices(trialCount,1) - trim(1));
-        
-        frameData = [totalFrames,gateUpFrame,gateDownFrame,totalFrames+numFrames-1];
-        
-        %%% Convert location information to numeric representation ('north' = 1, 'south' = 2, 'east' = 3, 'west' = 4)
-        startLoc = uint8(find(ismember(locLUT,location_info{trialCount,1})));
-        correctEnd = uint8(find(ismember(locLUT,location_info{trialCount,2})));
-        actualEnd = uint8(find(ismember(locLUT,location_info{trialCount,3})));
-        locData = [startLoc, correctEnd, actualEnd];
-        
-        %%% Write the trial info to the hdf5 file
-        h5write(fullfile(outputDir,hdf5Name),'/TrialInfo/Frames',frameData,[trialCount,1],[1,4]);
-        h5write(fullfile(outputDir,hdf5Name),'/TrialInfo/Locations',locData,[trialCount,1],[1,3]);
-        h5write(fullfile(outputDir,hdf5Name),'/TrialInfo/Time',time(trialCount),[trialCount,1],[1,1]);
-        
-        fprintf('  %d: File "%s" stored\n', i, list(i).name);
-        
-        %%% Total frame count stored in hdf5 file
-        totalFrames = totalFrames+numFrames;
-        
-        %%% Total frame count corresponding to behavior text file
-        testFrames = testFrames+oriFrames+numDroppedFrames;
-        clear imageStack tifName tifInfo tifFile droppedFrames newImageStack
     end
 end
 
-[path,name,ext] = fileparts(list(1).name);
-xmlName = [fullfile(tifDir,name),'.xml'];
+tifFiles = dir(fullfile(tifDir,'*.tif'));
+num_files = length(tifFiles);
+
+% Determine the image size and recording FPS
+firstName = fullfile(tifDir,tifFiles(1).name);
+[rows,cols] = size(imread(firstName));
+
+xmlName = convert_extension(firstName, 'xml');
 xmlData = parse_miniscope_xml(xmlName);
-frameRate = str2num(xmlData.fps);
+frameRate = str2double(xmlData.fps);
 
-%%% Remove the extra frame count needed to index the hdf5 file
-totalFrames = totalFrames-1;
+% Initialize output HDF5 datset
+hdf5_filename = fullfile(outputDir, hdf5Name);
+movie_dataset = '/Data/Images';
+h5create(hdf5_filename, movie_dataset, [Inf Inf Inf],...
+         'ChunkSize', [rows cols 1],...
+         'Datatype', 'uint16');
 
-h5create(fullfile(outputDir,hdf5Name),'/Params/NumFrames',1);
-h5write(fullfile(outputDir,hdf5Name),'/Params/NumFrames',totalFrames);
-h5create(fullfile(outputDir,hdf5Name),'/Params/NumRows',1,'Datatype','uint16');
-h5write(fullfile(outputDir,hdf5Name),'/Params/NumRows',uint16(dRows));
-h5create(fullfile(outputDir,hdf5Name),'/Params/NumCols',1,'Datatype','uint16');
-h5write(fullfile(outputDir,hdf5Name),'/Params/NumCols',uint16(dCols));
-h5create(fullfile(outputDir,hdf5Name),'/Params/TrimVals',[1 2],'Datatype','uint16');
-h5write(fullfile(outputDir,hdf5Name),'/Params/TrimVals',uint16(trim));
-h5create(fullfile(outputDir,hdf5Name),'/Params/DownsmpFactor',1,'Datatype','double');
-h5write(fullfile(outputDir,hdf5Name),'/Params/DownsmpFactor',downsmpFactor);
-h5create(fullfile(outputDir,hdf5Name),'/Params/FrameRate',1,'Datatype','double');
-h5write(fullfile(outputDir,hdf5Name),'/Params/FrameRate',frameRate);
+% Indexing variables
+trialCount = 0;  % Number of trials saved to HDF5
+totalFrames = 0; % Number of frames saved to HDF5
+
+[frame_indices, ~, ~] = parse_plusmaze(plusmazeName);
+startFrames = frame_indices(:,1);
+currentFrame = 1;
+
+% We can compute the expected number of frames per trial solely based on
+% the provided Plus Maze file and the trim parameters. Use this information
+% to detect any frame mismatches during concatenation.
+expected_frames_per_trial = compute_expected_frames(frame_indices, trim);
+num_expected_trials = length(expected_frames_per_trial);
+
+for i=1:num_files
+    % Load recording
+    %------------------------------------------------------------
+    fprintf('File "%s"...\n', tifFiles(i).name);
+    tifName = fullfile(tifDir,tifFiles(i).name);
+    
+    if use_xml
+        imageStack = load_movie_from_tif(tifName, 'usexml');
+    else
+        imageStack = load_movie_from_tif(tifName);
+    end
+    
+    % Save frames to HDF5, if part of a good trial
+    %------------------------------------------------------------
+    if (currentFrame == startFrames(1+trialCount)) % GOOD TRIAL        
+        trialCount = trialCount+1;
+
+        % Trim frames from the beginning and end
+        frames_to_save = imageStack(:,:,1+trim(1):end-trim(2));
+        num_saved_frames = size(frames_to_save, 3);
+        
+        assert(num_saved_frames == expected_frames_per_trial(trialCount),...
+            '  Unexpected number of frames for Trial %d!', trialCount);
+        
+        h5write(fullfile(outputDir,hdf5Name), movie_dataset,...
+                frames_to_save,...
+                [1,1,1+totalFrames],...
+                size(frames_to_save));      
+        fprintf('  Stored as Trial %d of %d\n',...
+            trialCount, num_expected_trials);
+        
+        % Total frame count stored in hdf5 file
+        totalFrames = totalFrames + num_saved_frames;
+    else % BAD TRIAL
+        fprintf('  Not a trial -- skipped.\n');
+    end
+
+    % Increment
+    currentFrame = currentFrame + size(imageStack,3);
+end
+
+assert(trialCount == num_expected_trials,...
+    '  Not all trials have been accounted for!');
+
+h5create(hdf5_filename,'/Params/TrimVals',[1 2],'Datatype','double');
+h5write(hdf5_filename,'/Params/TrimVals',trim);
+h5create(hdf5_filename,'/Params/FrameRate',1,'Datatype','double');
+h5write(hdf5_filename,'/Params/FrameRate',frameRate);
+h5create(hdf5_filename,'/Params/ConcatVersion',1,'Datatype','double');
+h5write(hdf5_filename,'/Params/ConcatVersion',1.0);
 
 h5disp(fullfile(outputDir,hdf5Name));
+
+end % concatenateHDF5
+
+function num_frames_per_trial = compute_expected_frames(frame_indices, trim)
+    % Compute the expected number of frames per trial, according to the
+    % frame index table and trim values.
+    comp_indices = compress_frame_indices(frame_indices, trim);
+    num_frames_per_trial = comp_indices(:,4) - comp_indices(:,1) + 1;
+end
