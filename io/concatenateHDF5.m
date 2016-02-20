@@ -56,17 +56,18 @@ testFrame = 1;
 
 for i=1:num_files
     % Load recording
+    %------------------------------------------------------------
     tifName = fullfile(tifDir,list(i).name);
     imageStack = load_movie_from_tif(tifName);
     
-    % Optionally, check XML for dropped frames
+    % Optionally, check XML for dropped frame correction
     if ~ignore_xml
         xmlName = convert_extension(tifName, 'xml');
         xmlData = parse_miniscope_xml(xmlName);
 
         numDroppedFrames = str2double(xmlData.dropped_count);
         if(numDroppedFrames ~= 0)
-            droppedFrames = str2num(xmlData.dropped);
+            droppedFrames = str2num(xmlData.dropped); %#ok<ST2NM>
         else
             droppedFrames = [];
         end
@@ -85,6 +86,12 @@ for i=1:num_files
             imageStack = cat(3, frontStack, prev_frame, backStack);
         end
         clear frontStack backStack prev_frame;
+        
+        % Make sure that the adjusted 'imageStack' has the correct number
+        % of frames according to XML file
+        num_frames_xml = str2double(xmlData.frames) + numDroppedFrames;
+        assert(num_frames_xml == size(imageStack,3),...
+            '%s: Number of frames in TIF file does not match that in XML!\n', tifName);
     end
     
     % Save frames to HDF5, if part of a good trial
