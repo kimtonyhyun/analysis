@@ -22,7 +22,7 @@ for k = 1:length(varargin)
         vararg = lower(varargin{k});
         switch vararg
             case {'noxml', 'ignorexml'}
-                fprintf('Ignoring XMLs!\n');
+                fprintf('concatenateHDF5: Ignoring XMLs (i.e. no dropped frame correction)!\n');
                 ignore_xml = 1;
         end
     end
