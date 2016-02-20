@@ -1,4 +1,4 @@
-function concatenateHDF5(tifDir,outputDir,hdf5Name,plusmazeName,trim)
+function concatenateHDF5(tifDir, outputDir, hdf5Name, plusmazeName, trim, varargin)
 % Concatenates all tif files in the specified directory into a single
 % hdf5 file. The number of frames to be dropped from the beginning 
 % and end of each trial is set in 'trim'. Bad trials are removed (using the
@@ -15,6 +15,18 @@ function concatenateHDF5(tifDir,outputDir,hdf5Name,plusmazeName,trim)
 % To Do: 
 % Write a more efficient method to replace dropped frames
 %
+
+ignore_xml = 0;
+for k = 1:length(varargin)
+    if ischar(varargin{k})
+        vararg = lower(varargin{k});
+        switch vararg
+            case {'noxml', 'ignorexml'}
+                fprintf('Ignoring XMLs!\n');
+                ignore_xml = 1;
+        end
+    end
+end
 
 [frame_indices, ~, ~] = parse_plusmaze(fullfile(tifDir,plusmazeName));
 
@@ -48,31 +60,33 @@ for i=1:num_files
     tifName = fullfile(tifDir,list(i).name);
     imageStack = load_movie_from_tif(tifName);
     
-    % Check XML for dropped frames
-    xmlName = convert_extension(tifName, 'xml');
-    xmlData = parse_miniscope_xml(xmlName);
+    % Optionally, check XML for dropped frames
+    if ~ignore_xml
+        xmlName = convert_extension(tifName, 'xml');
+        xmlData = parse_miniscope_xml(xmlName);
 
-    numDroppedFrames = str2double(xmlData.dropped_count);
-    if(numDroppedFrames ~= 0)
-        droppedFrames = str2num(xmlData.dropped);
-    else
-        droppedFrames = [];
+        numDroppedFrames = str2double(xmlData.dropped_count);
+        if(numDroppedFrames ~= 0)
+            droppedFrames = str2num(xmlData.dropped);
+        else
+            droppedFrames = [];
+        end
+
+        % Fill in dropped frames by its previous frame. Remarks:
+        %   1) Code will break if the first frame of file has been dropped.
+        %   2) Assumes that 'droppedFrames' is ascending.
+        for j=1:length(droppedFrames)
+            droppedFrame = droppedFrames(j);
+            fprintf('DroppedFrame: %i\n',droppedFrame);
+
+            frontStack = imageStack(:,:,1:droppedFrame-1);
+            backStack = imageStack(:,:,droppedFrame:end);
+            prev_frame = imageStack(:,:,droppedFrame-1);
+
+            imageStack = cat(3, frontStack, prev_frame, backStack);
+        end
+        clear frontStack backStack prev_frame;
     end
-    
-    % Fill in dropped frames by its previous frame. Remarks:
-    %   1) Code will break if the first frame of file has been dropped.
-    %   2) Assumes that 'droppedFrames' is ascending.
-    for j=1:length(droppedFrames)
-        droppedFrame = droppedFrames(j);
-        fprintf('DroppedFrame: %i\n',droppedFrame);
-
-        frontStack = imageStack(:,:,1:droppedFrame-1);
-        backStack = imageStack(:,:,droppedFrame:end);
-        prev_frame = imageStack(:,:,droppedFrame-1);
-
-        imageStack = cat(3, frontStack, prev_frame, backStack);
-    end
-    clear frontStack backStack prev_frame;
     
     % Save frames to HDF5, if part of a good trial
     %------------------------------------------------------------
