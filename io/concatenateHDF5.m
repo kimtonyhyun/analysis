@@ -21,7 +21,7 @@ for k = 1:length(varargin)
     if ischar(varargin{k})
         vararg = lower(varargin{k});
         switch vararg
-            case {'noxml', 'ignorexml'}
+            case {'noxml', 'ignorexml', 'tif'}
                 fprintf('concatenateHDF5: Ignoring XMLs (i.e. no dropped frame correction)!\n');
                 use_xml = 0;
         end
@@ -40,8 +40,9 @@ xmlData = parse_miniscope_xml(xmlName);
 frameRate = str2double(xmlData.fps);
 
 % Initialize output HDF5 datset
+hdf5_filename = fullfile(outputDir, hdf5Name);
 movie_dataset = '/Data/Images';
-h5create(fullfile(outputDir,hdf5Name), movie_dataset, [Inf Inf Inf],...
+h5create(hdf5_filename, movie_dataset, [Inf Inf Inf],...
          'ChunkSize', [rows cols 1],...
          'Datatype', 'uint16');
 
@@ -64,25 +65,11 @@ for i=1:num_files
     %------------------------------------------------------------
     fprintf('%d: File "%s"...\n', i, tifFiles(i).name);
     tifName = fullfile(tifDir,tifFiles(i).name);
-    imageStack = load_movie_from_tif(tifName);
     
-    % Optionally, check XML for dropped frame correction
     if use_xml
-        xmlName = convert_extension(tifName, 'xml');
-        xmlData = parse_miniscope_xml(xmlName);
-
-        numDroppedFrames = str2double(xmlData.dropped_count);
-        if(numDroppedFrames ~= 0)
-            droppedFrames = str2num(xmlData.dropped); %#ok<ST2NM>
-            imageStack = fill_dropped_frames(imageStack, droppedFrames);
-        end
-
-        % Make sure that the adjusted 'imageStack' has the correct number
-        % of frames according to XML file. Note that the XML file counts
-        % recorded and dropped frames separately.
-        num_frames_xml = str2double(xmlData.frames) + numDroppedFrames;
-        assert(num_frames_xml == size(imageStack,3),...
-            '  Unexpected number of frames after dropped frame correction!\n');
+        imageStack = load_movie_from_tif(tifName, 'usexml');
+    else
+        imageStack = load_movie_from_tif(tifName);
     end
     
     % Save frames to HDF5, if part of a good trial
@@ -95,7 +82,7 @@ for i=1:num_files
         num_saved_frames = size(frames_to_save, 3);
         
         assert(num_saved_frames == expected_frames_per_trial(trialCount),...
-            '  Unexpected number of frames for Trial %d!\n', trialCount);
+            '  Unexpected number of frames for Trial %d!', trialCount);
         
         h5write(fullfile(outputDir,hdf5Name), movie_dataset,...
                 frames_to_save,...
@@ -114,10 +101,12 @@ for i=1:num_files
     currentFrame = currentFrame + size(imageStack,3);
 end
 
-h5create(fullfile(outputDir,hdf5Name),'/Params/TrimVals',[1 2],'Datatype','double');
-h5write(fullfile(outputDir,hdf5Name),'/Params/TrimVals',trim);
-h5create(fullfile(outputDir,hdf5Name),'/Params/FrameRate',1,'Datatype','double');
-h5write(fullfile(outputDir,hdf5Name),'/Params/FrameRate',frameRate);
+h5create(hdf5_filename,'/Params/TrimVals',[1 2],'Datatype','double');
+h5write(hdf5_filename,'/Params/TrimVals',trim);
+h5create(hdf5_filename,'/Params/FrameRate',1,'Datatype','double');
+h5write(hdf5_filename,'/Params/FrameRate',frameRate);
+h5create(hdf5_filename,'/Params/ConcatVersion',1,'Datatype','double');
+h5write(hdf5_filename,'/Params/ConcatVersion',1.0);
 
 % Make sure all frames are accounted for. The following assertion may fail,
 % for example, if there are missing TIF files at the end.
@@ -127,22 +116,6 @@ assert(totalFrames == sum(expected_frames_per_trial),...
 h5disp(fullfile(outputDir,hdf5Name));
 
 end % concatenateHDF5
-
-function frames = fill_dropped_frames(frames, dropped_frames)
-    % Fill in dropped frames by its previous frame. Remarks:
-    %   1) Code will break if the first frame of file has been dropped.
-    %   2) Assumes that 'droppedFrames' is ascending.
-    for j=1:length(dropped_frames)
-        dropped_frame = dropped_frames(j);
-        fprintf('  Dropped frame %i\n',dropped_frame);
-
-        frontStack = frames(:,:,1:dropped_frame-1);
-        backStack = frames(:,:,dropped_frame:end);
-        prev_frame = frames(:,:,dropped_frame-1);
-
-        frames = cat(3, frontStack, prev_frame, backStack);
-    end
-end % fill_dropped_frames
 
 function num_frames_per_trial = compute_expected_frames(frame_indices, trim)
     % Compute the expected number of frames per trial, according to the
