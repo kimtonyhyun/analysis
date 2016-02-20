@@ -53,6 +53,11 @@ totalFrames = 0; % Number of frames saved to HDF5
 startFrames = frame_indices(:,1);
 currentFrame = 1;
 
+% We can compute the expected number of frames per trial solely based on
+% the provided Plus Maze file and the trim parameters. Use this information
+% to detect any frame mismatches during concatenation.
+expected_frames_per_trial = compute_expected_frames(frame_indices, trim);
+
 for i=1:num_files
     % Load recording
     %------------------------------------------------------------
@@ -85,15 +90,19 @@ for i=1:num_files
 
         % Trim frames from the beginning and end
         frames_to_save = imageStack(:,:,1+trim(1):end-trim(2));
+        num_saved_frames = size(frames_to_save, 3);
+        
+        assert(num_saved_frames == expected_frames_per_trial(trialCount),...
+            '%s: Unexpected number of frames for Trial %d!\n', tifName, trialCount);
         
         h5write(fullfile(outputDir,hdf5Name), movie_dataset,...
                 frames_to_save,...
                 [1,1,1+totalFrames],...
                 size(frames_to_save));      
-        fprintf('%d: File "%s" stored\n', i, tifFiles(i).name);
+        fprintf('%d: File "%s" stored as Trial %d\n', i, tifFiles(i).name, trialCount);
         
         % Total frame count stored in hdf5 file
-        totalFrames = totalFrames+size(frames_to_save,3);
+        totalFrames = totalFrames + num_saved_frames;
     else % BAD TRIAL
         fprintf('%d: File "%s" skipped\n', i, tifFiles(i).name);
     end
@@ -126,3 +135,10 @@ function frames = fill_dropped_frames(frames, dropped_frames)
         frames = cat(3, frontStack, prev_frame, backStack);
     end
 end % fill_dropped_frames
+
+function num_frames_per_trial = compute_expected_frames(frame_indices, trim)
+    % Compute the expected number of frames per trial, according to the
+    % frame index table and trim values.
+    comp_indices = compress_frame_indices(frame_indices, trim);
+    num_frames_per_trial = comp_indices(:,4) - comp_indices(:,1) + 1;
+end
