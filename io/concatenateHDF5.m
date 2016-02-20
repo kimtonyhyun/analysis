@@ -1,6 +1,6 @@
 function concatenateHDF5(tifDir,outputDir,hdf5Name,plusmazeName,trim)
 
-% Concatenates all tif files in the specified directory into an
+% Concatenates all tif files in the specified directory into a single
 % hdf5 file. The number of frames to be dropped from the beginning 
 % and end of each trial is set in 'trim'. Bad trials are removed (using the
 % plusmaze text file) and if frames were dropped during a good trial, the 
@@ -17,7 +17,7 @@ function concatenateHDF5(tifDir,outputDir,hdf5Name,plusmazeName,trim)
 % Write a more efficient method to replace dropped frames
 %
 
-[frame_indices,location_info,time] = parse_plusmaze(fullfile(tifDir,plusmazeName));
+[frame_indices, ~, ~] = parse_plusmaze(fullfile(tifDir,plusmazeName));
 startFrames = frame_indices(:,1);
 
 list = dir(fullfile(tifDir,'*.tif'));
@@ -28,13 +28,8 @@ firstName = fullfile(tifDir,list(1).name);
 
 totalFrames = 1;
 
-locLUT = {'north';'south';'east';'west'};
-
 chunkSize = [rows cols 1];
 h5create(fullfile(outputDir,hdf5Name),'/Data/Images',[Inf Inf Inf],'ChunkSize',chunkSize,'Datatype','uint16');
-h5create(fullfile(outputDir,hdf5Name),'/TrialInfo/Frames',[Inf,4],'ChunkSize',[1,4]);
-h5create(fullfile(outputDir,hdf5Name),'/TrialInfo/Locations',[Inf,3],'ChunkSize',[1,3],'Datatype','uint8');
-h5create(fullfile(outputDir,hdf5Name),'/TrialInfo/Time',[Inf,1],'ChunkSize',[1,1]);
 badTrial = 0;
 testFrames = startFrames(1,1);
 trialCount = 0;
@@ -77,7 +72,7 @@ for i=1:num_files
         tifFile = Tiff(tifName,'r');
         oriFrames = length(tifInfo);
         
-        [path,name,ext] = fileparts(tifName);
+        [~,name,~] = fileparts(tifName);
         xmlName = [fullfile(tifDir,name),'.xml'];
         xmlData = parse_miniscope_xml(xmlName);
         
@@ -101,7 +96,6 @@ for i=1:num_files
 
         %%% Replace any dropped frames with the frame immediately
         %%% preceeding it
-
         numDroppedFrames = 0;
         if(droppedFrames ~= 0)
             for j=1:length(droppedFrames)
@@ -120,26 +114,8 @@ for i=1:num_files
         numFrames = size(finalImageStack,3);
         [dRows,dCols] = size(finalImageStack(:,:,1));
         
-        h5write(fullfile(outputDir,hdf5Name),'/Data/Images',finalImageStack,[1,1,totalFrames],[dRows,dCols,numFrames]);
-        
-        %%% Find frames that correspond to the gate going up and down for
-        %%% the current trial
-        gateUpFrame = totalFrames + (frame_indices(trialCount,2) - frame_indices(trialCount,1) - trim(1));
-        gateDownFrame = totalFrames + (frame_indices(trialCount,3) - frame_indices(trialCount,1) - trim(1));
-        
-        frameData = [totalFrames,gateUpFrame,gateDownFrame,totalFrames+numFrames-1];
-        
-        %%% Convert location information to numeric representation ('north' = 1, 'south' = 2, 'east' = 3, 'west' = 4)
-        startLoc = uint8(find(ismember(locLUT,location_info{trialCount,1})));
-        correctEnd = uint8(find(ismember(locLUT,location_info{trialCount,2})));
-        actualEnd = uint8(find(ismember(locLUT,location_info{trialCount,3})));
-        locData = [startLoc, correctEnd, actualEnd];
-        
-        %%% Write the trial info to the hdf5 file
-        h5write(fullfile(outputDir,hdf5Name),'/TrialInfo/Frames',frameData,[trialCount,1],[1,4]);
-        h5write(fullfile(outputDir,hdf5Name),'/TrialInfo/Locations',locData,[trialCount,1],[1,3]);
-        h5write(fullfile(outputDir,hdf5Name),'/TrialInfo/Time',time(trialCount),[trialCount,1],[1,1]);
-        
+        h5write(fullfile(outputDir,hdf5Name),'/Data/Images',finalImageStack,[1,1,totalFrames],[dRows,dCols,numFrames]);      
+               
         fprintf('  %d: File "%s" stored\n', i, list(i).name);
         
         %%% Total frame count stored in hdf5 file
@@ -159,12 +135,6 @@ frameRate = str2num(xmlData.fps);
 %%% Remove the extra frame count needed to index the hdf5 file
 totalFrames = totalFrames-1;
 
-h5create(fullfile(outputDir,hdf5Name),'/Params/NumFrames',1);
-h5write(fullfile(outputDir,hdf5Name),'/Params/NumFrames',totalFrames);
-h5create(fullfile(outputDir,hdf5Name),'/Params/NumRows',1,'Datatype','uint16');
-h5write(fullfile(outputDir,hdf5Name),'/Params/NumRows',uint16(dRows));
-h5create(fullfile(outputDir,hdf5Name),'/Params/NumCols',1,'Datatype','uint16');
-h5write(fullfile(outputDir,hdf5Name),'/Params/NumCols',uint16(dCols));
 h5create(fullfile(outputDir,hdf5Name),'/Params/TrimVals',[1 2],'Datatype','uint16');
 h5write(fullfile(outputDir,hdf5Name),'/Params/TrimVals',uint16(trim));
 h5create(fullfile(outputDir,hdf5Name),'/Params/FrameRate',1,'Datatype','double');
