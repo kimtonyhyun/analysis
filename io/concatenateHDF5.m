@@ -57,10 +57,12 @@ currentFrame = 1;
 % the provided Plus Maze file and the trim parameters. Use this information
 % to detect any frame mismatches during concatenation.
 expected_frames_per_trial = compute_expected_frames(frame_indices, trim);
+num_expected_trials = length(expected_frames_per_trial);
 
 for i=1:num_files
     % Load recording
     %------------------------------------------------------------
+    fprintf('%d: File "%s"...\n', i, tifFiles(i).name);
     tifName = fullfile(tifDir,tifFiles(i).name);
     imageStack = load_movie_from_tif(tifName);
     
@@ -80,7 +82,7 @@ for i=1:num_files
         % recorded and dropped frames separately.
         num_frames_xml = str2double(xmlData.frames) + numDroppedFrames;
         assert(num_frames_xml == size(imageStack,3),...
-            '%s: Unexpected number of frames after dropped frame correction!\n', tifName);
+            '  Unexpected number of frames after dropped frame correction!\n');
     end
     
     % Save frames to HDF5, if part of a good trial
@@ -93,18 +95,19 @@ for i=1:num_files
         num_saved_frames = size(frames_to_save, 3);
         
         assert(num_saved_frames == expected_frames_per_trial(trialCount),...
-            '%s: Unexpected number of frames for Trial %d!\n', tifName, trialCount);
+            '  Unexpected number of frames for Trial %d!\n', trialCount);
         
         h5write(fullfile(outputDir,hdf5Name), movie_dataset,...
                 frames_to_save,...
                 [1,1,1+totalFrames],...
                 size(frames_to_save));      
-        fprintf('%d: File "%s" stored as Trial %d\n', i, tifFiles(i).name, trialCount);
+        fprintf('  Stored as Trial %d of %d\n',...
+            trialCount, num_expected_trials);
         
         % Total frame count stored in hdf5 file
         totalFrames = totalFrames + num_saved_frames;
     else % BAD TRIAL
-        fprintf('%d: File "%s" skipped\n', i, tifFiles(i).name);
+        fprintf('  Not a trial -- skipped.\n');
     end
 
     % Increment
@@ -116,6 +119,11 @@ h5write(fullfile(outputDir,hdf5Name),'/Params/TrimVals',trim);
 h5create(fullfile(outputDir,hdf5Name),'/Params/FrameRate',1,'Datatype','double');
 h5write(fullfile(outputDir,hdf5Name),'/Params/FrameRate',frameRate);
 
+% Make sure all frames are accounted for. The following assertion may fail,
+% for example, if there are missing TIF files at the end.
+assert(totalFrames == sum(expected_frames_per_trial),...
+    'Unexpected number of frames in HDF5 output!');
+
 h5disp(fullfile(outputDir,hdf5Name));
 
 end % concatenateHDF5
@@ -124,7 +132,7 @@ function frames = fill_dropped_frames(frames, dropped_frames)
     % Fill in dropped frames by its previous frame. Remarks:
     %   1) Code will break if the first frame of file has been dropped.
     %   2) Assumes that 'droppedFrames' is ascending.
-    for j=1:length(droppedFrames)
+    for j=1:length(dropped_frames)
         dropped_frame = dropped_frames(j);
         fprintf('  Dropped frame %i\n',dropped_frame);
 
