@@ -101,17 +101,16 @@ for i=1:num_files
     currentFrame = currentFrame + size(imageStack,3);
 end
 
+assert(trialCount == num_expected_trials,...
+    '  Not all trials have been accounted for!');
+
+
 h5create(hdf5_filename,'/Params/TrimVals',[1 2],'Datatype','double');
 h5write(hdf5_filename,'/Params/TrimVals',trim);
 h5create(hdf5_filename,'/Params/FrameRate',1,'Datatype','double');
 h5write(hdf5_filename,'/Params/FrameRate',frameRate);
 h5create(hdf5_filename,'/Params/ConcatVersion',1,'Datatype','double');
 h5write(hdf5_filename,'/Params/ConcatVersion',1.0);
-
-% Make sure all frames are accounted for. The following assertion may fail,
-% for example, if there are missing TIF files at the end.
-assert(totalFrames == sum(expected_frames_per_trial),...
-    'Unexpected number of frames in HDF5 output!');
 
 h5disp(fullfile(outputDir,hdf5Name));
 
