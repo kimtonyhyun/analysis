@@ -80,11 +80,11 @@ end
         
         % Divide rasters by end location
         subplot(3,4,11);
-        ds.plot_cell_raster(cell_idx, 'end', 'south');
+        ds.plot_cell_raster(cell_idx, 'end', 'south', 'draw_correct');
         set(gca, 'CLim', raster_scale);
         title('South end');
         subplot(3,4,12);
-        ds.plot_cell_raster(cell_idx, 'end', 'north');
+        ds.plot_cell_raster(cell_idx, 'end', 'north', 'draw_correct');
         set(gca, 'CLim', raster_scale);
         title('North end'); 
     end % draw_rasters

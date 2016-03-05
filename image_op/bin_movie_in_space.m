@@ -70,6 +70,7 @@ for i = 1:num_chunks
     movie_chunk = movie_chunk(:);
     movie_chunk = sum(reshape(movie_chunk, bin_factor, []), 1); % Bin along column
     movie_chunk = sum(reshape(movie_chunk, binned_height, bin_factor, []), 2); % Bin along rows
+    movie_chunk = movie_chunk / bin_factor^2;
     
     movie_chunk = reshape(movie_chunk, binned_height, binned_width, chunk_count);
 

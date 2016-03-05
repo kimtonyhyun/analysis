@@ -80,7 +80,7 @@ for i = 1:num_chunks
     Mf = MIJ.getCurrentImage; % Double
     MIJ.run('Close');
     
-	movie_chunk_norm = bsxfun(@rdivide, movie_chunk, single(Mf));
+	movie_chunk_norm = bsxfun(@rdivide, single(movie_chunk), single(Mf));
     
     h5write(movie_out, movie_dataset,...
             movie_chunk_norm,...
