@@ -2,7 +2,7 @@ function view_trace_in_space(ds, cell_idx)
 % Displays the trace of 'cell_idx' over the animal's trajectory in the
 % behavior arena
 
-[m, M] = get_trace_min_max(ds, cell_idx);
+[m, M] = get_trace_bounds(ds, cell_idx);
 raster_scale = [m M];
 
 clf;
@@ -44,22 +44,3 @@ end
 hold off;
 
 end % view_trace_in_space
-
-function [global_min, global_max] = get_trace_min_max(ds, cell_idx)
-    % Read all trials from DaySummary, so that we can apply a common 
-    % scaling to the trace
-    global_min = Inf; % Global min
-    global_max = -Inf; % Global max
-    
-    for trial_idx = 1:ds.num_trials
-        trace = ds.get_trace(cell_idx, trial_idx);
-        m = min(trace);
-        if m < global_min
-            global_min = m;
-        end
-        M = max(trace);
-        if M > global_max
-            global_max = M;
-        end
-    end
-end
