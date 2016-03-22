@@ -39,7 +39,7 @@ for trial_idx = 1:ds.num_trials
     centroids = ds.trials(trial_idx).centroids;
     trace = ds.get_trace(cell_idx, trial_idx);
     trace = 255*(trace-m)/(M-m); % Scale trace to image colormap
-    cline(centroids(:,1), centroids(:,2), [], trace);
+    cline(centroids(:,1), centroids(:,2), trace, trace);
 end
 hold off;
 
