@@ -20,7 +20,17 @@ while (1)
         if ~ds.is_behavior_loaded
             fprintf('  Behavior video not loaded into DaySummary!\n');
         else
-            view_detailed_trial(ds, cell_idx, val);
+            if (val == 0) % Trial "0" shows all trials superimposed in space
+                if ds.is_tracking_loaded
+                    view_trace_in_space(ds, cell_idx);
+                    fprintf('  Showing cell %d trace on space. Press any key to continue...\n', cell_idx);
+                    pause;
+                else
+                    fprintf('  Tracking data not loaded into DaySummary!\n');
+                end
+            else
+                view_detailed_trial(ds, cell_idx, val);
+            end
         end
     else
         resp = lower(resp);

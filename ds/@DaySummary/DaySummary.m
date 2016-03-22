@@ -28,14 +28,14 @@ classdef DaySummary < handle
         
         trial_indices
         full_num_frames
-        
-        is_tracking_loaded
     end
     
-    properties (Access = private)
+    properties (SetAccess = private, Hidden=true)
         cell_distances
         cell_map_ref_img
         behavior_vid
+        behavior_ref_img
+        is_tracking_loaded
     end
         
     methods
@@ -247,7 +247,6 @@ classdef DaySummary < handle
         end
         
         function [trace, frame_indices] = get_trace(obj, cell_idx, selected_trials)
-            % When 'selected_trials' is omitted, then return all trials
             if ~exist('selected_trials', 'var')
                 selected_trials = 1:obj.num_trials;
             end
@@ -385,6 +384,10 @@ classdef DaySummary < handle
                 fprintf('  Warning! Number of frames in behavior video (%d) does not match the trial frame table (%d)!\n',...
                     obj.behavior_vid.NumberOfFrames, obj.trial_indices(end,end));
             end
+            
+            % Load reference image
+            behavior_ref_img = obj.behavior_vid.read(1);
+            obj.behavior_ref_img = squeeze(behavior_ref_img(:,:,1,:));
         end
         
         function Mb = get_behavior_trial(obj, trial_idx)
