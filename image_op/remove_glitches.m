@@ -4,7 +4,7 @@ function remove_glitches(movie_in, movie_out)
 % the movie frame.
 %
 % Usage:
-%   M_gfix = remove_glitches('c11m3d19.hdf5');
+%   remove_glitches('c11m3d19.hdf5', '');
 %
 % Todo:
 %   - Interactive addition and removal of frames to be replaced
@@ -37,12 +37,17 @@ xlabel('Frame');
 ylabel('Pixel values');
 grid on;
 hold on;
-plot(min_anomalous_frames(:,1), min_anomalous_frames(:,2), 'ro');
-plot(max_anomalous_frames(:,1), max_anomalous_frames(:,2), 'ro');
-title('Red marker indicates frames to be replaced');
 
-frames_to_replace = union(min_anomalous_frames(:,1),...
-                          max_anomalous_frames(:,1));
+frames_to_replace = [];
+if ~isempty(min_anomalous_frames)
+    plot(min_anomalous_frames(:,1), min_anomalous_frames(:,2), 'ro');
+    frames_to_replace = union(frames_to_replace, min_anomalous_frames(:,1));
+end
+if ~isempty(max_anomalous_frames)
+    plot(max_anomalous_frames(:,1), max_anomalous_frames(:,2), 'ro');
+    frames_to_replace = union(frames_to_replace, max_anomalous_frames(:,1));
+end
+title('Red marker indicates frames to be replaced');
 
 fprintf('%s: Replace %d frames? (Press any key to continue)\n',...
         datestr(now), length(frames_to_replace));
