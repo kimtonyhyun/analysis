@@ -95,6 +95,8 @@ classdef DaySummary < handle
             turns = cell(num_trials, 1);
             traces = cell(num_trials, 1);
             centroids = cell(num_trials, 1);
+            movement_onset_frames = cell(num_trials, 1);
+            turn_onset_frames = cell(num_trials, 1);
             for k = 1:num_trials
                 trial_frames = trial_indices(k,1):...
                                trial_indices(k,end);
@@ -103,6 +105,8 @@ classdef DaySummary < handle
                 traces{k} = data.traces(trial_frames, :)';
                 turns{k} = obj.compute_turn(loc_info{k,1}, loc_info{k,3});
                 centroids{k} = zeros(num_frames_in_trial, 2);
+                movement_onset_frames{k} = 0;
+                turn_onset_frames{k} = 0;
             end
             
             obj.num_trials = num_trials;
@@ -115,7 +119,9 @@ classdef DaySummary < handle
                 'turn',  turns,...
                 'time',  num2cell(trial_durations),...
                 'traces', traces,...
-                'centroids', centroids);
+                'centroids', centroids,...
+                'movement_onset_frame',movement_onset_frames,...
+                'turn_onset_frame',turn_onset_frames);
             
             % Parse by CELL
             %------------------------------------------------------------
@@ -400,10 +406,19 @@ classdef DaySummary < handle
         %------------------------------------------------------------
         function load_tracking(obj, tracking_source)
             centroids = load(tracking_source);
+
+            extrema_x = [min(centroids(:,1)),max(centroids(:,1))];
+            extrema_y = [min(centroids(:,2)),max(centroids(:,2))];
+            
             for k = 1:obj.num_trials
                 trial_indices = obj.trial_indices(k,1):obj.trial_indices(k,end);
                 obj.trials(k).centroids = centroids(trial_indices, :);
+                [idx_mv_onset,idx_turn_onset] = calc_behavioral_event_indices(...
+                    obj.trials(k).centroids,extrema_x,extrema_y,obj.trials(k).start,obj.trials(k).end);
+                obj.trials(k).movement_onset_frame = idx_mv_onset;
+                obj.trials(k).turn_onset_frame = idx_turn_onset;
             end
+            
             fprintf('%s: Loaded tracking data from "%s"\n',...
                 datestr(now), tracking_source);
             obj.is_tracking_loaded = true;
