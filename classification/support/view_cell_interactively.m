@@ -85,7 +85,7 @@ ylim(COM(2)+zoom_half_width*[-1 1]);
 
 % Compute the active portions of the trace
 %------------------------------------------------------------
-trace = trace_orig; % By default, select the original trace
+trace = trace_fixed; % Start with baseline-corrected trace
 
 mad_scale = 10;
 mad = compute_mad(trace);
@@ -117,7 +117,7 @@ state.last_val = [];
 state.zoomed = true;
 state.show_map = false;
 state.show_neighbors = false;
-state.baseline_removed = false;
+state.baseline_removed = true;
 
 while (1)
     if (~isnan(val)) % Is a number
