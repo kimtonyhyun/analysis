@@ -23,12 +23,11 @@ M = load_movie(movie_in);
 fprintf('%s: Computing fluorescence stats...\n', datestr(now));
 F = compute_fluorescence_stats(M);
 
-z_thresh = 8;
 fprintf('%s: Detect anomalous frames in the minimum trace...\n', datestr(now));
-min_anomalous_frames = detect_anomalous_frames(F(:,1), z_thresh);
+min_anomalous_frames = detect_anomalous_frames(F(:,1), 6);
 
 fprintf('%s: Detect anomalous frames in the max trace...\n', datestr(now));
-max_anomalous_frames = detect_anomalous_frames(F(:,3), z_thresh);
+max_anomalous_frames = detect_anomalous_frames(F(:,3), 10);
 
 num_frames = size(M,3);
 plot(F(:,[1 3]), 'b.-');
