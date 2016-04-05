@@ -7,7 +7,8 @@ function trim_behavior_video(plusmaze_source, behavior_source, lick_source, trim
 % Inputs:
 %   plusmaze_source: Text file output from the plus maze
 %   behavior_source: Behavior video (MPEG-4)
-%   lick_source: Lickometer text file from the plus maze.
+%   lick_source: Lickometer text file from the plus maze. Optional. Provide
+%       empty matrix ('[]') to skip.
 %   trim: Number of frames to drop from the beginning (trim[1]) and
 %         end (trim[2]) of each trial
 %   
@@ -43,12 +44,15 @@ fprintf('  PlusMaze output (%s) has %d frames\n', plusmaze_source, num_frames);
 % the FPGA counter (and NOT the behavior video). Hence, we don't need to
 % apply dropped behavior frame compensation.
 %----------------------------------------------------------------------
-lick_series = load(lick_source);
-num_lick_samples = length(lick_series);
-fprintf('  Lickometer series (%s) has %d samples\n', lick_source, num_lick_samples);
-assert(num_lick_samples == num_frames,...
-       '  Number of samples (%d) in lickometer file is inconsistent with PlusMaze output (%d)!',...
-       num_lick_samples, num_frames);
+is_lick_loaded = ~isempty(lick_source);
+if is_lick_loaded
+    lick_series = load(lick_source);
+    num_lick_samples = length(lick_series);
+    fprintf('  Lickometer series (%s) has %d samples\n', lick_source, num_lick_samples);
+    assert(num_lick_samples == num_frames,...
+           '  Number of samples (%d) in lickometer file is inconsistent with PlusMaze output (%d)!',...
+           num_lick_samples, num_frames);
+end
 
 % Generate frame indices into the behavior video, with its dropped frames
 %   (Optional parameter specifies a table of dropped frames)
@@ -114,13 +118,15 @@ for trial_idx = 1:num_trials
         A = rgb2gray(A);
         
         % Lick indicator at top right corner of video
-        lick_indicator = 255*ones(lick_square_size); % Max uint8
-        if ~lick_series(behavior_frame_idx) % If no lick, mask white square with black
-            lick_indicator((1+lick_square_border):(end-lick_square_border),...
-                           (1+lick_square_border):(end-lick_square_border)) =...
-                                zeros(lick_square_size-2*lick_square_border);
+        if is_lick_loaded
+            lick_indicator = 255*ones(lick_square_size); % Max uint8
+            if ~lick_series(behavior_frame_idx) % If no lick, mask white square with black
+                lick_indicator((1+lick_square_border):(end-lick_square_border),...
+                               (1+lick_square_border):(end-lick_square_border)) =...
+                                    zeros(lick_square_size-2*lick_square_border);
+            end
+            A(1:lick_square_size, (end-(lick_square_size-1)):end) = lick_indicator;
         end
-        A(1:lick_square_size, (end-(lick_square_size-1)):end) = lick_indicator;
         
         writeVideo(trimmed_behavior_video, A);
 
