@@ -8,13 +8,14 @@ function [ trial_frames, tracking_error_frames] = find_start_end_of_trials( cent
 %   before or after (because there is no visible jump in position)
 % 
 % Input:
-%     centroids.mat file from get_mouse_XY_pos
+%     .xy file of position data from get_mouse_XY_pos.m
 % 
 % Returns
 %     trial_frames: Array of start and end frames [start end; start end; ...]
 %     tracking_error_frames: Frames that are not start/end but show a jump
 % 
 % 2015-02-28 Fori Wang
+% Updated 2016-04-11 Fori Wang
 
     centroids = load(centroids_xy);
     num_frames = length(centroids);
