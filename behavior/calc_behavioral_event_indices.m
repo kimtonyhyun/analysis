@@ -3,9 +3,11 @@ function [idx_mv_onset,idx_turn_onset] = calc_behavioral_event_indices(cents,ext
 %   extrema_x (extrema_y) contains the minimum and maximum x (y) values of the centroids in
 %   a session.
 %   start_str and end_str are the start and end arms.
+%   if a particular index is not found, then 0 is returned in its place.
+%
 
     % Constants
-    angle_thresh = 15;
+    angle_thresh = 25;
     pix_veloc_thresh = 2;
     
     num_frames = size(cents,1);
@@ -53,28 +55,27 @@ function [idx_mv_onset,idx_turn_onset] = calc_behavioral_event_indices(cents,ext
     angle = atan(velocity_end./velocity_st)*180/pi;
 
     % Find movement onset
-    for idx_mv_onset = 50:(num_frames-50)
+    for idx_mv_onset = 51:(num_frames-51)
         % Need 9 consecutive positive displacements
         if prod(velocity_st(idx_mv_onset:idx_mv_onset+8)>pix_veloc_thresh)>0 
             break;
         end
     end    
     % No movement onset is found
-    if idx_mv_onset== num_frames-50
+    if idx_mv_onset== num_frames-51
         idx_mv_onset=0;
     end
 
     % Find turn onset
-    for idx_turn_onset = max((idx_mv_onset+1),50):(num_frames-50)
-        % Need 9 consecutive positive displacements + minimum displacement
-        % angle
+    for idx_turn_onset = max((idx_mv_onset+1),51):(num_frames-51)
+        % Need 9 consecutive positive displacements + minimum displacement angle
         if prod(velocity_end(idx_turn_onset:idx_turn_onset+8)>pix_veloc_thresh)>0 ...
                 && angle(idx_turn_onset)>angle_thresh 
             break;
         end
     end    
     % No turn onset is found
-    if idx_turn_onset== num_frames-50
+    if idx_turn_onset== num_frames-51
         idx_turn_onset=0;
     end
 
