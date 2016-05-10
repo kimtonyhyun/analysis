@@ -10,7 +10,7 @@ running_frames = (trial_indices(:,3) - trial_indices(:,1)) -...
                   movement_onset_frames + 1;
 running_times = running_frames / ds.trace_fps;
 
-subplot(211);
+ax1 = subplot(211);
 plot(full_trial_times, '.-');
 grid on;
 xrange = [0.5 ds.num_trials+0.5];
@@ -18,7 +18,7 @@ xlim(xrange);
 ylim(compute_yrange(full_trial_times));
 ylabel('Full trial time [s]');
 
-subplot(212);
+ax2 = subplot(212);
 plot(running_times, 'r.-');
 grid on;
 xlim(xrange);
@@ -38,6 +38,8 @@ for k = 1:ds.num_trials
               'FaceColor', corr_color);
 end
 ylim([yrange(1) yrange(2)+corr_height]);
+
+linkaxes([ax1, ax2], 'x');
 
 subplot(211); % Give focus to the topmost panel
 
