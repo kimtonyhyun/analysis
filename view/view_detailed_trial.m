@@ -111,6 +111,14 @@ end
         plot(trial_markers(2)*[1 1], scale, 'r--', 'HitTest', 'off'); % Open-gate
         plot(trial_markers(3)*[1 1], scale, 'r--', 'HitTest', 'off'); % Close-gate
         
+        if ds.is_tracking_loaded
+            trial = ds.trials(trial_idx);
+            movement_onset = trial.movement_onset_frame / num_trials_in_frame;
+            turn_onset = trial.turn_onset_frame / num_trials_in_frame;
+            plot(movement_onset*[1 1], scale, 'k--', 'HitTest', 'off');
+            plot(turn_onset*[1 1], scale, 'k--', 'HitTest', 'off');
+        end
+        
         % Markers for indicating current frame
         t = plot(0*[1 1], scale, 'ButtonDownFcn', @start_drag); % Vertical bar -- can be dragged
         d = plot(0, trace(1), 'o',... % Dot
