@@ -31,6 +31,7 @@ classdef DaySummary < handle
     end
     
     properties (SetAccess = private, Hidden=true)
+        trace_fps
         cell_distances
         cell_map_ref_img
         behavior_vid
@@ -76,6 +77,9 @@ classdef DaySummary < handle
             obj.full_num_frames = trial_indices(end,end);
             assert(size(data.traces,1) == obj.full_num_frames,...
                 'Error: Length of traces does not match trial index table!');
+            
+            % Calculate the approximate FPS of the provided trace
+            obj.trace_fps = double(obj.full_num_frames) / sum(trial_durations);
             
             % Optional exclusion of probe trials. Effectively, we are
             % "deleting" the lines of the plus maze text file that
@@ -179,7 +183,7 @@ classdef DaySummary < handle
                 ref_image = ref_image + obj.cells(k).im;
             end
             obj.cell_map_ref_img = ref_image;
-            
+                        
             % Load classification, if available
             %------------------------------------------------------------
             class_source = get_most_recent_file(rec_dir, 'class_*.txt');
