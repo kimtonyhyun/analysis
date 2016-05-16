@@ -1,4 +1,4 @@
-### Quickstart for DaySummary usage
+## Quickstart for DaySummary usage
 
 The Matlab-based analysis workflow for the strategy shifting experiment at Herrin is based on the use of a `DaySummary` object. The basic idea behind the `DaySummary` class is to encapsulate all relevant information for a single session of the strategy shifting protocol. This tutorial will explain the basic instantiation and usage of the `DaySummary` object.
 
@@ -61,3 +61,68 @@ The above example used the "sources" struct to automatically load the behavior a
   Computing distances between all sources... Done (2.0 sec)
 16-May-2016 10:47:12: Loaded classification from cm01\class_151125-172203.txt
 ```
+
+#### Basic usage of the `DaySummary` object
+
+By displaying the `DaySummary` instance in the Matlab console, one can get a basic view of the session data such as the number of trials:
+```
+>> m1d12
+
+m1d12 = 
+  DaySummary with properties:
+              cells: [1223x1 struct]
+             trials: [110x1 struct]
+          num_cells: 1223
+         num_trials: 110
+      trial_indices: [110x4 int32]
+    full_num_frames: 13851
+```
+
+Information about a particular trial (e.g. the 15th) can be viewed as follows:
+```
+>> m1d12.trials(15)
+                   start: 'east'
+                    goal: 'north'
+                     end: 'north'
+                 correct: 1
+                    turn: 'right'
+                    time: 12.4590
+                  traces: [1223x119 double]
+               centroids: [119x2 double]
+    movement_onset_frame: 0
+        turn_onset_frame: 0
+```
+
+Information about a particular cell (e.g. the 62nd) can be viewed as follows:
+```
+>> m1d12.cells(62)
+          im: [525x602 double]
+    boundary: [47x2 double]
+        mask: [525x602 logical]
+         com: [2x1 double]
+       label: 'phase-sensitive cell'
+```
+
+Note that the traces are organized by trial rather than cell (i.e. under the `trials` substruct rather than `cells`). To simplify access, there are getter methods such as `get_trace`:
+```
+trace = m1d12.get_trace(62);
+```
+which returns the trace of a single cell (62nd, in the above example) over all trials. See the definition of `DaySummary` for additional built-in methods.
+
+Additionally, we have built several visualization methods based on the `DaySummary` object. For example, a complete cell map can be visualized by:
+```
+m1d12.plot_cell_map;
+```
+yielding
+
+![c11m1d12 cell map](https://raw.githubusercontent.com/schnitzer-lab/analysis/kimth/ds-docs/docs/ds_plot_cell_map.png?token=AB_C3xfqUxbLW3SnLzZMgmbjDaEoRQhxks5XQ0N4wA%3D%3D)
+
+where the green outlines indicate sources that passed the manual cell classification, and the red outlines are spurious (non-cellular) sources.
+
+You can also quickly browse through single-cell rasters by:
+```
+browse_rasters(m1d12);
+```
+yielding
+
+![c11m1d12 browse rasters](https://raw.githubusercontent.com/schnitzer-lab/analysis/kimth/ds-docs/docs/ds_browse-rasters.png?token=AB_C37F45xK7a1O2pnnoZ5UTPzsZi5kpks5XQ0ahwA%3D%3D)
