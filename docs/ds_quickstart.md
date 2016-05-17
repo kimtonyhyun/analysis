@@ -6,7 +6,7 @@ The Matlab-based analysis workflow for the strategy shifting experiment at Herri
 
 The following screenshot illustrates my (Tony's) preferred folder structure for session data, using the "c11m1d12" dataset as an example:
 
-![Tony's preferred folder structure](https://raw.githubusercontent.com/schnitzer-lab/analysis/master/docs/ds_folder_structure.PNG?token=AB_C30zVE24z5TmnrOIYwD5AZGm7It3Xks5XQ-ymwA%3D%3D)
+![Tony's preferred folder structure](ds_folder_structure.PNG)
 
 The experimental data is stored in the `_data` subdirectory:
 
@@ -115,7 +115,7 @@ Additionally, we have built several visualization methods based on the `DaySumma
 ```
 yielding
 
-![c11m1d12 cell map](https://raw.githubusercontent.com/schnitzer-lab/analysis/master/docs/ds_plot_cell_map.png?token=AB_C310CZM6uy42JRFEXud3eK-F6rcedks5XQ-zSwA%3D%3D)
+![c11m1d12 cell map](ds_plot_cell_map.png)
 
 where the green outlines indicate sources that passed the manual cell classification, and the red outlines are spurious (non-cellular) sources.
 
@@ -125,4 +125,4 @@ You can also quickly browse through single-cell rasters by:
 ```
 yielding
 
-![c11m1d12 browse rasters](https://raw.githubusercontent.com/schnitzer-lab/analysis/master/docs/ds_browse-rasters.png?token=AB_C30G9OaMFxPwu3HSWgr3u9HEC0P3uks5XQ-zrwA%3D%3D)
+![c11m1d12 browse rasters](ds_browse-rasters.png)
