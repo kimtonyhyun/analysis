@@ -105,13 +105,13 @@ Information about a particular cell (e.g. the 62nd) can be viewed as follows:
 
 Note that the traces are organized by trial rather than cell (i.e. under the `trials` substruct rather than `cells`). To simplify access, there are getter methods such as `get_trace`:
 ```
-trace = m1d12.get_trace(62);
+>> trace = m1d12.get_trace(62);
 ```
 which returns the trace of a single cell (62nd, in the above example) over all trials. See the definition of `DaySummary` for additional built-in methods.
 
 Additionally, we have built several visualization methods based on the `DaySummary` object. For example, a complete cell map can be visualized by:
 ```
-m1d12.plot_cell_map;
+>> m1d12.plot_cell_map;
 ```
 yielding
 
@@ -121,7 +121,7 @@ where the green outlines indicate sources that passed the manual cell classifica
 
 You can also quickly browse through single-cell rasters by:
 ```
-browse_rasters(m1d12);
+>> browse_rasters(m1d12);
 ```
 yielding
 
