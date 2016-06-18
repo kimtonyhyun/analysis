@@ -33,8 +33,14 @@ end
 % Plot boundaries of other cells, and retrieve their handles so that
 %   we can toggle the boundaries on and off
 %------------------------------------------------------------
-other_cells = setdiff(1:ds.num_cells, cell_idx);
-num_other_cells = ds.num_cells - 1;
+% Old method plots ALL other cells
+% other_cells = setdiff(1:ds.num_cells, cell_idx);
+% num_other_cells = ds.num_cells - 1;
+
+% New method only plots N nearest sources -- improves performance when
+% there are 1000+ sources to classify
+num_other_cells = min(300, ds.num_cells-1);
+other_cells = ds.get_nearest_sources(cell_idx, num_other_cells);
 other_cell_handles = zeros(num_other_cells, 1);
 
 for n = 1:num_other_cells
