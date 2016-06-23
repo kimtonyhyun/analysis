@@ -1,23 +1,24 @@
-function register_movie(movie_in, movie_out, varargin)
+function register_movie(movie_in, movie_out, filter_type)
 % Motion correct HDF5 movie from file ('movie_in') to file ('movie_out').
 % Registration is performed with TurboReg (turbocoreg.mex). The
-% registration is performed after filtering the frames with the "Mosaic
-% filter", consisting of two steps: (1) "subtract spatial mean", and 
-% (2) "apply spatial mean". Two optional arguments provide parameters for
-% the two filtering steps.
+% registration is performed after filtering the frames with a filter.
+% 
+% For example, the "Mosaic filter", derived from Inscopix uses two steps:
+%   (1) "subtract spatial mean", and 
+%   (2) "apply spatial mean".
+% This filter appears to work decently for Miniscope and other 1p movies
+% (e.g. 1p VLM). The Mosaic filter is the default option.
 %
 % If 'movie_out' is left as an empty string, then default name will be
 % provided.
 %
-% The motion correction parameters will also be saved in the output HDF5 
-% file under the '/MotCorr' directory
-%
 % Inputs:
 %   movie_in:  Name of incoming HDF5 movie
 %   movie_out: Name of outgoing HDF5 movie
+%   filter_type: Optional string indicating type of filter to be applied
 %
 % Example usage:
-%   register_movie('c9m7d12.hdf5','',20,5);
+%   register_movie('c9m7d12.hdf5','');
 %
 
 if isempty(movie_out)
@@ -37,20 +38,26 @@ num_frames = movie_size(3);
 
 % Begin TurboReg processing
 %------------------------------------------------------------
-
-% Optional parameters specify the "Mosaic filter", which consists of:
-%   1) Subtract spatial mean
-%   2) Apply spatial mean -- to the output of (1)
-ssm_radius = 20;
-asm_radius = 5;
-if (length(varargin)==2)
-    ssm_radius = varargin{1};
-    asm_radius = varargin{2};
+if ~exist('filter_type', 'var')
+    filter_type = 'mosaic';
 end
 
-hDisk  = fspecial('disk', ssm_radius);
-hDisk2 = fspecial('disk', asm_radius);
-transform = @(A) mosaic_transform(A, hDisk, hDisk2);
+switch filter_type
+    case 'mosaic'
+        ssm_radius = 20;
+        asm_radius = 5;
+        hDisk  = fspecial('disk', ssm_radius);
+        hDisk2 = fspecial('disk', asm_radius);
+        transform = @(A) mosaic_transform(A, hDisk, hDisk2);
+
+    case {'identity', 'nofilter'}
+        transform = @(A) identity_transform(A);
+        
+    otherwise
+        fprintf('  Error: Did not recognize filter type "%s"!\n', filter_type);
+        return
+end
+fprintf('register_movie: Using "%s" filter...\n', filter_type);
 
 % Common reference for registration
 ref_idx = 1;
@@ -121,6 +128,10 @@ end % register_movie
 function A_tr = mosaic_transform(A, ssm_filter, asm_filter)
     A_tr = A - imfilter(A, ssm_filter, 'replicate');
     A_tr = imfilter(A_tr, asm_filter);
+end
+
+function A_tr = identity_transform(A)
+    A_tr = A;
 end
 
 function depth = calculate_pyramid_depth(len)
