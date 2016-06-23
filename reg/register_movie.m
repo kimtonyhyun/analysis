@@ -3,11 +3,8 @@ function register_movie(movie_in, movie_out, filter_type)
 % Registration is performed with TurboReg (turbocoreg.mex). The
 % registration is performed after filtering the frames with a filter.
 % 
-% For example, the "Mosaic filter", derived from Inscopix uses two steps:
-%   (1) "subtract spatial mean", and 
-%   (2) "apply spatial mean".
-% This filter appears to work decently for Miniscope and other 1p movies
-% (e.g. 1p VLM). The Mosaic filter is the default option.
+% The default filter (called "mosaic") has worked well for Miniscope and
+% other 1p movies. The Mosaic filter is the default option.
 %
 % If 'movie_out' is left as an empty string, then default name will be
 % provided.
@@ -18,7 +15,7 @@ function register_movie(movie_in, movie_out, filter_type)
 %   filter_type: Optional string indicating type of filter to be applied
 %
 % Example usage:
-%   register_movie('c9m7d12.hdf5','');
+%   register_movie('c9m7d12.hdf5', '');
 %
 
 if isempty(movie_out)
@@ -125,15 +122,6 @@ fprintf('%s: Done!\n', datestr(now));
 
 end % register_movie
 
-function A_tr = mosaic_transform(A, ssm_filter, asm_filter)
-    A_tr = A - imfilter(A, ssm_filter, 'replicate');
-    A_tr = imfilter(A_tr, asm_filter);
-end
-
-function A_tr = identity_transform(A)
-    A_tr = A;
-end
-
 function depth = calculate_pyramid_depth(len)
     min_size = 45;
     depth = 0;
@@ -141,4 +129,19 @@ function depth = calculate_pyramid_depth(len)
         len = len/2;
         depth = depth + 1;
     end
+end
+
+%------------------------------------------------------------
+% Built-in image filters
+%------------------------------------------------------------
+function A_tr = mosaic_transform(A, ssm_filter, asm_filter)
+    % Derived from Inscopix's Mosaic. Frame is transformed in two steps:
+    %   (1) "Subtract spatial mean", then
+    %   (2) "Apply spatial mean"
+    A_tr = A - imfilter(A, ssm_filter, 'replicate');
+    A_tr = imfilter(A_tr, asm_filter);
+end
+
+function A_tr = identity_transform(A)
+    A_tr = A;
 end
