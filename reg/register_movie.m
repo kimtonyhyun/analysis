@@ -53,6 +53,8 @@ for k = 1:length(varargin)
 end
 
 switch filter_type
+    % See comments associated with each transform function (e.g.
+    % `mosaic_transform`) for further details.
     case 'mosaic'
         ssm_radius = 20;
         asm_radius = 5;
@@ -96,6 +98,9 @@ copy_hdf5_params(movie_in, movie_out);
      
 h5create(movie_out, '/MotCorr/MaskXY', size(mask_xy), 'Datatype', 'double');
 h5write(movie_out, '/MotCorr/MaskXY', mask_xy);
+
+h5create(movie_out, '/MotCorr/RefImg', size(im_ref), 'Datatype', 'single');
+h5write(movie_out, '/MotCorr/RefImg', im_ref);
 
 % Apply TurboReg
 frame_chunk_size = 500;
@@ -147,6 +152,8 @@ function A_tr = mosaic_transform(A, ssm_filter, asm_filter)
     % Derived from Inscopix's Mosaic. Frame is transformed in two steps:
     %   (1) "Subtract spatial mean", then
     %   (2) "Apply spatial mean"
+    % Has worked well for Miniscope DFF movies, as well as low
+    % magnification 1p data (e.g. 1p VLM).
     A_tr = A - imfilter(A, ssm_filter, 'replicate');
     A_tr = imfilter(A_tr, asm_filter);
 end
