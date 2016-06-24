@@ -41,11 +41,14 @@ filter_type = 'mosaic'; % Default filter option
 
 for k = 1:length(varargin)
     vararg = varargin{k};
-    switch vararg
-        case 'ref' % Externally provided reference image
-            im_ref = varargin{k+1};
-        otherwise
-            filter_type = lower(vararg);
+    if ischar(vararg)
+        vararg = lower(vararg);
+        switch vararg
+            case 'ref' % Externally provided reference image
+                im_ref = varargin{k+1};
+            otherwise
+                filter_type = vararg;
+        end
     end
 end
 
