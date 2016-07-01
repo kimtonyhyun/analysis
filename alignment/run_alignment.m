@@ -75,3 +75,6 @@ if bijective_matching
     fprintf('run_alignment: Applying bijective filter...\n');
     [match_1to2, match_2to1] = bijective_filter(match_1to2, match_2to1);
 end
+
+num_matches = sum(~cellfun(@isempty, match_1to2));
+fprintf('run_alignment: Found %d matches!\n', num_matches);
