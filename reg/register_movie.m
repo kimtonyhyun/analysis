@@ -1,4 +1,4 @@
-function register_movie(movie_in, movie_out, filter_type)
+function register_movie(movie_in, movie_out, varargin)
 % Motion correct HDF5 movie from file ('movie_in') to file ('movie_out').
 % Registration is performed with TurboReg (turbocoreg.mex). The
 % registration is performed after filtering the frames with a filter.
@@ -12,7 +12,6 @@ function register_movie(movie_in, movie_out, filter_type)
 % Inputs:
 %   movie_in:  Name of incoming HDF5 movie
 %   movie_out: Name of outgoing HDF5 movie
-%   filter_type: Optional string indicating type of filter to be applied
 %
 % Example usage:
 %   register_movie('c9m7d12.hdf5', '');
@@ -35,11 +34,27 @@ num_frames = movie_size(3);
 
 % Begin TurboReg processing
 %------------------------------------------------------------
-if ~exist('filter_type', 'var')
-    filter_type = 'mosaic';
+ref_idx = 1; % By default, movie is registered against the first frame
+im_ref = h5read(movie_in, movie_dataset, [1 1 ref_idx], [height width 1]);
+
+filter_type = 'mosaic'; % Default filter option
+
+for k = 1:length(varargin)
+    vararg = varargin{k};
+    if ischar(vararg)
+        vararg = lower(vararg);
+        switch vararg
+            case 'ref' % Externally provided reference image
+                im_ref = varargin{k+1};
+            otherwise
+                filter_type = vararg;
+        end
+    end
 end
 
 switch filter_type
+    % See comments associated with each transform function (e.g.
+    % `mosaic_transform`) for further details.
     case 'mosaic'
         ssm_radius = 20;
         asm_radius = 5;
@@ -55,10 +70,6 @@ switch filter_type
         return
 end
 fprintf('register_movie: Using "%s" filter...\n', filter_type);
-
-% Common reference for registration
-ref_idx = 1;
-im_ref = h5read(movie_in, movie_dataset, [1 1 ref_idx], [height width 1]);
 im_ref = transform(single(im_ref));
 
 % Specify ROI
@@ -87,6 +98,9 @@ copy_hdf5_params(movie_in, movie_out);
      
 h5create(movie_out, '/MotCorr/MaskXY', size(mask_xy), 'Datatype', 'double');
 h5write(movie_out, '/MotCorr/MaskXY', mask_xy);
+
+h5create(movie_out, '/MotCorr/RefImg', size(im_ref), 'Datatype', 'single');
+h5write(movie_out, '/MotCorr/RefImg', im_ref);
 
 % Apply TurboReg
 frame_chunk_size = 500;
@@ -138,6 +152,8 @@ function A_tr = mosaic_transform(A, ssm_filter, asm_filter)
     % Derived from Inscopix's Mosaic. Frame is transformed in two steps:
     %   (1) "Subtract spatial mean", then
     %   (2) "Apply spatial mean"
+    % Has worked well for Miniscope DFF movies, as well as low
+    % magnification 1p data (e.g. 1p VLM).
     A_tr = A - imfilter(A, ssm_filter, 'replicate');
     A_tr = imfilter(A_tr, asm_filter);
 end
