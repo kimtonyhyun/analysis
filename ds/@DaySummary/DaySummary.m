@@ -1,12 +1,15 @@
 % Summary of PlusMaze data for a single day.
 %
 % Inputs:
-%   ds_source: Two possibilities:
+%   ds_source: Three possibilities:
 %       1) Plus maze text file
 %       2) Struct 's' containing the following fields:
 %           - s.maze: Path to plus maze text file (required)
 %           - s.behavior: Path to behavioral video (optional; e.g. mp4)
 %           - s.tracking: Path to tracking text file (optional; *.xy)
+%       3) Empty string. Fake trial metadata will be generated that matches
+%           the number of frames in the provided rec file. A hack to allow
+%           use of the 'analysis' codebase with non-PlusMaze datasets.
 %
 %   rec_dir: Directory containing 
 %       - Filters and traces in a "rec_*.mat" file (required)
@@ -51,6 +54,16 @@ classdef DaySummary < handle
                 end
             end
             
+            % Load extraction data (i.e. filters & traces)
+            %------------------------------------------------------------
+            data_source = get_most_recent_file(rec_dir, 'rec_*.mat');
+            data = load(data_source);
+            obj.num_cells = data.info.num_pairs;
+            fprintf('%s: Loaded %d filters and traces (%s) from %s\n',...
+                    datestr(now), obj.num_cells, data.info.type, data_source);
+                
+            trace_num_frames = size(data.traces, 1);
+            
             % Check if DaySummary session data is provided as a struct
             %------------------------------------------------------------
             if isstruct(ds_source)
@@ -58,23 +71,25 @@ classdef DaySummary < handle
             else
                 plusmaze_txt = ds_source;
             end
-            
-            % Read trial metadata
-            [trial_indices, loc_info, trial_durations] = parse_plusmaze(plusmaze_txt); %#ok<*PROP>
-            fprintf('%s: Loaded trial metadata from %s\n', datestr(now), plusmaze_txt);
-            
-            % Load cell data (i.e. filters & traces)
-            %------------------------------------------------------------
-            data_source = get_most_recent_file(rec_dir, 'rec_*.mat');
-            data = load(data_source);
-            obj.num_cells = data.info.num_pairs;
-            fprintf('%s: Loaded %d filters and traces (%s) from %s\n',...
-                    datestr(now), obj.num_cells, data.info.type, data_source);
+                       
+            if ~isempty(plusmaze_txt)
+                % PlusMaze metadata provided. Read trial metadata
+                [trial_indices, loc_info, trial_durations] = parse_plusmaze(plusmaze_txt); %#ok<*PROP>
+                fprintf('%s: Loaded trial metadata from %s\n', datestr(now), plusmaze_txt);
+            else
+                % PlusMaze metadata NOT provided. Make up fake info so that
+                % DaySummary object can be instantiated anyway.
+                trial_indices = [1 2 3 trace_num_frames];
+                loc_info = {'east', 'north', 'north'};
+                trial_durations = 10.0;
+                fprintf('%s: Generated fake trial metadata to match number of frames (%d) in rec file (%s)!\n',...
+                    datestr(now), trace_num_frames, data_source);
+            end
             
             % Check that the length of traces is consistent with the table
             % of trial indices.
             obj.full_num_frames = trial_indices(end,end);
-            assert(size(data.traces,1) == obj.full_num_frames,...
+            assert(trace_num_frames == obj.full_num_frames,...
                 'Error: Length of traces does not match trial index table!');
             
             % Optional exclusion of probe trials. Effectively, we are
