@@ -8,3 +8,4 @@ session = DaySummary(sources, 'cm01');
 X = soft_normalize(X);
 cpd = fit_cpd(X);
 factor_plots(session,cpd(10,10),trial_idx);
+scree_plot(cpd);
