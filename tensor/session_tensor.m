@@ -1,31 +1,39 @@
-function [X,idx] = session_tensor(ds)
+function [X,cell_idx,trial_idx] = session_tensor(session)
 % SESSION_TENSOR, construct a 3d tensor (neurons x time x trial) from a behavioral session.
 %
-%     X,idx = SESSION_TENSOR(day_summary)
+%     X,cell_idx = SESSION_TENSOR(session)
 
 % find cells
-idx = [];
-for a = 1:ds.num_cells
-	if strcmp('not a cell',ds.cells(a).label)
+cell_idx = [];
+for a = 1:session.num_cells
+	if strcmp('not a cell',session.cells(a).label)
 		continue
 	end
-	idx = [idx; a];
+	cell_idx = [cell_idx; a];
 end
 
-lens = zeros(ds.num_trials,1);
-for b = 1:ds.num_trials
-	trial = ds.trials(b);
+% determine median trial duration
+lens = zeros(session.num_trials,1);
+for b = 1:session.num_trials
+	trial = session.trials(b);
 	lens(b) = size(trial.traces,2);
 end
 len = ceil(median(lens));
 
-X = zeros(length(idx),len,ds.num_trials);
-for b = 1:ds.num_trials
-	trial = ds.trials(b);
+% remove probe trials
+trial_idx = remove_probes(session);
+
+% linear interpolation to align trials.
+X = zeros(length(cell_idx),len,length(trial_idx));
+for b = 1:length(trial_idx)
+	it = trial_idx(b);
+	trial = session.trials(it);
 	L = size(trial.traces,2);
 	d = 1;
-    for c = transpose(idx)
+    for c = transpose(cell_idx)
         X(d,:,b) = interp1(linspace(1,len,L),trial.traces(c,:),1:len);
         d = d+1;
     end
 end
+
+% TO DO: Time warping? Position mapping?
