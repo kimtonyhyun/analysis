@@ -27,7 +27,7 @@ for r = min_rank:max_rank
 	for s = 1:ns
 		decomp = normalize(cp_als(Xt,r));
 		cpd(s,ri).rank = r;
-		cpd(s,ri).Rsq = norm(Xt-full(decomp))/norm(Xt);
+		cpd(s,ri).Rsq = 1 - norm(Xt-full(decomp))/norm(Xt);
 		cpd(s,ri).factors = struct('neuron',decomp.u{1},'time',decomp.u{2},'trial',decomp.u{3});
 		cpd(s,ri).lambda = decomp.lambda;
 	end
