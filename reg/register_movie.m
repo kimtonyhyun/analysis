@@ -37,6 +37,7 @@ num_frames = movie_size(3);
 ref_idx = 1; % By default, movie is registered against the first frame
 im_ref = h5read(movie_in, movie_dataset, [1 1 ref_idx], [height width 1]);
 
+select_roi = true;
 filter_type = 'mosaic'; % Default filter option
 
 for k = 1:length(varargin)
@@ -44,6 +45,8 @@ for k = 1:length(varargin)
     if ischar(vararg)
         vararg = lower(vararg);
         switch vararg
+            case {'nomask', 'noroi'}
+                select_roi = false;
             case 'ref' % Externally provided reference image
                 im_ref = varargin{k+1};
             otherwise
@@ -73,19 +76,25 @@ fprintf('register_movie: Using "%s" filter...\n', filter_type);
 im_ref = transform(single(im_ref));
 
 % Specify ROI
-fprintf('register_movie: Please select ROI for TurboReg\n');
-imagesc(im_ref); axis image; colormap gray;
-title(strrep(movie_in,'_','\_'));
-h_poly = impoly;
-mask_xy = getPosition(h_poly);
+if select_roi
+    fprintf('register_movie: Please select ROI for TurboReg\n');
+    imagesc(im_ref); axis image; colormap gray;
+    title(strrep(movie_in,'_','\_'));
+    h_poly = impoly;
+    mask_xy = getPosition(h_poly);
+    input('register_movie: Please enter to proceed >> ');
+else % Use the full image
+    mask_xy = [1 1;
+               height 1;
+               height width
+               1 width];
+end
 mask_ref = single(poly2mask(mask_xy(:,1), mask_xy(:,2), height, width));
 
 % Turboreg options
 options.rotation_enable = false;
 options.mingain = 0.0; % Max accuracy
 options.levels = calculate_pyramid_depth(min(height, width));
-
-input('register_movie: Please enter to proceed >> ');
 
 % Prepare output movie
 %------------------------------------------------------------
