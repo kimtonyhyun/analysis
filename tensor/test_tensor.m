@@ -1,6 +1,6 @@
 clear; close all; clc;
 
-cd('/home/alex/data/strategy_switch/c11m1d12')
+cd('/Users/alex/Dropbox/strategy_switch/data/c11m1d12')
 
 sources = gen_data_sources;
 session = DaySummary(sources, 'cm01');
