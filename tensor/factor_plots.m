@@ -9,21 +9,7 @@ nn = size(factors.neuron,1);
 nt = size(factors.time,1);
 nk = size(factors.trial,1);
 
-% east and west starts
-ie = [];
-iw = [];
-for it = 1:length(trial_idx)
-	trial = session.trials(trial_idx(it));
-	if strcmp(trial.start,'east')
-		ie = [ie;it];
-		continue
-	end
-	if strcmp(trial.start,'west')
-		iw = [iw;it];
-		continue
-	end
-	error('assertion error')
-end
+[ie,iw] = ie_iw(session,trial_idx);
 
 %figure('Position', [0, 0, 300, 400])
 figure()

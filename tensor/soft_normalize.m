@@ -8,7 +8,7 @@ Y = zeros(size(X));
 if ndims(X) == 3
 	for c = 1:size(X,1)
 		x = X(c,:,:);
-		Y(c,:,:) = x ./ (5 + range(x(:)));
+		Y(c,:,:) = x ./ (1 + max(x(:)));
 	end
 else
 	error('input has inappropriate dimensions')
