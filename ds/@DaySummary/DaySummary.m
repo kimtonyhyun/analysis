@@ -156,7 +156,8 @@ classdef DaySummary < handle
                 masks{k} = poly2mask(boundaries{k}(:,1), boundaries{k}(:,2), height, width);
                 
                 % Compute the center of mass
-                masked_filter = masks{k}.*images{k};
+%                 masked_filter = masks{k}.*images{k};
+                masked_filter = images{k}; % Masking sometimes yields numerical instabilities
                 com = [(1:width)*sum(masked_filter,1)';
                        (1:height)*sum(masked_filter,2)];
                 coms{k} = com / sum(masked_filter(:));
