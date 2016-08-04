@@ -17,7 +17,8 @@ for i = 1:length(varargin)
     end
 end
 
-% Compute a common scaling for the movie
+% Initial processing of movie
+max_proj = max(M,[],3);
 movie_clim = compute_movie_scale(M);
 fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
     datestr(now), movie_clim(1), movie_clim(2));
@@ -40,9 +41,9 @@ prev_cell_idx = 1;
 
 while (cell_idx <= num_candidates)
     if show_raster
-        display_candidate(cell_idx);
+        display_candidate_rasters(cell_idx);
     else
-        
+        display_candidate(cell_idx);
     end
     
     % Ask the user to classify the cell candidate
@@ -114,7 +115,7 @@ ds.save_class(output_name);
 
     % Auxiliary functions
     %------------------------------------------------------------
-    function display_candidate(cell_idx)
+    function display_candidate_rasters(cell_idx)
         clf;
         subplot(3,2,[1 2]);
         ds.plot_trace(cell_idx);
@@ -125,7 +126,39 @@ ds.save_class(output_name);
 
         subplot(3,2,[4 6]);
         ds.plot_cell_raster(cell_idx, 'draw_correct');
-    end % display_candidate
+    end % display_candidate_rasters
+
+    function display_candidate(cell_idx)
+        clf;
+        subplot(3,1,1);
+        ds.plot_trace(cell_idx);
+        title(sprintf('Candidate %d of %d', cell_idx, num_candidates));
+        
+        subplot(3,1,[2 3]);
+        imagesc(max_proj);
+        axis image;
+        colormap gray;
+        hold on;
+        
+        % Plot cell filter on top of max projection image
+        filter_threshold = 0.3;
+        
+        filter = ds.cells(cell_idx).im;
+        boundaries = compute_ic_boundary(filter, filter_threshold);
+        for j = 1:length(boundaries)
+            boundary = boundaries{j};
+            plot(boundary(:,1), boundary(:,2), 'c', 'LineWidth', 2);
+        end
+        
+        COM = ds.cells(cell_idx).com;
+        plot(COM(1), COM(2), 'b.');
+        hold off;
+        
+        [height, width, ~] = size(M);
+        zoom_half_width = min([width, height])/10;
+        xlim(COM(1)+zoom_half_width*[-1 1]);
+        ylim(COM(2)+zoom_half_width*[-1 1]);
+    end
 
     function display_map()
         clf;
