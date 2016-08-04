@@ -1,7 +1,13 @@
-function [X,cell_idx,trial_idx] = session_tensor(session)
+function [X,cell_idx,trial_idx] = session_tensor(session,varargin)
 % SESSION_TENSOR, construct a 3d tensor (neurons x time x trial) from a behavioral session.
 %
 %     X,cell_idx = SESSION_TENSOR(session)
+
+if nargin == 1
+    trial_type = 'all';
+else
+    trial_type = varargin{1};
+end
 
 % find cells
 cell_idx = [];
@@ -20,8 +26,37 @@ for b = 1:session.num_trials
 end
 len = ceil(median(lens));
 
-% remove probe trials
-trial_idx = remove_probes(session);
+% select trials of interest
+everything = 1:length(session.trials);
+[en,es,wn,ws,probes] = unique_paths(session);
+switch trial_type
+    case 'east'
+        trial_idx = union(en,es);
+        disp('building tensor to analyze east trials')
+    case 'west'
+        trial_idx = union(wn,ws);
+        disp('building tensor to analyze west trials')
+    case 'en'
+        trial_idx = en;
+        disp('building tensor to analyze east -> north trials')
+    case 'es'
+        trial_idx = es;
+        disp('building tensor to analyze east -> south trials')
+    case 'wn'
+        trial_idx = wn;
+        disp('building tensor to analyze west -> north trials')
+    case 'ws'
+        trial_idx = ws;
+        disp('building tensor to analyze west -> south trials')
+    case 'all' % remove probes
+        trial_idx = setdiff(everything,probes);
+        disp('building tensor to analyze all non-probe trials')
+    case 'everything' % keep probes
+        trial_idx = everything;
+        disp('building tensor to analyze everything (including probes)')
+    otherwise
+        error('trial type not understood')
+end
 
 % linear interpolation to align trials.
 X = zeros(length(cell_idx),len,length(trial_idx));
