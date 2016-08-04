@@ -1,12 +1,27 @@
-function classify_cells(ds, M)
+function classify_cells(ds, M, varargin)
 % Perform manual classification of candidate filter/trace pairs
+
+% Note: Default options configured for the PlusMaze experiment!
+show_raster = true;
+fps = 10;
+
+for i = 1:length(varargin)
+    vararg = varargin{i};
+    if ischar(vararg)
+        switch lower(vararg)
+            case 'fps'
+                fps = varargin{i+1};
+            case 'noraster' % Use with non-PlusMaze datasets
+                show_raster = false;
+        end
+    end
+end
 
 % Compute a common scaling for the movie
 movie_clim = compute_movie_scale(M);
 fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
     datestr(now), movie_clim(1), movie_clim(2));
-
-fps = 10; % FIXME
+fprintf('  %s: FPS is %.1f...\n', datestr(now), fps);
 
 % Load filter/trace pairs to be classified
 num_candidates = ds.num_cells;
@@ -24,7 +39,11 @@ cell_idx = 1;
 prev_cell_idx = 1;
 
 while (cell_idx <= num_candidates)
-    display_candidate(cell_idx);
+    if show_raster
+        display_candidate(cell_idx);
+    else
+        
+    end
     
     % Ask the user to classify the cell candidate
     prompt = sprintf('Classifier (%d/%d, "%s") >> ', ...
@@ -100,51 +119,12 @@ ds.save_class(output_name);
         subplot(3,2,[1 2]);
         ds.plot_trace(cell_idx);
         title(sprintf('Candidate %d of %d', cell_idx, num_candidates));
-
-%         subplot(3,4,4);
-%         display_neighborhood(cell_idx);
         
         subplot(3,2,[3 5]);
         ds.plot_superposed_trials(cell_idx);
 
         subplot(3,2,[4 6]);
         ds.plot_cell_raster(cell_idx, 'draw_correct');
-        
-        function display_neighborhood(cell_idx)
-            % Display the current cell
-            cell_img = ds.cells(cell_idx).im;
-            [height, width] = size(cell_img);
-            zoom_half_width = min([height, width])/15;
-            
-            imagesc(cell_img);
-            axis image;
-            xlabel('x [px]');
-            ylabel('y [px]');
-            com = ds.cells(cell_idx).com;
-            x_range = com(1) + zoom_half_width*[-1 1];
-            x_range(1) = max(1, x_range(1)); x_range(2) = min(width, x_range(2));
-            y_range = com(2) + zoom_half_width*[-1 1];
-            y_range(1) = max(1, y_range(1)); y_range(2) = min(height, y_range(2));
-            xlim(x_range);
-            ylim(y_range);
-            hold on;
-            
-            % Display neighbors
-            num_neighbors_to_show = 5;
-            neighbor_indices = ds.get_nearest_sources(cell_idx, num_neighbors_to_show);
-            for k = 1:num_neighbors_to_show
-                neighbor_idx = neighbor_indices(k);
-                boundary = ds.cells(neighbor_idx).boundary;
-                com = ds.cells(neighbor_idx).com;
-                
-                color = 'w';
-                plot(boundary(:,1), boundary(:,2), color);
-                text(com(1), com(2), num2str(neighbor_idx),...
-                     'HorizontalAlignment', 'center',...
-                     'Color', color,...
-                     'Clipping', 'on');
-            end
-        end % Display neighborhood
     end % display_candidate
 
     function display_map()
