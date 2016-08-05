@@ -1,18 +1,16 @@
 clear; close all; clc;
 
-% change to data folder
-p = pwd();
 if ismac
-    cd('/Users/alex/Dropbox/strategy_switch/data/c11m1d12')
+    p = '/Users/alex/Dropbox/strategy_switch/data/c11m1d12';
 elseif isunix
-    cd('/home/alex/Dropbox/strategy_switch/data/c11m1d12')
+    p = '/home/alex/Dropbox/strategy_switch/data/c11m1d12';
 else
     error('Platform not supported')
 end
 
 % do tensor analysis
-sources = gen_data_sources;
-session = DaySummary(sources, 'cm01');
+sources = gen_data_sources(p);
+session = DaySummary(sources, [p,'/cm01']);
 [X,cell_idx,trial_idx] = session_tensor(session);
 X = soft_normalize(X);
 cpd = fit_cpd(X);
