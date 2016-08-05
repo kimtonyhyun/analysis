@@ -1,7 +1,7 @@
 function scree_plot(cpd)
 % SCREE_PLOT, shows unexplained variance as a function of number of factors. 
 %
-%     FACTOR_PLOTS(session,decomp,trial_idx)
+%     SCREE_PLOT(cpd)
 
 vc = cpd(:);
 n = length(vc);
