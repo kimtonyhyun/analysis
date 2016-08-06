@@ -60,6 +60,15 @@ while (cell_idx <= num_candidates)
             fprintf('  Sorry, %d is not a valid cell index\n', val);
         end
     else
+
+        % Apply syntactic sugar
+        switch (resp)
+            case 'C'
+                resp = 'c!';
+            case 'N'
+                resp = 'n';
+        end
+
         resp = lower(resp);
         switch (resp)
             % Classication options
@@ -134,15 +143,14 @@ ds.save_class(output_name);
         ds.plot_trace(cell_idx);
         title(sprintf('Candidate %d of %d', cell_idx, num_candidates));
         
+        % Plot cell filter on top of max projection image
         subplot(3,1,[2 3]);
         imagesc(max_proj);
         axis image;
         colormap gray;
         hold on;
         
-        % Plot cell filter on top of max projection image
         filter_threshold = 0.3;
-        
         filter = ds.cells(cell_idx).im;
         boundaries = compute_ic_boundary(filter, filter_threshold);
         for j = 1:length(boundaries)
@@ -156,8 +164,10 @@ ds.save_class(output_name);
         
         [height, width, ~] = size(M);
         zoom_half_width = min([width, height])/10;
-        xlim(COM(1)+zoom_half_width*[-1 1]);
-        ylim(COM(2)+zoom_half_width*[-1 1]);
+        x_range = COM(1)+zoom_half_width*[-1 1];
+        y_range = COM(2)+zoom_half_width*[-1 1];
+        xlim(x_range);
+        ylim(y_range);
     end
 
     function display_map()
