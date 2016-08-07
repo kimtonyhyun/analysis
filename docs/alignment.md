@@ -37,8 +37,7 @@ At this point, you are prompted to select 4 pairs of cells from each dataset. I 
 If you mess up with the clicking, you can just Ctrl+C out of the script, and restart. ;)
 
 After you select the 4 pairs of alignment points, the script will show you a pre-transform and post-transform overlay:
-![Pre-alignment overlay](alignment_pre.png)
-![Post-alignment overlay](alignment_post.png)
+![Pre- and post-alignment overlays](alignment_prepost.png)
 
 At this point, you have to press [Enter] in the console output to proceed with the matching:
 ```
