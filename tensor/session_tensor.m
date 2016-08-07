@@ -1,12 +1,17 @@
-function [X,cell_idx,trial_idx] = session_tensor(session,varargin)
+function [X,cell_idx,trial_idx] = session_tensor(session,trial_type)
 % SESSION_TENSOR, construct a 3d tensor (neurons x time x trial) from a behavioral session.
 %
 %     X,cell_idx = SESSION_TENSOR(session)
+%     X,cell_idx = SESSION_TENSOR(session,'all') % all non-probe trials (default)
+%     X,cell_idx = SESSION_TENSOR(session,'east') % all east starts
+%     X,cell_idx = SESSION_TENSOR(session,'west') % all west starts
+%     X,cell_idx = SESSION_TENSOR(session,'en') % all east -> north trials
+%     X,cell_idx = SESSION_TENSOR(session,'es') % all east -> south trials
+%     X,cell_idx = SESSION_TENSOR(session,'wn') % all west -> north trials
+%     X,cell_idx = SESSION_TENSOR(session,'ws') % all west -> south trials
 
 if nargin == 1
     trial_type = 'all';
-else
-    trial_type = varargin{1};
 end
 
 % find cells
