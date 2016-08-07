@@ -31,7 +31,7 @@ The alignment procedure can be invoked as:
 >> [match_12to13, match_13to12] = run_alignment(m1d12, m1d13);
 ```
 
-At this point, you are prompted to select 4 pairs of cells from each dataset. I find it easiest to alternate clicks between the datasets:
+At this point, you are prompted to select 4 pairs of cells from each dataset. (Tip: try to distribute these control points around the field of view.) I find it easiest to alternate clicks between the datasets:
 ![Alignment control points](alignment_selection.png)
 
 If you mess up with the clicking, you can just Ctrl+C out of the script, and restart. ;)
