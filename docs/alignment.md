@@ -68,4 +68,8 @@ If `match_12to13{k}` is empty, it means that there was no match for Cell k of Da
 
 ## Additional details on `run_alignment`
 
-Documentation to be written.
+Documentation to be filled out.
+
+#### Alignment without spatial transformation
+
+#### Heuristics used by the matching algorithm
