@@ -4,7 +4,7 @@ The Matlab-based analysis workflow for the strategy shifting experiment at Herri
 
 1. [`DaySummary` QuickStart](ds_quickstart.md)
 2. Classifying cells using `DaySummary`
-3. Cross-dataset alignment
+3. [Cross-dataset alignment](alignment.md)
 4. Use of `MultiDay`
 
 ## Standard data formats
