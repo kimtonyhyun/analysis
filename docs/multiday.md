@@ -4,7 +4,7 @@ A single `DaySummary` instance encapsulates the information associated with a si
 
 #### Instantiating a `MultiDay` instance
 
-In this tutorial, we will create a `MultiDay` object from three `DaySummary` instances: `m1d12`, `m1d13`, and `m1d14`; i.e. Days 12, 13, 14 of Cohort 11, Mouse 1. We assume the following `DaySummary` variables exist in the Matlab workspace:
+In this tutorial, we will create a `MultiDay` object from three `DaySummary` instances: `m1d12`, `m1d13`, and `m1d14` (i.e. Days 12, 13, 14 of Cohort 11, Mouse 1). We assume the following `DaySummary` variables exist in the Matlab workspace:
 ```
 >> m1d12
 
@@ -39,3 +39,7 @@ m1d14 =
       trial_indices: [100x4 int32]
     full_num_frames: 11878
 ```
+
+#### Important side note: Definition of cross-day match and "match conflicts"
+
+#### Basic usage of the `MultiDay` object
