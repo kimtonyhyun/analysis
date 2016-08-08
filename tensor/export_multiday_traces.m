@@ -20,3 +20,5 @@ for k = 1:md.num_days
         X{idx} = traces(cell_indices,:); % Reordered to use common index
     end
 end
+
+X = X(1:idx); % Truncate
