@@ -164,9 +164,18 @@ ds.save_class(output_name);
         % Draw nearest neighbors
         num_neighbors_to_draw = min(20, ds.num_cells-1);
         other_cells = ds.get_nearest_sources(cell_idx, num_neighbors_to_draw);
-        for other_cell_idx = other_cells
-            boundary = ds.cells(other_cell_idx).boundary;
-            plot(boundary(:,1), boundary(:,2), 'w');
+        for oc_idx = other_cells
+            oc = ds.cells(oc_idx);
+            if isempty(oc.label)
+                color = 'w';
+            else
+                if ds.is_cell(oc_idx)
+                    color = 'g';
+                else
+                    color = 'r';
+                end
+            end
+            plot(oc.boundary(:,1), oc.boundary(:,2), color);
         end
         hold off;
         
