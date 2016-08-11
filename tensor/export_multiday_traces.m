@@ -1,13 +1,13 @@
-function [X, neuron_map, trial_map] = export_multiday_traces(md, trial_type)
+function [matched_traces, neuron_map, trial_map] = export_multiday_traces(md, trial_type)
 % Exports cross-day aligned cell traces (via MultiDay) into a lightweight
 % format (description below) for tensor analysis
 %
 % Output format:
-%   X: Column cell vector [M x 1] where M is the total number of trials
-%      (across all days) of the requested 'trial_type' (e.g. 'en')
+%   matched_traces: Column cell vector [M x 1] where M is the total number 
+%      of trials across all days of the requested 'trial_type' (e.g. 'en')
 %       
-%      X{j} is a matrix of cell traces, in the format [num_matched_cells x
-%      num_frames_in_trial_j].
+%      matched_traces{j} is a matrix of cell traces, in the format
+%      [num_matched_cells x num_frames_in_trial_j].
 %
 %   neuron_map: Matrix [num_matched_cells x num_days] that maps each 
 %      matched neuron to its per-day neuron index.
@@ -24,7 +24,7 @@ end
 neuron_map = md.matched_indices;
 
 % Preallocate outputs
-X = cell(max_num_trials,1);
+matched_traces = cell(max_num_trials,1);
 trial_map = zeros(max_num_trials, 2); % Format: [Day-index, Trial-index]
 
 idx = 0;
@@ -41,11 +41,11 @@ for k = 1:md.num_days
         traces = day.trials(trial_idx).traces; % [neuron x time]
         
         idx = idx + 1;
-        X{idx} = traces(day_cell_indices,:); % Reordered to use common index
+        matched_traces{idx} = traces(day_cell_indices,:); % Reordered to use common index
         trial_map(idx,:) = [day_idx, trial_idx];
     end
 end
 
 % Truncate outputs
-X = X(1:idx);
+matched_traces = matched_traces(1:idx);
 trial_map = trial_map(1:idx,:);
