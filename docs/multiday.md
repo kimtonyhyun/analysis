@@ -79,6 +79,24 @@ md =
            sort_day: 12
 ```
 
-#### Important side note: Definition of cross-day match and "match conflicts"
+#### Definition of cross-day match
+
+The following three-day example illustrates the behavior of the cross-day alignment in `MultiDay`. Suppose we have a single cell that shows up on three days as: Cell A from Day 1, Cell B from Day 2, and Cell C from Day 3. An edge (shown in red, below) between two cells indicates that there is a bidirectional match.
+
+The simplest case is when there is a match between all day pairs, as follows:
+
+![Full match](md_simple-case.png)
+
+In this case, it clearly makes sense to call A / B / C to be an aligned cell.
+
+However, the `MultiDay` matching algorithm would also consider the following relationships to indicate that A / B / C are aligned: 
+
+![All match cases](md_all-cases.png)
+
+Thus, it is possible to provide fewer than the full set of matches (in `match_list`) when instantiating `MultiDay`.
+
+#### Match conflicts
+
+
 
 #### Basic usage of the `MultiDay` object
