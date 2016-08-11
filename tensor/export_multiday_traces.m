@@ -13,8 +13,8 @@ function [X, N, K] = export_multiday_traces(md, trial_type)
 %      to its per-day neuron index.
 %
 %   K: Matrix [M x 2] where M is the total number of trials of requested
-%      'trial_type'. K(i,1) is the day index, and K(i,2) is the trial index
-%      in that day.
+%      'trial_type'. For the i-th trial, K(i,1) is the day index of that
+%      trial, and K(i,2) is the trial index in the original day.
 %   
 max_num_trials = 0;
 for day_idx = md.valid_days
