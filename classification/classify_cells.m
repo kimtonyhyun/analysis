@@ -160,6 +160,14 @@ ds.save_class(output_name);
         
         COM = ds.cells(cell_idx).com;
         plot(COM(1), COM(2), 'b.');
+        
+        % Draw nearest neighbors
+        num_neighbors_to_draw = min(20, ds.num_cells-1);
+        other_cells = ds.get_nearest_sources(cell_idx, num_neighbors_to_draw);
+        for other_cell_idx = other_cells
+            boundary = ds.cells(other_cell_idx).boundary;
+            plot(boundary(:,1), boundary(:,2), 'w');
+        end
         hold off;
         
         [height, width, ~] = size(M);
