@@ -82,3 +82,15 @@ MD browser (Sort day 12, ID 1 of 341) >> 4
 MD browser (Sort day 12, ID 4 of 341) >> 
 ```
 yielding:
+
+![Aligned single cell rasters over Days 12, 13, 14](md_12-13-14-raster.png)
+
+The rasters allow for visual assessment of the cell's firing pattern over multiple days. The shape of the (cell's) filter on each day also provides a sanity check that the cross-day alignment was successful. Detailed instructions for navigating `browse_multiday` will be provided in a different document.
+
+More examples from `browse_multiday`:
+
+![MultiDay example 1](md_example1.png)
+
+![MultiDay example 2](md_example2.png)
+
+![MultiDay example 3](md_example3.png)
