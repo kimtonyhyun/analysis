@@ -74,3 +74,11 @@ This scenario can arise when cells A and D are located very close to one another
 The `MultiDay` constructor, as it is computing cross-day cellular alignments, is able to detect such match conflicts. Cells involved in match conflicts are then removed from further analysis.
 
 #### Basic usage of the `MultiDay` object
+
+The function `browse_multiday` allows for quick visualization of session-aligned `MultiDay` data, e.g.:
+```
+>> browse_multiday(md);
+MD browser (Sort day 12, ID 1 of 341) >> 4
+MD browser (Sort day 12, ID 4 of 341) >> 
+```
+yielding:
