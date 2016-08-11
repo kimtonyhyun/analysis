@@ -48,8 +48,10 @@ classdef MultiDay < handle
                 m_itoj = match_list{k,3};
                 m_jtoi = match_list{k,4};
                 
-                obj.match{i,j} = m_itoj;
-                obj.match{j,i} = m_jtoi;
+                if all(ismember([i, j], obj.valid_days))
+                    obj.match{i,j} = m_itoj;
+                    obj.match{j,i} = m_jtoi;
+                end
             end
             
             % Check if match matrices have been provided
