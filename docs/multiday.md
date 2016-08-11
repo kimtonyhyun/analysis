@@ -63,9 +63,14 @@ Thus, it is possible to provide fewer than the full set of matches (in `match_li
 
 #### Match conflicts / "Inconsistent" matches
 
-When creating a `MultiDay` instance from three or more `DaySummaries`, it is possible to have a "match conflict": i.e. multiple cells from the same day match to the same set of cross-day cells.
+When creating a `MultiDay` instance from three or more `DaySummary`s, it is possible to have a "match conflict": i.e. multiple cells from the same day match to the same set of cross-day cells.
 
 Consider the following example:
 
+![Match conflict](md_match-conflict.PNG)
+
+This scenario can arise when cells A and D are located very close to one another on Day 1. (See [here](https://github.com/schnitzer-lab/analysis/pull/142) for a real example.) For each pair of days, cell alignment matches are unique (i.e. if Day 1 / Cell A matches to Day 2 / Cell B, then Day 1 / Cell D _cannot_ match to Day 2 / Cell B). However, when more three or more `DaySummary`s are involved, it is possible that more than one cell from a given day match to the same set of cross-day cells.
+
+The `MultiDay` constructor, as it is computing cross-day cellular alignments, is able to detect such match conflicts. Cells involved in match conflicts are then removed from further analysis.
 
 #### Basic usage of the `MultiDay` object
