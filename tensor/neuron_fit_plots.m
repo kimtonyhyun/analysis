@@ -1,6 +1,6 @@
-function neuron_fit_plots(session,X,Xest,cell_idx,trial_idx)
+function neuron_fit_plots(ds,X,Xest,cell_idx,trial_idx)
 
-[ie,~] = ie_iw(session,trial_idx);
+[ie,~] = ie_iw(ds,trial_idx);
 trials = 1:4:100;
 ylimits = [min(X(:)) max(X(:))];
 

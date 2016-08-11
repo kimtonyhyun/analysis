@@ -1,4 +1,4 @@
-function neuron_factor_plots(session,decomp,trial_idx,varargin)
+function neuron_factor_plots(decomp,trial_idx,varargin)
 
 % tensor dimensions (neurons x time x trial)
 factors = decomp.factors;
