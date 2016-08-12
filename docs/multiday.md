@@ -58,7 +58,26 @@ Note that the `DaySummary` instances provided in `ds_list` are subfields of the 
     full_num_frames: 13851
 ```
 
-#### Definition of cross-day match
+#### Basic usage of the `MultiDay` object
+
+The essential quantity computed by `MultiDay` is `matched_indices`, which lists how the cell indices are aligned across the individual `DaySummary`s. In our example using `m1d12`, `m1d13`, `m1d14`, we find:
+```
+>> md.matched_indices
+
+           6          24           6
+           7           9           7
+        ...
+        1208        1230        1125
+```
+
+Each row of `md.matched_indices` is a cell that has been observed and aligned on all three days. For example, the first row indicates that: Cell 6 of `m1d12` is aligned to Cell 24 of `m1d13` is aligned to Cell 6 of `m1d14`.
+
+Note that the `matched_indices` table is sorted by Day 12 (the first column). The table can be sorted by other days as well, e.g. by Day 13 (the second column) by invoking:
+```
+>> md.sort_matches_by_day(13);
+```
+
+#### Definition of a cross-day match
 
 The following three-day example illustrates the behavior of the cross-day alignment in `MultiDay`. Suppose we have a single cell that shows up on three days as: Cell A from Day 1, Cell B from Day 2, and Cell C from Day 3. An edge (shown in red, below) between two cells indicates that there is a bidirectional match.
 
@@ -86,28 +105,7 @@ This scenario can arise when cells A and D are located very close to one another
 
 The `MultiDay` constructor, as it is computing multi-day cell alignment, is able to detect such match conflicts. Cells involved in match conflicts are then removed from further analysis.
 
-#### Basic usage of the `MultiDay` object
-
-##### `MultiDay.matched_indices`
-
-The essential quantity computed by `MultiDay` is `matched_indices`, which lists how the cell indices are aligned across the individual `DaySummary`s. In our original example using `m1d12`, `m1d13`, `m1d14`, we find:
-```
->> md.matched_indices
-
-           6          24           6
-           7           9           7
-        ...
-        1208        1230        1125
-```
-
-Each row of `md.matched_indices` is a cell that has been observed and aligned on all three days. For example, the first row indicates that: Cell 6 of `m1d12` is aligned to Cell 24 of `m1d13` is aligned to Cell 6 of `m1d14`.
-
-Note that the `matched_indices` table is sorted by Day 12 (the first column). The table can be sorted by other days as well, e.g. by Day 13 (the second column) by invoking:
-```
->> md.sort_matches_by_day(13);
-```
-
-##### `browse_multiday`
+#### Quick visualization of `MultiDay` via `browse_multiday`
 
 The function `browse_multiday` allows for quick visualization of session-aligned `MultiDay` data, e.g.:
 ```
