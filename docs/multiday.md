@@ -69,9 +69,9 @@ Consider the following example:
 
 ![Match conflict](md_match-conflict.PNG)
 
-This scenario can arise when cells A and D are located very close to one another on Day 1. (See [here](https://github.com/schnitzer-lab/analysis/pull/142) for a real example.) For each pair of days, cell alignment matches are unique (i.e. if Day 1 / Cell A matches to Day 2 / Cell B, then Day 1 / Cell D _cannot_ match to Day 2 / Cell B). However, when more three or more `DaySummary`s are involved, it is possible that more than one cell from a given day match to the same set of cross-day cells.
+This scenario can arise when cells A and D are located very close to one another on Day 1. For each pair of days, matches are bidrectional and unique (i.e. if Day 1 / Cell A matches to Day 2 / Cell B, then Day 1 / Cell D _cannot_ match to Day 2 / Cell B). However, when more three or more `DaySummary`s are involved, it is possible that more than one cell from a given day match to the same set of cross-day cells. (See [here](https://github.com/schnitzer-lab/analysis/pull/142) for a real example.)
 
-The `MultiDay` constructor, as it is computing cross-day cellular alignments, is able to detect such match conflicts. Cells involved in match conflicts are then removed from further analysis.
+The `MultiDay` constructor, as it is computing multi-day cell alignment, is able to detect such match conflicts. Cells involved in match conflicts are then removed from further analysis.
 
 #### Basic usage of the `MultiDay` object
 
