@@ -75,6 +75,27 @@ The `MultiDay` constructor, as it is computing multi-day cell alignment, is able
 
 #### Basic usage of the `MultiDay` object
 
+##### `MultiDay.matched_indices`
+
+The essential quantity computed by `MultiDay` is `matched_indices`, which lists how the cell indices are aligned across the individual `DaySummary`s. In our original example using `m1d12`, `m1d13`, `m1d14`, we find:
+```
+>> md.matched_indices
+
+           6          24           6
+           7           9           7
+        ...
+        1208        1230        1125
+```
+
+Each row of `md.matched_indices` is a cell that has been observed and aligned on all three days. For example, the first row indicates that: Cell 6 of `m1d12` is aligned to Cell 24 of `m1d13` is aligned to Cell 6 of `m1d14`.
+
+Note that the `matched_indices` table is sorted by Day 12 (the first column). The table can be sorted by other days as well, e.g. by Day 13 (the second column) by invoking:
+```
+>> md.sort_matches_by_day(13);
+```
+
+##### `browse_multiday`
+
 The function `browse_multiday` allows for quick visualization of session-aligned `MultiDay` data, e.g.:
 ```
 >> browse_multiday(md);
