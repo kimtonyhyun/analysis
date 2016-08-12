@@ -45,6 +45,19 @@ md =
            sort_day: 12
 ```
 
+Note that the `DaySummary` instances provided in `ds_list` are subfields of the resulting `MultiDay` instance. The individual `DaySummary` fields (e.g. `m1d12`) can be directly accessed as follows:
+```
+>> md.day(12)
+
+  DaySummary with properties:
+              cells: [1223x1 struct]
+             trials: [110x1 struct]
+          num_cells: 1223
+         num_trials: 110
+      trial_indices: [110x4 int32]
+    full_num_frames: 13851
+```
+
 #### Definition of cross-day match
 
 The following three-day example illustrates the behavior of the cross-day alignment in `MultiDay`. Suppose we have a single cell that shows up on three days as: Cell A from Day 1, Cell B from Day 2, and Cell C from Day 3. An edge (shown in red, below) between two cells indicates that there is a bidirectional match.
