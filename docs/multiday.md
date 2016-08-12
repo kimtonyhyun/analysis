@@ -45,7 +45,7 @@ md =
            sort_day: 12
 ```
 
-Note that the `DaySummary` instances provided in `ds_list` are subfields of the resulting `MultiDay` instance. The individual `DaySummary` fields (e.g. `m1d12`) can be directly accessed as follows:
+Note that the `DaySummary` instances provided in `ds_list` are subfields of the resulting `MultiDay` instance. The individual `DaySummary` fields (e.g. `m1d12`) can be directly accessed through `md` as follows:
 ```
 >> md.day(12)
 
