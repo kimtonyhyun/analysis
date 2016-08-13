@@ -91,11 +91,11 @@ However, the `MultiDay` matching algorithm would also consider the following rel
 
 ![All match cases](md_all-cases.png)
 
-Thus, it is possible to provide fewer than the full set of matches (in `match_list`) when instantiating `MultiDay`.
+Thus, note that it is permissible to provide fewer than the complete set of matches when instantiating `MultiDay` (i.e. in `match_list`).
 
 #### Match conflicts / "Inconsistent" matches
 
-When creating a `MultiDay` instance from three or more `DaySummary`s, it is possible to have a "match conflict": i.e. multiple cells from the same day match to the same set of cross-day cells.
+When creating a `MultiDay` instance from three or more `DaySummary`s, it is possible to have a "match conflict": i.e. multiple cells from the same day that match to the same set of cross-day cells.
 
 Consider the following example:
 
