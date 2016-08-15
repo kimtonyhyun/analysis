@@ -1,50 +1,66 @@
-function neuron_factor_plots(decomp,trial_idx,varargin)
+function neuron_factor_plots(decomp,md,trial_map,varargin)
+
+% parse optional inputs
+params = inputParser;
+params.addParameter('trialcolor', 'start', ...
+                    @(x) any(validatestring(x,['start','error','none'])));
+params.addParameter('trialax', 'order', ...
+                    @(x) any(validatestring(x,['order','number'])));
+params.parse(varargin{:});
+res = params.Results;
 
 % tensor dimensions (neurons x time x trial)
 factors = decomp.factors;
 nn = size(factors.neuron,1);
 nr = size(factors.neuron,2);
-nk = length(trial_idx);
+nk = size(trial_map,1);
 
 % plot factors in order of decreasing variability across trials
-peak_idx = zeros(nr,1);
+factvar = zeros(nr,1);
 for r = 1:nr
-    peak_idx(r) = std(factors.trial(:,r));
+    factvar(r) = std(factors.trial(:,r));
 end
-[~,fo] = sort(peak_idx,'descend');
+[~,fo] = sort(factvar,'descend');
 
-% color the trials
-if nargin == 3
-    colormode = 'none';
-else
-    colormode = varargin{1};
+% trial coloring labels
+red = [1.0 0.0 0.0];
+blue = [0.0 0.7 1.0];
+switch res.trialcolor
+    case 'start'
+        tc = {'east', 'E', blue;
+              'west', 'W', red};
+    case 'end'
+        tc = {'north', 'N', blue;
+              'south', 'S', red};
+    case 'correct'
+        tc = {'1', '1', blue;
+              '0', '0', red};
+    otherwise
+        tc = {};
 end
 
+% set trial colors
 trial_colors = zeros(nk,3);
-if ~strcmp(colormode,'none')
-    [i1,i2,labels] = ten_filter_trials(session,trial_idx,colormode);
-    for k = transpose(i1)
-        trial_colors(k,:) = [0 0 1];
-    end
-    for k = transpose(i2)
-        trial_colors(k,:) = [1 0 0];
+if ~isempty(tc)
+    for k = 1:nk
+        trial = md.day(trial_map(k,1)).trials(trial_map(k,2));
+        trialdata = num2str(trial.(res.trialcolor));
+        idx = strcmp(tc(:,1), trialdata);
+        trial_colors(k,:) = tc{idx,3};
     end
 end
 
-% plot trials by true order
-if nargin < 5
-    axmode = 'order';
-else
-    axmode = varargin{2};
-end
-
-switch axmode
+% plot trials by order or by true number
+switch res.trialax
     case 'order'
         trial_ax = 1:nk;
     case 'number'
-        trial_ax = trial_idx;
-    otherwise
-        error('unsupported trial axis')
+        trial_ax = trial_map(:,2);
+        for d = sort(md.valid_days,'ascend')
+            n = length(md.day(d).trials);
+            idx = trial_map(:,1) > d;
+            trial_ax(idx) = trial_ax(idx) + n;
+        end
 end
 
 % make the figure

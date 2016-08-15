@@ -7,11 +7,13 @@ if ismac
     p_m1d12 = '/Users/alex/Dropbox/strategy_switch/data/c11m1d12';
     p_m1d13 = '/Users/alex/Dropbox/strategy_switch/data/c11m1d13';
     p_m1d14 = '/Users/alex/Dropbox/strategy_switch/data/c11m1d14';
+    figdir = '/Users/alex/Dropbox/strategy_switch/figs/';
     load /Users/alex/Dropbox/strategy_switch/data/match_m1d12-14.mat
 elseif isunix
     p_m1d12 = '/home/alex/Dropbox/strategy_switch/data/c11m1d12';
     p_m1d13 = '/home/alex/Dropbox/strategy_switch/data/c11m1d13';
     p_m1d14 = '/home/alex/Dropbox/strategy_switch/data/c11m1d14';
+    figdir = '/home/alex/Dropbox/strategy_switch/figs/';
     load /home/alex/Dropbox/strategy_switch/data/match_m1d12-14.mat
 else
     error('Platform not supported')
@@ -33,25 +35,36 @@ match_list = {12, 13, m_12to13, m_13to12;
 md = MultiDay(ds_list,match_list);
 
 %% The real tensor stuff happens here
-[X, neuron_map, trial_map] = export_multiday_traces(md, 'east');
+md = MultiDay({12,m1d12},{});
+[X, neuron_map, trial_map] = export_multiday_traces(md,'all');
 
-% preprocessing
-X = standardize(X,trial_map);
+% TODO: standardize before warp?
+% X = standardize(X,trial_map);
+
+% preprocessing.
 X = timewarp(X);
+for c = 1:size(X,1)
+    x = X(c,:,:);
+    X(c,:,:) = x ./ (1 + max(x(:)));
+end
 
 % make a scree plot (up to rank 10)
-[cpd_list,rsq] = cpd_scree(X,10);
+[cpd_list,rsq] = fit_cpd(X,10);
+scree_cpd(cpd_list);
 
 % pick best cpd to analyze further
 [~,i] = max(rsq);
 cpd = cpd_list(i);
 Xest = full(cpd.decomp);
+Xest = Xest.data;
 
 % plot single-figure summary of all factors
-% neuron_factor_plots(cpd,trial_idx,'start')
+neuron_factor_plots(cpd,md,trial_map)
 
 % plot fit across neurons
-visualize_fit(X,Xest,1)
+outdir = [figdir, 'm1/neuron_viz/'];
+visualize_fit(X,Xest,1,md,trial_map,outdir);
 
 % plot fit across trials
-visualize_fit(X,Xest,3)
+outdir = [figdir, 'm1/trial_viz/'];
+visualize_fit(X,Xest,3,md,trial_map,outdir);

@@ -39,4 +39,7 @@ switch trial_type
         error('trial type not understood')
 end
 
-filtered_trial_indices = filtered_trial_indices'; % Return as a ROW vector
+% Return as a ROW vector
+if size(filtered_trial_indices,2) == 1
+    filtered_trial_indices = filtered_trial_indices';
+end
