@@ -1,4 +1,4 @@
-function [M] = visualize_fit(X,Xest,dim,md,trial_map,outdir)
+function visualize_fit(X,Xest,dim,md,trial_map,outdir)
 % VISUALIZE_FIT, compare the cpd fit (Xest) to the real data (X) along mode
 % dim.
 %
@@ -50,7 +50,6 @@ for n = 1:nframes
         xlim(xlimits)
         ylabel([ystr,' ', num2str(s(k))])
     end 
-    % M(n) = getframe(gcf);
     if isempty(outdir)
         pause
     else

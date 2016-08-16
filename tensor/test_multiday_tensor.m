@@ -45,7 +45,7 @@ md = MultiDay({12,m1d12},{});
 X = timewarp(X);
 for c = 1:size(X,1)
     x = X(c,:,:);
-    X(c,:,:) = x ./ (1 + max(x(:)));
+    X(c,:,:) = x ./ (max([1, max(abs(x(:)))]));
 end
 
 % make a scree plot (up to rank 10)
@@ -68,3 +68,7 @@ visualize_fit(X,Xest,1,md,trial_map,outdir);
 % plot fit across trials
 outdir = [figdir, 'm1/trial_viz/'];
 visualize_fit(X,Xest,3,md,trial_map,outdir);
+
+% plot residuals
+visualize_resids(X,Xest,md,trial_map);
+
