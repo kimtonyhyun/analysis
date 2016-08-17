@@ -4,6 +4,8 @@ function visualize_fit(X,Xest,dim,md,trial_map,outdir)
 %
 %     VISUALIZE_FIT(X,Xest,dim,ds_list,trial_map)
 
+figure()
+
 if nargin==5
     outdir = '';
 end

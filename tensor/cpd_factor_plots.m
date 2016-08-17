@@ -1,4 +1,4 @@
-function neuron_factor_plots(cpd,md,trial_map,varargin)
+function cpd_factor_plots(cpd,md,trial_map,varargin)
 
 % parse optional inputs
 params = inputParser;
@@ -10,8 +10,12 @@ params.addParameter('factor_order', 'lambda', ...
                     @(x) any(validatestring(x,['lambda','trialvar'])));
 params.addParameter('neuron_plot', 'bars', ...
                     @(x) any(validatestring(x,['bars','plotmatrix'])));
+params.addParameter('n_factors', cpd.rank);
+params.addParameter('space', 0.1);
 params.parse(varargin{:});
 res = params.Results;
+nf = res.n_factors;
+space = res.space;
 
 % tensor dimensions (neurons x time x trial)
 factors = cpd.factors;
@@ -29,8 +33,6 @@ switch res.factor_order
             factvar(r) = std(factors.trial(:,r));
         end
         [~,fo] = sort(factvar,'descend');
-    otherwise
-        error('wtf')
 end
 
 % trial coloring labels
@@ -77,45 +79,45 @@ end
 % make the figure
 figure()
 
-subplot(1,3,1)
+subplot(1,3,1);
 switch res.neuron_plot
     case 'bars'
         [~,no] = sort(cpd.factors.neuron(:,fo(1)),'descend');
         set(gca,'Visible','off')
         pos = get(gca,'Position');
         width = pos(3);
-        height = pos(4)/10;
-        space = .02; % 2 percent space between axes
+        height = pos(4)/nf;
         pos(1:2) = pos(1:2) + space*[width height];
 
-        ax = gobjects(10);
+        ax = gobjects(nf);
         yl = 1.01*max(abs(factors.trial(:)));
-        for r = 1:nr
-            axPos = [pos(1) pos(2)+(10-r)*height ...
+        for r = 1:nf
+            axPos = [pos(1) pos(2)+(nf-r)*height ...
                         width*(1-space) height*(1-space)];
             ax(r) = axes('Position',axPos);
             hold on
             bar(1:nn,factors.neuron(no,r))
             set(gca,'xtick',[],'xlim',([0,nn+1]),...
-                    'ytick',[-0.3,0.3],'ylim',[-0.5,0.5])
+                    'ytick',[-0.1,0.1],'ylim',[-0.15,0.15])
         end
+        title(ax(1),'neuron factors')
+        
     case 'plotmatrix'
         plotmatrix(factors.neuron(:,fo))
         title('neuron factors')
 end
 
-subplot(1,3,2)
+subplot(1,3,2);
 set(gca,'Visible','off')
 pos = get(gca,'Position');
 width = pos(3);
-height = pos(4)/10;
-space = .02; % 2 percent space between axes
+height = pos(4)/nf;
 pos(1:2) = pos(1:2) + space*[width height];
 
-ax = gobjects(10);
+ax = gobjects(nf);
 yl = 1.01*max(abs(factors.trial(:)));
-for r = 1:nr
-    axPos = [pos(1) pos(2)+(10-r)*height ...
+for r = 1:nf
+    axPos = [pos(1) pos(2)+(nf-r)*height ...
                 width*(1-space) height*(1-space)];
     ax(r) = axes('Position',axPos);
     hold on
@@ -124,22 +126,34 @@ for r = 1:nr
     set(gca,'xtick',[])
     ylim([-yl yl])
 end
+title(ax(1),'trial factors')
 
-subplot(1,3,3)
+subplot(1,3,3); title('time factors')
 set(gca,'Visible','off')
 pos = get(gca,'Position');
 width = pos(3);
-height = pos(4)/10;
-space = .02; % 2 percent space between axes
+height = pos(4)/nf;
 pos(1:2) = pos(1:2) + space*[width height];
 
-ax = gobjects(10);
-for r = 1:nr
-    axPos = [pos(1) pos(2)+(10-r)*height ...
+ax = gobjects(nf);
+for r = 1:nf
+    axPos = [pos(1) pos(2)+(nf-r)*height ...
                 width*(1-space) height*(1-space)];
     ax(r) = axes('Position',axPos);
-    hold on
     plot(factors.time(:,fo(r)),'-k','linewidth',2)
+    axis tight
     set(gca,'xtick',[])
+    if mod(r,2) == 0
+        set(gca,'YAxisLocation','right')
+    end
+    yl = get(gca,'ylim');
+    ryl = round(yl,2);
+    if ryl(2) > yl(2)
+        yl(2) = ryl(2);
+    end
+    if ryl(1) < yl(1)
+        yl(1) = ryl(1);
+    end
+    set(gca,'ytick',[ryl(1),ryl(2)],'ylim',yl)
 end
 title(ax(1),'time factors')

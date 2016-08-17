@@ -36,7 +36,7 @@ md = MultiDay(ds_list,match_list);
 
 %% The real tensor stuff happens here
 md = MultiDay({12,m1d12},{});
-[X, neuron_map, trial_map] = export_multiday_traces(md,'all');
+[X, neuron_map, trial_map] = export_multiday_traces(md);
 
 % TODO: standardize before warp?
 % X = standardize(X,trial_map);
@@ -48,8 +48,8 @@ for c = 1:size(X,1)
     X(c,:,:) = x ./ (max([1, max(abs(x(:)))]));
 end
 
-% make a scree plot (up to rank 10)
-[cpd_list,rsq] = fit_cpd(X,10);
+% make a scree plot
+[cpd_list,rsq] = fit_cpd(X);
 scree_cpd(cpd_list);
 
 % pick best cpd to analyze further
@@ -59,7 +59,7 @@ Xest = full(cpd.decomp);
 Xest = Xest.data;
 
 % plot single-figure summary of all factors
-neuron_factor_plots(cpd,md,trial_map)
+cpd_factor_plots(cpd,md,trial_map)
 
 % plot fit across neurons
 outdir = [figdir, 'm1/neuron_viz/'];
@@ -71,4 +71,3 @@ visualize_fit(X,Xest,3,md,trial_map,outdir);
 
 % plot residuals
 visualize_resids(X,Xest,md,trial_map);
-
