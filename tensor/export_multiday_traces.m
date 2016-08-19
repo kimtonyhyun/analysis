@@ -30,6 +30,8 @@ trial_map = filter_trials(md, varargin{:});
 K = size(trial_map,1);
 matched_traces = cell(K,1);
 for k = 1:K
-    trial = md.day(trial_map(k,1)).trials(trial_map(k,2));
-    matched_traces{k} = trial.traces;
+    d = trial_map(k,1); % day for this trial
+    ni = neuron_map(:,find(md.valid_days == d));
+    trial = md.day(d).trials(trial_map(k,2));
+    matched_traces{k} = trial.traces(ni,:);
 end

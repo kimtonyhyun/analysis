@@ -10,6 +10,7 @@ p = inputParser;
 p.addParameter('num_starts', 10);
 p.addParameter('min_rank', 1);
 p.addParameter('max_rank', 15);
+p.addParameter('printitn',0);
 p.parse(varargin{:});
 
 ns = p.Results.num_starts;
@@ -31,9 +32,9 @@ itercount = 0;
 for a = randperm(ns*nr)
     h = waitbar(itercount/(nr*ns));
     [r,~] = ind2sub([nr,ns],a);
-	decomp = normalize(cp_als(Xt,r,'printitn',0));
+	decomp = normalize(cp_als(Xt,min_rank+r-1,'printitn',p.Results.printitn));
 
-	cpd(a).rank = r;
+	cpd(a).rank = min_rank+r-1;
 	cpd(a).Rsq = 1 - norm(Xt-full(decomp))/norm(Xt - mean(X(:)));
 	cpd(a).factors = struct('neuron',decomp.u{1},'time',decomp.u{2},'trial',decomp.u{3});
 	cpd(a).lambda = decomp.lambda;
