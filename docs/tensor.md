@@ -82,7 +82,7 @@ The following command will produce a nicely formatted scree plot, given the stru
 scree_cpd(cpd_list);
 ```
 
-INSERT IMAGE
+![CPD scree plot](cpd_scree.png)
 
 #### Visualizing the factors
 
@@ -100,7 +100,7 @@ Below, I visualized the factors for a rank 15 model using the command:
 cpd_factor_plots(cpd,md,trial_map)
 ```
 
-INSERT IMAGE
+![CPD factors](cpd_factors.png)
 
 The left column of plots shows the 15 *neuron factors*.
 Because the ordering of the neurons in the data tensor `X` isn't especially meaningful, I've sorted the neurons from highest to lowest on the first factor (i.e the top plot).
@@ -130,7 +130,7 @@ visualize_fit(X,Xest,1,md,trial_map);
 
 The last command should produce a series of plots that look like this (press the space button to go to the next plot and `Control-C` / `Command-C` to interrupt the program).
 
-INSERT IMAGE
+![CPD factors](cpd_fit1.png)
 
 This figure plots a single neuron `X(i,:,:)` on 25 random trials.
 The raw data is plotted in red/blue traces respectively denoting east/west trial starts.
@@ -143,7 +143,7 @@ It is also possible to examine the model fit across all trials, i.e. examining s
 visualize_fit(X,Xest,3,md,trial_map);
 ```
 
-INSERT IMAGE
+![CPD factors](cpd_fit3.png)
 
 #### Visualizing the residuals and outlier detection
 
@@ -157,10 +157,9 @@ visualize_resids(X,Xest,md,trial_map);
 
 Produces a plot like:
 
-INSERT IMAGE
-
-The plot in the upper left shows the distribution of all residuals (blue histogram)
+![CPD residual analysis](cpd_resids.png)
 
 ## Things to improve:
 
-- [ ] 
+- [ ] Measuring distance in trial space as a metric of learning / strategy-shifting
+- [ ] More detailed residual analysis and better documentation
