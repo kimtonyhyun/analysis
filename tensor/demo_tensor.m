@@ -10,11 +10,9 @@ for c = 1:size(X,1)
     X(c,:,:) = x ./ (max([1, max(abs(x(:)))]));
 end
 
-% % make a scree plot
-% [cpd_list,rsq] = fit_cpd(X);
-% scree_cpd(cpd_list);
-
-[cpd_list,rsq] = fit_cpd(X,'min_rank',15,'max_rank',15);
+% make a scree plot
+[cpd_list,rsq] = fit_cpd(X);
+scree_cpd(cpd_list);
 
 % pick best cpd to analyze further
 [~,i] = max(rsq);

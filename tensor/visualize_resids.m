@@ -34,11 +34,14 @@ subplot(2,2,1)
 histfit(resid(:))
 xlabel('residual')
 legend('observed residual','gaussian fit')
+title('histogram of all residuals')
 
 subplot(2,2,3); hold on
 C = [1,2,4,5];
 mn_rsq = [mean(Rsq.east), mean(Rsq.west), mean(Rsq.correct), mean(Rsq.incorrect)];
 bar(C,mn_rsq,'r')
+title('Model fit east/west starts, correct/incorrect trials (bars show means)')
+ylabel('R^2')
 
 N = [length(Rsq.west), length(Rsq.east), length(Rsq.correct), length(Rsq.incorrect)];
 
@@ -52,9 +55,10 @@ end
 set(gca,'xtick',[1,2,4,5],'xticklabels',{'west','east','correct','error'})
 
 subplot(1,2,2)
-E = squeeze(sum(log(err),2));
+E = log(squeeze(sum(err,2)));
 %[~,Es1] = sort(sum(E,1),'descend');
 [~,Es2] = sort(sum(E,2),'descend');
 image(E(Es2,:),'CDataMapping','scaled')
 xlabel('trial number')
 ylabel('neurons')
+title('heatmap of log sum-of-squared residuals for each neuron on each trial')

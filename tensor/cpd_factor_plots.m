@@ -35,33 +35,7 @@ switch res.factor_order
         [~,fo] = sort(factvar,'descend');
 end
 
-% trial coloring labels
-red = [1.0 0.0 0.0];
-blue = [0.0 0.7 1.0];
-switch res.trialcolor
-    case 'start'
-        tc = {'east', 'E', blue;
-              'west', 'W', red};
-    case 'end'
-        tc = {'north', 'N', blue;
-              'south', 'S', red};
-    case 'correct'
-        tc = {'1', '1', blue;
-              '0', '0', red};
-    otherwise
-        tc = {};
-end
-
-% set trial colors
-trial_colors = zeros(nk,3);
-if ~isempty(tc)
-    for k = 1:nk
-        trial = md.day(trial_map(k,1)).trials(trial_map(k,2));
-        trialdata = num2str(trial.(res.trialcolor));
-        idx = strcmp(tc(:,1), trialdata);
-        trial_colors(k,:) = tc{idx,3};
-    end
-end
+trial_colors = get_trial_colors(md, trial_map, res.trialcolor);
 
 % plot trials by order or by true number
 switch res.trialax

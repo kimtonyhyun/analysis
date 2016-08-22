@@ -8,7 +8,7 @@ A *tensor* is a higher-order numeric array. The *order* of a tensor is the numbe
 
 There are many tensor decompositions one can try, but the simplest and easiest to interpret is the canonical polyadic decomposition (CPD). We will focus on fitting this decomposition on an order-3 tensor `neurons x intra-trial phase x trials`, which gives us three sets of low-dimensional factors/components. The first set of components provides a low-dimensional representation of the neurons, the second set of components provide a representation of the within-trial dynamics of the neurons, and the final set of components provide a representation of how the within-trial dynamics change across trials and days.
 
-[Kolda & Bader (2008)](#) is a good review that covers the more technical details of tensor decomposition.
+[Kolda & Bader (2008)](http://dx.doi.org/10.1137/07070111X) is a good review that covers the more technical details of tensor decomposition.
 
 ## Basic Walkthrough
 
@@ -50,18 +50,6 @@ Next we need to convert `X` from the cell array format to a 3-dimensional array.
 
 These items should not be too difficult and are up for grabs!
 
-#### Warping the trials to a common length
-
-Next we need to convert `X` from the cell array format to a 3-dimensional array.
-This is achieved by the poorly named timewarp function, `X = timewarp(X)`.
-At the moment, we just do linear interpolation/stretching to convert all trials to the same length.
-In the future I want this function to support other options for warping the data:
-
-- [ ] Dynamic Barycentric Averaging (DBA), which uses dynamic time warping to align all trials.
-- [ ] Mapping the trial phase to the position of the mouse
-
-These items should not be too difficult if anyone would like to contribute them!
-
 #### Fitting the CPD model and making a scree plot
 
 Tensor decompositions are non-convex optimization problems and are NP-hard in terms of worst case analysis.
@@ -75,7 +63,7 @@ To do this, we use the `fit_cpd` function:
 
 The results are returned in a 1-dimensional struct array `cpd_list` which holds the outcome of each optimization.
 The vector `rsq` holds the coefficient of determination (R<sup>2</sup>) for each optimzation as a measure of the fit.
-These results are commonly summarized with a [scree plot](#).
+These results are commonly summarized with a [scree plot](http://support.minitab.com/en-us/minitab/17/topic-library/modeling-statistics/multivariate/principal-components-and-factor-analysis/what-is-a-scree-plot/).
 The following command will produce a nicely formatted scree plot, given the struct array of cpd fits:
 
 ```matlab
@@ -163,3 +151,4 @@ Produces a plot like:
 
 - [ ] Measuring distance in trial space as a metric of learning / strategy-shifting
 - [ ] More detailed residual analysis and better documentation
+- [ ] Thorough analysis and documentation of standardizing the tensor.
