@@ -1,11 +1,14 @@
-## Use of `DaySummary` objects
+## Herrin analysis workflow
 
 The Matlab-based analysis workflow for the strategy shifting experiment at Herrin is organized around a `DaySummary` object. The basic idea behind the `DaySummary` class is to encapsulate all relevant information for a single session of the strategy shifting protocol.
 
 1. [`DaySummary` QuickStart](ds_quickstart.md)
+  * Using `DaySummary` with non-PlusMaze datasets
+  * Using `browse_rasters`
 2. Classifying cells using `DaySummary`
-3. Cross-dataset alignment
-4. Use of `MultiDay`
+3. [Cross-dataset alignment](alignment.md)
+4. [Use of `MultiDay`](multiday.md)
+  * Use of `browse_multiday`
 
 ## Standard data formats
 

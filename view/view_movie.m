@@ -4,6 +4,7 @@ function view_movie(M, varargin)
 
 movie_clim = [];
 use_mask = 0;
+use_outline = 0;
 num_repeats = 1;
 rescale_each_frame = false;
 for k = 1:length(varargin)
@@ -20,6 +21,9 @@ for k = 1:length(varargin)
                 mask = ~varargin{k+1};
             case 'clim'
                 movie_clim = varargin{k+1};
+            case 'boundary'
+                use_outline = 1;
+                ds = varargin{k+1};
         end
     end
 end
@@ -40,12 +44,21 @@ else
     end
 end
 
-
 axis image;
 truesize;
 colormap gray;
 xlabel('x [px]');
 ylabel('y [px]');
+
+if use_outline
+    hold on;
+    cell_indices = find(ds.is_cell);
+    for cell_idx = cell_indices
+        boundary = ds.cells(cell_idx).boundary;
+        plot(boundary(:,1), boundary(:,2), 'g');
+    end
+    hold off;
+end
 
 num_playbacks = 1;
 while (num_playbacks <= num_repeats) 
