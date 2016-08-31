@@ -35,7 +35,7 @@ params.addParameter('align', true);
 params.addParameter('space', 0.1);
 params.addParameter('names', cell(1, nf));
 params.addParameter('plots', repmat({'line'}, [1 nf]));
-params.addParameter('a', cell(1, nf));
+params.addParameter('a', repmat({10}, [1 nf]));
 params.addParameter('c', cell(1, nf));
 params.addParameter('linespec', repmat({'-'}, [1 nf]));
 params.addParameter('link_yax', false(1,nf));
@@ -43,6 +43,8 @@ params.addParameter('ylims', cell(1, nf));
 params.addParameter('pause', false);
 params.addParameter('figure', -1);
 params.addParameter('greedy', nr>5);
+params.addParameter('permute', false(1,nf));
+params.addParameter('linewidth', ones(1,3));
 
 params.parse(varargin{:});
 res = params.Results;
@@ -59,10 +61,20 @@ else
     error('invalid figure handle')
 end
 
-% % plot factors in order of decreasing variability across trials
-% [~,fo] = sort(cpd(1).lambda,'descend');
-
+% set up the axes
 [Ax,BigAx] = setup_axes(nr, nf, res.space, res.names);
+
+% The 'sortdim' option sorts the entries along an axis by the top factor.
+% This is useful if the tensor does not have a natural ordering along
+% a certain dimension.
+prm = cell(1, nf);
+for f = 1:nf
+    if res.permute(f)
+        [~,prm{f}] = sort(tnsrlist{1}.u{f}(:,1),'descend');
+    else
+        prm{f} = 1:sz(f);
+    end
+end
 
 % iterate over ktensors
 for idx = 1:length(tnsrlist)
@@ -77,6 +89,7 @@ for idx = 1:length(tnsrlist)
 
     % main loop for plotting
     for f = 1:nf
+
         for r = 1:nr
             
             % fetch the axes to plot on
@@ -95,6 +108,7 @@ for idx = 1:length(tnsrlist)
                 case 'bar'
                     mkbar = true;
                 case 'scatterline'
+                case 'linescatter'
                     mkscat = true;
                     mkline = true;
                 otherwise
@@ -104,25 +118,25 @@ for idx = 1:length(tnsrlist)
 
             % make plots
             x = 1:sz(f);
-            y = X.u{f}(:,r);
+            y = X.u{f}(prm{f},r);
 
             % line plot
             if mkline
-                plot(x,y,res.linespec{f})
+                plot(x, y, res.linespec{f}, 'linewidth', res.linewidth(f))
             end
 
             % scatter plot
             if mkscat
-                if isempty(res.c)
-                    scatter(x, y, res.a)                        
+                if isempty(res.c{f})
+                    scatter(x, y, res.a{f})                        
                 else
-                    scatter(x, y, res.a, res.c)
+                    scatter(x, y, res.a{f}, res.c{f}, 'filled')
                 end
             end
 
             % bar plot
             if mkbar
-                error('not implemented')
+                bar(x, y)
             end
 
             % make axes tight
