@@ -24,7 +24,7 @@ p.parse(varargin{:});
 % extract the factor matrix we are analyzing
 fct = parse_factor(p.Results.factor);
 F = cpd.factors.(fct);
-[n,r] = size(F);
+[n,nr] = size(F);
 
 % Determine which distance metric we are using
 dist_func = parse_metric(p.Results.metric);

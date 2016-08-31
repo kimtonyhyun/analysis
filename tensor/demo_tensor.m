@@ -12,7 +12,7 @@ end
 
 % make a scree plot
 [cpd_list,rsq] = fit_cpd(X);
-scree_cpd(cpd_list);
+visualize_rank(cpd_list);
 
 % pick best cpd to analyze further
 [~,i] = max(rsq);
@@ -21,7 +21,7 @@ Xest = full(cpd.decomp);
 Xest = Xest.data;
 
 % plot single-figure summary of all factors
-cpd_factor_plots(cpd,md,trial_map)
+visualize_factors(cpd,md,trial_map);
 
 % plot fit across neurons
 visualize_fit(X,Xest,1,md,trial_map);

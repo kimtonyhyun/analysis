@@ -22,7 +22,7 @@ Xt = tensor(X);
 
 % create struct array
 nr = max_rank-min_rank+1;
-cpd(ns*nr) = struct('rank',0,'Rsq',0,'factors',struct([]),'lambdas',[],'decomp',[]);
+cpd(1,ns*nr) = struct('rank',0,'Rsq',0,'factors',struct([]),'lambdas',[],'decomp',[]);
 
 % main loop
 rsq = zeros(ns*nr,1);
