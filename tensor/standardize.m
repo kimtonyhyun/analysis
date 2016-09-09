@@ -1,7 +1,9 @@
-function [dest] = standardize(X,trial_map,method)
-% SOFT_NORMALIZE, apply soft-normalization to each neuron in data tensor X and
-% return a new, normalized tensor Y.
+function [dest] = standardize(X,trial_map)
+% STANDARDIZE(X, trial_map), standardizes a set of multiday
+% traces 
 %
+%     Args
+%     ----
 %     X = STANDARDIZE(X,trial_map,[method='soft'])
 
 % default standardization
@@ -33,11 +35,10 @@ if strcmp(method,'soft')
         x(:,a:b) = X{k};
     end
     % standardize each neuron
-    denom = 1;%range(x,2);
-    cent = mean(x,2);
+    denom = range(x,2);
     for c = 1:size(X,1)
         for k = 1:n_trial
-            dest{k}(c,:) = (X{k}(c,:)-cent(c)) ./ denom(c);
+            dest{k}(c,:) = X{k}(c,:) ./ denom(c);
         end
     end
 elseif strcmp(method,'medmax')
@@ -63,4 +64,26 @@ elseif strcmp(method,'medmax')
     end
 else
     error('Standardization method not recognized.')
+end
+
+function [cmx] = cellmax(X, trial_map)
+
+% separate days/sessions for this dataset
+days = unique(trial_map(:,1));
+
+K = length(X);     % num trials
+N = size(X{1},1);  % num neurons
+D = length(days);  % num days
+
+cmx = zeros(N,D);
+
+for k = 1:K
+    % day for this trial
+    d = find(days == trial_map(k,1));
+
+    % max for each cell on this trial
+    mx = max(X{k},[],2);
+
+    % reduce op across all trials
+    cmx(:,d) = max([ cmx(:,d) mx], [], 2);
 end

@@ -1,14 +1,14 @@
-[X, neuron_map, trial_map] = export_multiday_traces(md);
+[X, meta, neuron_map, trial_map] = export_multiday_traces(md);
 
 % TODO: consider standardize before warp?
 % X = standardize(X,trial_map);
 
 % preprocessing (timewarp and then standardize)
 X = timewarp(X);
-for c = 1:size(X,1)
-    x = X(c,:,:);
-    X(c,:,:) = x ./ (max([1, max(abs(x(:)))]));
-end
+% for c = 1:size(X,1)
+%     x = X(c,:,:);
+%     X(c,:,:) = x ./ (max([1, max(abs(x(:)))]));
+% end
 
 % make a scree plot
 [cpd_list,rsq] = fit_cpd(X);
@@ -21,7 +21,7 @@ Xest = full(cpd.decomp);
 Xest = Xest.data;
 
 % plot single-figure summary of all factors
-visualize_factors(cpd,md,trial_map);
+visualize_neuron_ktensor(cpd.decomp,md,trial_map);
 
 % plot fit across neurons
 visualize_fit(X,Xest,1,md,trial_map);

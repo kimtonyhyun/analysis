@@ -8,7 +8,7 @@ function [cpd,rsq] = fit_cpd(X,varargin)
 % parse optional inputs
 p = inputParser;
 p.addParameter('num_starts', 10);
-p.addParameter('min_rank', 1);
+p.addParameter('min_rank', 15);
 p.addParameter('max_rank', 15);
 p.addParameter('printitn',0);
 p.parse(varargin{:});
