@@ -220,6 +220,19 @@ classdef MultiDay < handle
             matched_ids = obj.matched_indices(:, obj.full_to_sparse(day_idx));
             unmatched_ids = setdiff(all_cell_ids, matched_ids);
         end
+
+        % Display functions
+        %------------------------------------------------------------
+        function summary(obj)
+            % summary stats
+            fprintf('\n<strong>Multi-Day Summary</strong>\n\n')
+            
+            for d = obj.valid_days
+                summary(obj.day(d),d)
+                fprintf('\n')
+            end
+
+        end % summary
     end
 
     % Private methods for implementing the cross-day matching logic
@@ -330,5 +343,6 @@ classdef MultiDay < handle
             fprintf('  Removed %d inconsistent matches!\n', num_invalid_matches);
             
         end % verify_match_consistency
+
     end
 end

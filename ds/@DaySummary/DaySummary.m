@@ -363,6 +363,55 @@ classdef DaySummary < handle
             [~, neighbor_inds] = sort(d); % Ascending order
             neighbor_inds = neighbor_inds(1:num_neighbors);
         end
+
+        function strategy = get_strategy(obj)
+            % Computes the best navigation strategy for the first and second half
+            % of the trials.
+            strategy = {'', ''};
+            nk = obj.num_trials;
+            idx = [1:floor(nk/2); ceil(1+nk/2):nk];
+            stratnm = {'allo-north','allo-south','ego-left','ego-right'};
+
+            for half = 1:2
+                an = 0; % allo-north
+                as = 0; % allo-south
+                el = 0; % ego-left
+                er = 0; % ego-right
+
+                for a = idx(half,:)
+                    trial = obj.trials(a);
+
+                    if any(strcmp(trial.start, {'north','south'}))
+                        continue % skip probe trials
+                    end
+                    if strcmp(trial.start, 'east')
+                        if strcmp(trial.goal, 'north')
+                            % allo-north or ego-right
+                            an = an+1;
+                            er = er+1;
+                        else
+                            % allo-south or ego-left
+                            as = as+1;
+                            el = el+1;
+                        end
+                    else % west start
+                        if strcmp(trial.goal, 'north')
+                            % allo-north or ego-left
+                            an = an+1;
+                            el = el+1;
+                        else
+                            % allo-south or ego-right
+                            as = as+1;
+                            er = er+1;
+                        end
+                    end
+                end
+
+                [~,mi] = max([an; as; el; er]);
+                strategy{half} = stratnm{mi};
+            end
+
+        end % get_strategy
         
         % Classification
         %------------------------------------------------------------
@@ -439,5 +488,44 @@ classdef DaySummary < handle
                 datestr(now), tracking_source);
             obj.is_tracking_loaded = true;
         end
+        
+        % Display/summarize functions
+        %------------------------------------------------------------
+        function summary(obj, num)
+            % summary stats
+            if nargin == 1
+                disp('<strong>Day Summary</strong>')
+                disp('-----------')
+            else
+                fprintf('<strong>Day #%i Summary</strong>\n', num)
+                disp('---------------')
+            end
+            disp([num2str(obj.num_cells), ' cells, ',...
+                  num2str(obj.num_trials), ' trials'])
+            
+            % strategy
+            strat = get_strategy(obj);
+            fprintf('<strong>Strategy:</strong> ')
+            if strcmp(strat{1},strat{2})
+                disp(strat{1})
+            else
+                disp([strat{1},' ---> ',strat{2}])
+            end
+
+            % errors
+            fprintf('<strong>Errors:</strong> ')
+            for k = 1:obj.num_trials
+                if obj.trials(k).correct
+                    fprintf('<strong>*</strong> ')
+                else
+                    fprintf(2,'<strong>*</strong> ')
+                end
+                if mod(k,20) == 0
+                    fprintf('\n        ')
+                end
+            end
+            fprintf('\n')
+
+        end % summary
     end
 end
