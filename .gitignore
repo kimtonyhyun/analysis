@@ -6,3 +6,4 @@
 *.mexw64
 *.mexa64
 .DS_Store
+/tensor/alex*
