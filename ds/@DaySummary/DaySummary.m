@@ -234,7 +234,7 @@ classdef DaySummary < handle
                 turn = 'right';
             end
         end % compute_turn
-        
+
         function filtered_trials = filter_trials(obj, varargin)
             filtered_trials = ones(1, obj.num_trials);
             for k = 1:length(varargin)
@@ -249,19 +249,19 @@ classdef DaySummary < handle
                                 strcmp({obj.trials.goal}, {obj.trials.end});
                         case 'start'
                             filtered_trials = filtered_trials &...
-                                strcmp({obj.trials.start}, varargin{k+1});
+                                trial_filter(obj, {obj.trials.start}, varargin{k+1});
                         case 'end'
                             filtered_trials = filtered_trials &...
-                                strcmp({obj.trials.end}, varargin{k+1});
+                                trial_filter(obj, {obj.trials.end}, varargin{k+1});
                         case 'turn'
                             filtered_trials = filtered_trials &...
-                                strcmp({obj.trials.turn}, varargin{k+1});
+                                trial_filter(obj, {obj.trials.turn}, varargin{k+1});
                     end
                 end
             end
             filtered_trials = filtered_trials';
         end   
-        
+
         % Accessors
         %------------------------------------------------------------
         function count = num_classified_cells(obj)
@@ -527,5 +527,23 @@ classdef DaySummary < handle
             fprintf('\n')
 
         end % summary
-    end
+    
+    end % public methods
+
+    methods (Access=private)
+
+        function mask = trial_filter(~, trial_data, selection)
+            if isstr(selection)
+                mask = strcmp(trial_data,selection(a));
+            elseif iscell(selection)
+                mask = false(size(trial_data));
+                for a = 1:length(selection)
+                    mask = mask | strcmp(trial_data,selection(a));
+                end
+            else
+                error('selection criterion must be a cell array or string')
+            end
+        end
+
+    end % private methods
 end
