@@ -1,4 +1,4 @@
-[X, meta, neuron_map, trial_map] = export_multiday_traces(md);
+[X, meta, neuron_map, trial_map] = export_traces(md);
 
 % TODO: consider standardize before warp?
 % X = standardize(X,trial_map);
@@ -11,7 +11,7 @@ X = timewarp(X);
 % end
 
 % make a scree plot
-[cpd_list,rsq] = fit_cpd(X);
+[cpd_list,rsq] = fit_cpd(X,'min_rank',1);
 visualize_rank(cpd_list);
 
 % pick best cpd to analyze further
