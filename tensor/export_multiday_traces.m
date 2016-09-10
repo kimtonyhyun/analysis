@@ -32,12 +32,14 @@ matched_traces = cell(K,1);
 meta.start = cell(K,1);
 meta.end = cell(K,1);
 meta.correct = cell(K,1);
+meta.day = cell(K,1);
 for k = 1:K
     d = trial_map(k,1); % day for this trial
-    ni = neuron_map(:,find(md.valid_days == d));
+    ni = neuron_map(:,md.valid_days == d);
     trial = md.day(d).trials(trial_map(k,2));
     matched_traces{k} = trial.traces(ni,:);
     meta.start{k} = trial.start;
     meta.end{k} = trial.end;
     meta.correct{k} = num2str(trial.correct);
+    meta.day{k} = num2str(d);
 end
