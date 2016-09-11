@@ -260,6 +260,21 @@ classdef DaySummary < handle
                 end
             end
             filtered_trials = filtered_trials';
+
+            % helper function to filter cell arrays of strings
+            function mask = trial_filter(~, trial_data, selection)
+                if isstr(selection)
+                    mask = strcmp(trial_data,selection);
+                elseif iscell(selection)
+                    mask = false(size(trial_data));
+                    for a = 1:length(selection)
+                        mask = mask | strcmp(trial_data,selection(a));
+                    end
+                else
+                    error('selection criterion must be a cell array or string')
+                end
+            end
+
         end   
 
         % Accessors
@@ -530,20 +545,4 @@ classdef DaySummary < handle
     
     end % public methods
 
-    methods (Access=private)
-
-        function mask = trial_filter(~, trial_data, selection)
-            if isstr(selection)
-                mask = strcmp(trial_data,selection(a));
-            elseif iscell(selection)
-                mask = false(size(trial_data));
-                for a = 1:length(selection)
-                    mask = mask | strcmp(trial_data,selection(a));
-                end
-            else
-                error('selection criterion must be a cell array or string')
-            end
-        end
-
-    end % private methods
 end
