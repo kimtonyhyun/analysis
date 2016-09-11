@@ -332,7 +332,7 @@ classdef DaySummary < handle
 
             % default span
             if nargin == 1
-                span = 3;
+                span = 5;
             end
 
             % moving average window
@@ -340,8 +340,8 @@ classdef DaySummary < handle
             a = 1;
 
             % separate estimates for east vs west starts
-            east_idx = filter_trials(obj, 'start', 'east');
-            west_idx = filter_trials(obj, 'start', 'west');
+            east_idx = find(filter_trials(obj, 'start', 'east'));
+            west_idx = find(filter_trials(obj, 'start', 'west'));
 
             % 1 = right turn, 0 = left turn
             east_right = double(strcmp({obj.trials(east_idx).turn},'right'));
@@ -351,7 +351,8 @@ classdef DaySummary < handle
             x = nan(length(east_idx),1);
             x(east_idx) = filter(b, a, east_right);
             x(west_idx) = filter(b, a, west_right);
-
+            x(east_idx(1:span)) = NaN;
+            x(west_idx(1:span)) = NaN;
         end
         
         function is_correct = get_trial_correctness(obj)

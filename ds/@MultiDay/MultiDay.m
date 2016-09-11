@@ -251,17 +251,17 @@ classdef MultiDay < handle
             trial_map = trial_map(1:b,:);
         end
 
-        function [matched_traces, meta, neuron_map, trial_map] = export_traces(md, varargin)
-        % [matched_traces, meta, neuron_map, trial_map] = EXPORT_TRACES(md)
+        function [X, meta, neuron_map, trial_map] = export(md, varargin)
+        % [X, meta, neuron_map, trial_map] = EXPORT(md)
         %
         % Exports cross-day aligned cell traces (via MultiDay) into a lightweight
         % format (description below) for tensor analysis
         %
         % Output format:
-        %   matched_traces: Column cell vector [M x 1] where M is the total number 
+        %   X: Column cell vector [M x 1] where M is the total number 
         %      of trials across all days of the requested 'trial_type' (e.g. 'en')
         %       
-        %      matched_traces{j} is a matrix of cell traces, in the format
+        %      X{j} is a matrix of cell traces, in the format
         %      [num_matched_cells x num_frames_in_trial_j].
         %
         %   neuron_map: Matrix [num_matched_cells x num_days] that maps each 
@@ -271,50 +271,77 @@ classdef MultiDay < handle
         %      requested 'trial_type'. For the i-th trial, K(i,1) is the day index 
         %      of that trial, and K(i,2) is the trial index in the original day.
         %   
-            max_num_trials = 0;
-            for day_idx = md.valid_days
-                max_num_trials = max_num_trials + md.day(day_idx).num_trials;
-            end
-
-            neuron_map = md.matched_indices;
 
             % get trial map (filtering out those specified)
             trial_map = filter_trials(md, varargin{:});
-            K = size(trial_map,1);
+
+            % neuron map for matching cells across days
+            neuron_map = md.matched_indices;
+
+            % activity traces for each trial
+            X = export_traces(md, trial_map);
+
+            % metadata for each trial (start, end, turn, correct, etc.)
+            meta = export_metadata(md, trial_map);
+            
+        end % export
+
+        function meta = export_metadata(md, trial_map)
+        % X = EXPORT_METADATA(md, trial_map)
+        %
+        % Exports traces of all trials specified by trial_map into
+        % a cell array X.
+
+            num_trials = size(trial_map,1);
 
             % get moving average of turn probability on each day
-            ndays = length(md.valid_days)
-            tp = cell(ndays)
+            ndays = length(md.valid_days);
+            tp = cell(ndays);
             for di = 1:ndays
                 d = md.valid_days(di);
                 tp{di} = est_turn_probabilities(md.day(d));
             end
 
             % copy selected trials into lightweight cell array
-            matched_traces = cell(K,1);
-            meta.start = cell(K,1);
-            meta.end = cell(K,1);
-            meta.correct = cell(K,1);
-            meta.day = cell(K,1);
-            meta.turn = cell(K,1);
-            meta.turn_prob = zeros(K,1);
-            for k = 1:K
+            meta.start = cell(num_trials,1);
+            meta.end = cell(num_trials,1);
+            meta.correct = zeros(num_trials,1);
+            meta.day = zeros(num_trials,1);
+            meta.turn = cell(num_trials,1);
+            meta.turn_prob = zeros(num_trials,1);
+            for k = 1:num_trials
                 % day and neuron indices
                 d = trial_map(k,1);
-                ni = neuron_map(:,md.valid_days == d);
-
-                % basic metadata associate with this trial
                 trial = md.day(d).trials(trial_map(k,2));
-                matched_traces{k} = trial.traces(ni,:);
+
+                % basic metadata associated with this trial
                 meta.start{k} = trial.start;
                 meta.end{k} = trial.end;
-                meta.correct{k} = num2str(trial.correct);
-                meta.day{k} = num2str(d);
+                meta.correct(k) = trial.correct;
+                meta.day(k) = d;
                 meta.turn{k} = trial.turn;
 
                 % turn probability estimated for this trial
-                di = find(md.valid_days == d)
+                di = find(md.valid_days == d);
                 meta.turn_prob(k) = tp{di}(trial_map(k,2));
+            end
+        end % export_metadata
+
+        function X = export_traces(md, trial_map)
+        % X = EXPORT_TRACES(md, trial_map)
+        %
+        % Exports traces of all trials specified by trial_map into
+        % a cell array X.
+            num_trials = size(trial_map,1);
+            X = cell(num_trials,1);
+            for k = 1:num_trials
+                % day and neuron indices
+                d = trial_map(k,1);
+                ni = md.matched_indices(:,md.valid_days == d);
+
+                % traces for this trial
+                trial = md.day(d).trials(trial_map(k,2));
+                X{k} = trial.traces(ni,:);
             end
         end % export_traces
 
@@ -330,6 +357,37 @@ classdef MultiDay < handle
             end
 
         end % summary
+
+        function plot_summary(md)
+            trial_map = filter_trials(md, 'start', {'east','west'});
+            meta = export_metadata(md, trial_map);
+            ndays = length(md.valid_days);
+
+            ei = strcmp(meta.start,'east');
+            wi = strcmp(meta.start,'west');
+
+            for di = 1:ndays
+                d = md.valid_days(di);
+
+                subplot(ndays,2,2*(di-1)+1)
+                plot_panel(meta, ei & (meta.day==d));
+                title(sprintf('day %i, east starts',d))
+
+                subplot(ndays,2,2*(di-1)+2)
+                plot_panel(meta, wi & (meta.day==d));
+                title(sprintf('day %i, west starts',d))
+            end
+
+            function plot_panel(meta,idx)
+                hold on
+                plot(meta.turn_prob(idx))
+                plot(strcmp('right',meta.turn(idx)),'.r','markersize',20)
+                ylim([0,1])
+                ylabel('p(turn right)')
+            end
+
+        end % plot_summary
+
     end
 
     % Private methods for implementing the cross-day matching logic
