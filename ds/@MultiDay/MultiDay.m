@@ -282,6 +282,14 @@ classdef MultiDay < handle
             trial_map = filter_trials(md, varargin{:});
             K = size(trial_map,1);
 
+            % get moving average of turn probability on each day
+            ndays = length(md.valid_days)
+            tp = cell(ndays)
+            for di = 1:ndays
+                d = md.valid_days(di);
+                tp{di} = est_turn_probabilities(md.day(d));
+            end
+
             % copy selected trials into lightweight cell array
             matched_traces = cell(K,1);
             meta.start = cell(K,1);
@@ -289,9 +297,13 @@ classdef MultiDay < handle
             meta.correct = cell(K,1);
             meta.day = cell(K,1);
             meta.turn = cell(K,1);
+            meta.turn_prob = zeros(K,1);
             for k = 1:K
-                d = trial_map(k,1); % day for this trial
+                % day and neuron indices
+                d = trial_map(k,1);
                 ni = neuron_map(:,md.valid_days == d);
+
+                % basic metadata associate with this trial
                 trial = md.day(d).trials(trial_map(k,2));
                 matched_traces{k} = trial.traces(ni,:);
                 meta.start{k} = trial.start;
@@ -299,6 +311,10 @@ classdef MultiDay < handle
                 meta.correct{k} = num2str(trial.correct);
                 meta.day{k} = num2str(d);
                 meta.turn{k} = trial.turn;
+
+                % turn probability estimated for this trial
+                di = find(md.valid_days == d)
+                meta.turn_prob(k) = tp{di}(trial_map(k,2));
             end
         end % export_traces
 

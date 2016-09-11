@@ -268,7 +268,7 @@ classdef DaySummary < handle
                 elseif iscell(selection)
                     mask = false(size(trial_data));
                     for a = 1:length(selection)
-                        mask = mask | strcmp(trial_data,selection(a));
+                        mask = mask | strcmp(trial_data,selection{a});
                     end
                 else
                     error('selection criterion must be a cell array or string')
@@ -323,6 +323,35 @@ classdef DaySummary < handle
                 is_cell(k) = any(strcmp(obj.cells(cell_idx).label,...
                     {'phase-sensitive cell', 'cell'}));
             end
+        end
+
+        function x = est_turn_probabilities(obj, span)
+        % returns estimtated probability of a right turn on each trial
+        % (conditioned on starting location). Uses a moving average with
+        % a window size defined by span (default = 5).
+
+            % default span
+            if nargin == 1
+                span = 3;
+            end
+
+            % moving average window
+            b = (1/span)*ones(1,span);
+            a = 1;
+
+            % separate estimates for east vs west starts
+            east_idx = filter_trials(obj, 'start', 'east');
+            west_idx = filter_trials(obj, 'start', 'west');
+
+            % 1 = right turn, 0 = left turn
+            east_right = double(strcmp({obj.trials(east_idx).turn},'right'));
+            west_right = double(strcmp({obj.trials(west_idx).turn},'right'));
+
+            % fill probe trials with NaN
+            x = nan(length(east_idx),1);
+            x(east_idx) = filter(b, a, east_right);
+            x(west_idx) = filter(b, a, west_right);
+
         end
         
         function is_correct = get_trial_correctness(obj)
