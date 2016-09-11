@@ -234,7 +234,7 @@ classdef DaySummary < handle
                 turn = 'right';
             end
         end % compute_turn
-        
+
         function filtered_trials = filter_trials(obj, varargin)
             filtered_trials = ones(1, obj.num_trials);
             for k = 1:length(varargin)
@@ -249,19 +249,34 @@ classdef DaySummary < handle
                                 strcmp({obj.trials.goal}, {obj.trials.end});
                         case 'start'
                             filtered_trials = filtered_trials &...
-                                strcmp({obj.trials.start}, varargin{k+1});
+                                trial_filter(obj, {obj.trials.start}, varargin{k+1});
                         case 'end'
                             filtered_trials = filtered_trials &...
-                                strcmp({obj.trials.end}, varargin{k+1});
+                                trial_filter(obj, {obj.trials.end}, varargin{k+1});
                         case 'turn'
                             filtered_trials = filtered_trials &...
-                                strcmp({obj.trials.turn}, varargin{k+1});
+                                trial_filter(obj, {obj.trials.turn}, varargin{k+1});
                     end
                 end
             end
             filtered_trials = filtered_trials';
+
+            % helper function to filter cell arrays of strings
+            function mask = trial_filter(~, trial_data, selection)
+                if isstr(selection)
+                    mask = strcmp(trial_data,selection);
+                elseif iscell(selection)
+                    mask = false(size(trial_data));
+                    for a = 1:length(selection)
+                        mask = mask | strcmp(trial_data,selection{a});
+                    end
+                else
+                    error('selection criterion must be a cell array or string')
+                end
+            end
+
         end   
-        
+
         % Accessors
         %------------------------------------------------------------
         function count = num_classified_cells(obj)
@@ -308,6 +323,36 @@ classdef DaySummary < handle
                 is_cell(k) = any(strcmp(obj.cells(cell_idx).label,...
                     {'phase-sensitive cell', 'cell'}));
             end
+        end
+
+        function x = est_turn_probabilities(obj, span)
+        % returns estimtated probability of a right turn on each trial
+        % (conditioned on starting location). Uses a moving average with
+        % a window size defined by span (default = 5).
+
+            % default span
+            if nargin == 1
+                span = 5;
+            end
+
+            % moving average window
+            b = (1/span)*ones(1,span);
+            a = 1;
+
+            % separate estimates for east vs west starts
+            east_idx = find(filter_trials(obj, 'start', 'east'));
+            west_idx = find(filter_trials(obj, 'start', 'west'));
+
+            % 1 = right turn, 0 = left turn
+            east_right = double(strcmp({obj.trials(east_idx).turn},'right'));
+            west_right = double(strcmp({obj.trials(west_idx).turn},'right'));
+
+            % fill probe trials with NaN
+            x = nan(length(east_idx),1);
+            x(east_idx) = filter(b, a, east_right);
+            x(west_idx) = filter(b, a, west_right);
+            x(east_idx(1:span)) = NaN;
+            x(west_idx(1:span)) = NaN;
         end
         
         function is_correct = get_trial_correctness(obj)
@@ -527,5 +572,7 @@ classdef DaySummary < handle
             fprintf('\n')
 
         end % summary
-    end
+    
+    end % public methods
+
 end
