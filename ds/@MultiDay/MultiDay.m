@@ -325,6 +325,51 @@ classdef MultiDay < handle
                 di = find(md.valid_days == d);
                 meta.turn_prob(k) = tp{di}(trial_map(k,2));
             end
+
+            % mark each trial as allo vs ego-centric
+            meta.strategy = cell(num_trials,1);
+            e0 = NaN; % trial index of last east start
+            w0 = NaN; % trial index of last west start
+            for k = 1:num_trials
+                if k > 330
+                    disp('')
+                end
+                pk = meta.turn_prob(k);
+                if strcmp(meta.start{k},'east')
+                    if ~isnan(w0) && ~isnan(pk)
+                        pl = meta.turn_prob(w0);
+                        if pk > 0.99 && pl > 0.99
+                            meta.strategy{k} = 'ego-right';
+                        elseif pk < 0.01 && pl < 0.01
+                            meta.strategy{k} = 'ego-left';
+                        elseif pk > 0.99 && pl < 0.01
+                            meta.strategy{k} = 'allo-north';
+                        elseif pk < 0.01 && pl > 0.99
+                            meta.strategy{k} = 'allo-south';
+                        end
+                    end
+                    e0 = k;
+                elseif strcmp(meta.start{k},'west')
+                    if ~isnan(e0) && ~isnan(pk)
+                        pl = meta.turn_prob(e0);
+                        if pk > 0.99 && pl > 0.99
+                            meta.strategy{k} = 'ego-right';
+                        elseif pk < 0.01 && pl < 0.01
+                            meta.strategy{k} = 'ego-left';
+                        elseif pk > 0.99 && pl < 0.01
+                            meta.strategy{k} = 'allo-south';
+                        elseif pk < 0.01 && pl > 0.99
+                            meta.strategy{k} = 'allo-north';
+                        end
+                    end
+                    w0 = k;
+                else
+                    meta.strategy{k} = 'probe';
+                end
+                if isempty(meta.strategy{k})
+                    meta.strategy{k} = 'NA';
+                end
+            end
         end % export_metadata
 
         function X = export_traces(md, trial_map)
@@ -379,10 +424,28 @@ classdef MultiDay < handle
             end
 
             function plot_panel(meta,idx)
+                N = sum(idx);
+                x = 1:N;
+                y = strcmp('right',meta.turn(idx));
+                c = repmat([0 0 0], N, 1);
+                s = 15*ones(N,1);
+
+                strat = meta.strategy(idx);
+                a = strcmp(strat,'allo-north') | strcmp(strat,'allo-south');
+                e = strcmp(strat,'ego-left') | strcmp(strat,'ego-right');
+
+                s(a|e) = 30;
+                if sum(a) > 0
+                    c(a,:) = repmat([1 0 0],sum(a),1);
+                end
+                if sum(e) > 0
+                    c(e,:) = repmat([0 0 1],sum(e),1);
+                end
+
                 hold on
                 plot(meta.turn_prob(idx))
-                plot(strcmp('right',meta.turn(idx)),'.r','markersize',20)
-                ylim([0,1])
+                scatter(x,y,s,c,'filled')
+                ylim([-0.1,1.1])
                 ylabel('p(turn right)')
             end
 
