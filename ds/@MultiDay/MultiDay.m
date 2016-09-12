@@ -251,7 +251,7 @@ classdef MultiDay < handle
             trial_map = trial_map(1:b,:);
         end
 
-        function [X, meta, neuron_map, trial_map] = export(md, varargin)
+        function [X, meta, neuron_map, trial_map] = export(md, extent, varargin)
         % [X, meta, neuron_map, trial_map] = EXPORT(md)
         %
         % Exports cross-day aligned cell traces (via MultiDay) into a lightweight
@@ -279,7 +279,7 @@ classdef MultiDay < handle
             neuron_map = md.matched_indices;
 
             % activity traces for each trial
-            X = export_traces(md, trial_map);
+            X = export_traces(md, trial_map, extent);
 
             % metadata for each trial (start, end, turn, correct, etc.)
             meta = export_metadata(md, trial_map);
@@ -331,9 +331,6 @@ classdef MultiDay < handle
             e0 = NaN; % trial index of last east start
             w0 = NaN; % trial index of last west start
             for k = 1:num_trials
-                if k > 330
-                    disp('')
-                end
                 pk = meta.turn_prob(k);
                 if strcmp(meta.start{k},'east')
                     if ~isnan(w0) && ~isnan(pk)
@@ -372,11 +369,12 @@ classdef MultiDay < handle
             end
         end % export_metadata
 
-        function X = export_traces(md, trial_map)
+        function X = export_traces(md, trial_map, extent)
         % X = EXPORT_TRACES(md, trial_map)
         %
         % Exports traces of all trials specified by trial_map into
         % a cell array X.
+
             num_trials = size(trial_map,1);
             X = cell(num_trials,1);
             for k = 1:num_trials
@@ -386,7 +384,42 @@ classdef MultiDay < handle
 
                 % traces for this trial
                 trial = md.day(d).trials(trial_map(k,2));
-                X{k} = trial.traces(ni,:);
+                t = truncate_trial(trial.centroids, trial.start, extent);
+                X{k} = trial.traces(ni,t);
+            end
+
+            function t_idx = truncate_trial(xy, start_arm, extent)
+                % x and y coordinates
+                x = xy(:,1);
+                y = xy(:,2);
+
+                % truncate as specified
+                if strcmp(extent, 'full')
+                    t_idx = true(size(x));   
+                elseif strcmp(extent, 'firsthalf')
+                    switch start_arm
+                        case 'east'
+                            t_idx = y > east_start_boundary(x);
+                        case 'west'
+                            t_idx = y < west_start_boundary(x);
+                        % TODO: probe trials?
+                    end
+                else
+                    error('extent not specified correctly')
+                end
+
+                % sanity check 
+                % ------------
+                % hold on
+                % plot(x(t_idx),y(t_idx))
+            end
+
+            function y = east_start_boundary(x)
+                y = -x+600;
+            end
+
+            function y = west_start_boundary(x)
+                y = -x+450;
             end
         end % export_traces
 
