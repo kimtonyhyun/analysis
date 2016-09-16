@@ -263,7 +263,7 @@ classdef DaySummary < handle
 
             % helper function to filter cell arrays of strings
             function mask = trial_filter(~, trial_data, selection)
-                if isstr(selection)
+                if ischar(selection)
                     mask = strcmp(trial_data,selection);
                 elseif iscell(selection)
                     mask = false(size(trial_data));
@@ -340,8 +340,8 @@ classdef DaySummary < handle
             a = 1;
 
             % separate estimates for east vs west starts
-            east_idx = find(filter_trials(obj, 'start', 'east'));
-            west_idx = find(filter_trials(obj, 'start', 'west'));
+            east_idx = filter_trials(obj, 'start', 'east');
+            west_idx = filter_trials(obj, 'start', 'west');
 
             % 1 = right turn, 0 = left turn
             east_right = double(strcmp({obj.trials(east_idx).turn},'right'));

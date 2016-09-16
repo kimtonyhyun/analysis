@@ -251,7 +251,7 @@ classdef MultiDay < handle
             trial_map = trial_map(1:b,:);
         end
 
-        function [X, meta, neuron_map, trial_map] = export(md, extent, varargin)
+        function [X, meta, neuron_map, trial_map] = export(md, varargin)
         % [X, meta, neuron_map, trial_map] = EXPORT(md)
         %
         % Exports cross-day aligned cell traces (via MultiDay) into a lightweight
@@ -270,8 +270,17 @@ classdef MultiDay < handle
         %   trial_map: Matrix [M x 2] where M is the total number of trials of 
         %      requested 'trial_type'. For the i-th trial, K(i,1) is the day index 
         %      of that trial, and K(i,2) is the trial index in the original day.
-        %   
-
+        
+            % By default, export full traces. Allow user to specify
+            % otherwise with the 'extent' optional argument.
+            extent = 'full';
+            for k = 1:length(varargin)-1
+                v = varargin{k};
+                if ischar(v) && strcmp('extent',v)
+                    extent = varargin{k+1};
+                end
+            end
+            
             % get trial map (filtering out those specified)
             trial_map = filter_trials(md, varargin{:});
 
@@ -279,10 +288,12 @@ classdef MultiDay < handle
             neuron_map = md.matched_indices;
 
             % activity traces for each trial
-            X = export_traces(md, trial_map, extent);
+            [X,x,y] = export_traces(md, trial_map, extent);
 
             % metadata for each trial (start, end, turn, correct, etc.)
             meta = export_metadata(md, trial_map);
+            meta.x = x; % also export position
+            meta.y = y;
             
         end % export
 
@@ -322,7 +333,7 @@ classdef MultiDay < handle
                 meta.turn{k} = trial.turn;
 
                 % turn probability estimated for this trial
-                di = find(md.valid_days == d);
+                di = md.valid_days == d;
                 meta.turn_prob(k) = tp{di}(trial_map(k,2));
             end
 
@@ -369,7 +380,7 @@ classdef MultiDay < handle
             end
         end % export_metadata
 
-        function X = export_traces(md, trial_map, extent)
+        function [X,x,y] = export_traces(md, trial_map, extent)
         % X = EXPORT_TRACES(md, trial_map)
         %
         % Exports traces of all trials specified by trial_map into
@@ -377,6 +388,8 @@ classdef MultiDay < handle
 
             num_trials = size(trial_map,1);
             X = cell(num_trials,1);
+            x = cell(num_trials,1);
+            y = cell(num_trials,1);
             for k = 1:num_trials
                 % day and neuron indices
                 d = trial_map(k,1);
@@ -384,11 +397,11 @@ classdef MultiDay < handle
 
                 % traces for this trial
                 trial = md.day(d).trials(trial_map(k,2));
-                t = truncate_trial(trial.centroids, trial.start, extent);
+                [t,x{k},y{k}] = truncate_trial(trial.centroids, trial.start, extent);
                 X{k} = trial.traces(ni,t);
             end
 
-            function t_idx = truncate_trial(xy, start_arm, extent)
+            function [t_idx,x,y] = truncate_trial(xy, start_arm, extent)
                 % x and y coordinates
                 x = xy(:,1);
                 y = xy(:,2);
@@ -396,7 +409,7 @@ classdef MultiDay < handle
                 % truncate as specified
                 if strcmp(extent, 'full')
                     t_idx = true(size(x));   
-                elseif strcmp(extent, 'firsthalf')
+                elseif strcmp(extent, 'first')
                     switch start_arm
                         case 'east'
                             t_idx = y > east_start_boundary(x);
@@ -409,12 +422,10 @@ classdef MultiDay < handle
                     error('extent not specified correctly')
                 end
                 
-                % sanity check 
-                % ------------
-                hold on
-                plot(x,y,'-r')
-                plot(x(t_idx),y(t_idx),'-b')
-            end
+                x = x(t_idx,:);
+                y = y(t_idx,:);
+                
+            end % truncate_trial
 
             function y = east_start_boundary(x)
                 y = -x+600;
