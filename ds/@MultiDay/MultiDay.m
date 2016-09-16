@@ -402,16 +402,18 @@ classdef MultiDay < handle
                             t_idx = y > east_start_boundary(x);
                         case 'west'
                             t_idx = y < west_start_boundary(x);
-                        % TODO: probe trials?
+                        otherwise
+                            t_idx = true(size(x));
                     end
                 else
                     error('extent not specified correctly')
                 end
-
+                
                 % sanity check 
                 % ------------
-                % hold on
-                % plot(x(t_idx),y(t_idx))
+                hold on
+                plot(x,y,'-r')
+                plot(x(t_idx),y(t_idx),'-b')
             end
 
             function y = east_start_boundary(x)

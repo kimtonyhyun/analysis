@@ -1,45 +1,33 @@
-function [B,cv_rate] = cpd_regress_trial(cpd, meta, trial_type, factors)
+function [B,cv_rate] = cpd_regress_trial(cpd, meta, var)
 % CPD_PREDICT(cpd, meta, trial_type)
 %
-% Uses logistic regression to predict trial metadata from cpd trial factors.
-%
-% model = cpd_predict(cpd, meta, 'start')
-% model = cpd_predict(cpd, meta, 'end')
-% model = cpd_predict(cpd, meta, 'correct')
+% Uses multinomial logistic regression to predict day, strategy, start arm,
+% etc. from trial factors.
 
-if nargin == 3
-    factors = 1:size(cpd.factors.trial,2);
+if strcmp(var, 'strategy')
+    % remove non-labelled trials
+    idx = strcmp('allo-north',meta.strategy) | ...
+          strcmp('allo-south',meta.strategy) | ...
+          strcmp('ego-right',meta.strategy) | ...
+          strcmp('ego-left',meta.strategy);
+
+    X = cpd.factors.trial(idx,:);
+    Y = categorical(meta.strategy(idx));
+else
+    X = cpd.factors.trial;
+    Y = categorical(meta.(var));
 end
-
-% independent, dependent vars
-X = cpd.factors.trial(:,factors);
-metadata = meta.(trial_type);
-labels = unique(metadata);
-Y = zeros(length(metadata),1);
-
-for i = 1:length(metadata)
-    for j = 1:length(labels)
-        if iscell(metadata)
-            if metadata{i} == labels{j}
-                Y(i) = j-1;
-            end
-        else
-            if metadata(i) == labels(j)
-                Y(i) = j-1;
-            end
-        end
-    end
-end
-
+    
 % find leave-one-out error rate
 cv_rate = mean(crossval(@fit_predict,X,Y,'leaveout',1));
 
 % fit the full model, return coefficients
-B = glmfit(X,Y,'binomial','link','logit');
-
+B = mnrfit(X,Y);
 
 function num_correct = fit_predict(xT,yT,xt,yt)
     % train on (xT,yT) then predict yt using xt
-    B = glmfit(xT,yT,'binomial','link','logit');
-    yhat = glmval(B,xt,'logit');
-    num_correct = sum(abs(yt-yhat)<0.01);
+    B = mnrfit(xT,yT);
+    yhat = mnrval(B,xt);
+    [~,yi] = max(yhat,[],2);
+    yl = categories(yT);
+    num_correct = sum(yl(yi) == yt);
