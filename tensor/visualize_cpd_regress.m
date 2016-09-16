@@ -1,11 +1,8 @@
 function [Bn,cv_rate] = visualize_cpd_regress(cpd, meta)
-% CPD_PREDICT(cpd, meta, trial_type)
+% VISUALIZE_CPD_REGRESS(cpd, meta)
 %
-% Uses logistic regression to predict trial metadata from cpd trial factors.
-%
-% model = cpd_predict(cpd, meta, 'start')
-% model = cpd_predict(cpd, meta, 'end')
-% model = cpd_predict(cpd, meta, 'correct')
+% Runs cpd_regress_trial(...) on all dependent variables and
+% plots the regression coefficients in a bar chart
 
 % number of factors
 nf = length(cpd.lambda);

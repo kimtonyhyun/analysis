@@ -1,7 +1,7 @@
-function scree_cpd(cpd_list)
-% SCREE_CPD, plots a scree plot given a vector of cpd fits
+function visualize_rank(cpd_list)
+% VISUALIZE_RANK, plots a scree plot given a vector of cpd fits
 %
-%     scree_cpd(cpd_list)
+%     visualize_rank(cpd_list)
 
 % collect rank and rsq of each model
 N = length(cpd_list);
