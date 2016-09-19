@@ -21,11 +21,12 @@ else
 end
 
 s = randsample(1:size(X,3),25);
-ylimits = [min(X(:)), quantile(X(:),0.999)];
 xlimits = [1, size(X,2)];
 
 nframes = size(X,1);
 for n = 1:nframes
+    clf()
+    ylimits = [Inf,-Inf];
     for k = 1:25
         
         % select day summary
@@ -37,7 +38,7 @@ for n = 1:nframes
         day = trial_map(trialX,1);
         trialDAY = trial_map(trialX,2);
         
-        subplot(5,5,k);
+        ax(k) = subplot(5,5,k);
         cla; hold on
         if strcmp(md.day(day).trials(trialDAY).start, 'east')
             plot(X(n,:,s(k)),'-','linewidth',3,'color',[0 0.7 1])
@@ -47,11 +48,15 @@ for n = 1:nframes
             warn('probe trial plotted')
         end
         plot(Xest(n,:,s(k)),'-k','linewidth',2)
-        set(gca,'xtick',[],'ytick',[])
-        ylim(ylimits)
+        set(gca,'xtick',[])
+        yl = ylim();
+        ylimits(1) = min([yl(1), ylimits(1)]);
+        ylimits(2) = max([yl(2), ylimits(2)]);
         xlim(xlimits)
         ylabel([ystr,' ', num2str(s(k))])
-    end 
+    end
+    linkaxes(ax)
+    ylim(ylimits)
     if isempty(outdir)
         pause
     else

@@ -19,15 +19,15 @@ else
 end
     
 % find leave-one-out error rate
-cv_rate = mean(crossval(@fit_predict,X,Y,'leaveout',1));
+cv_rate = mean(crossval(@fit_predict,X,Y,'kfold',10));
 
 % fit the full model, return coefficients
 B = mnrfit(X,Y);
 
-function num_correct = fit_predict(xT,yT,xt,yt)
+function frac_correct = fit_predict(xT,yT,xt,yt)
     % train on (xT,yT) then predict yt using xt
     B = mnrfit(xT,yT);
     yhat = mnrval(B,xt);
     [~,yi] = max(yhat,[],2);
     yl = categories(yT);
-    num_correct = sum(yl(yi) == yt);
+    frac_correct = mean(yl(yi) == yt);
