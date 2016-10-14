@@ -77,7 +77,7 @@ fprintf('%s: Overlap matrix completed!\n', datestr(now));
 
 % Find the nonzero elements of the mask overlap matrix
 %------------------------------------------------------------
-min_overlap_threshold = 1/3;
+min_overlap_threshold = 1/2;
 match_1to2 = find_nonzero_overlaps(M, min_overlap_threshold);
 match_2to1 = find_nonzero_overlaps(M', min_overlap_threshold);  
 
