@@ -416,7 +416,16 @@ classdef MultiDay < handle
                         case 'west'
                             t_idx = y < west_start_boundary(x);
                         otherwise
-                            t_idx = true(size(x));
+                            error('extent not implemented for probe trials');
+                    end
+                elseif strcmp(extent,'second')
+                    switch start_arm
+                        case 'east'
+                            t_idx = y < east_start_boundary(x);
+                        case 'west'
+                            t_idx = y > west_start_boundary(x);
+                        otherwise
+                            error('extent not implemented for probe trials');
                     end
                 else
                     error('extent not specified correctly')
