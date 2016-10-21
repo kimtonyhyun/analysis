@@ -234,6 +234,8 @@ function pretty_ylims(Ax, ylimits, link)
     end
 
 function ryl = pretty_axticks(yl)
-    t0 = round(ceil(yl(1)*100)/100,2);
-    t1 = round(floor(yl(2)*100)/100,2);
+    % round ylimits to 2 significant digits
+    s = 10.^(floor(log10(abs(yl))-1));
+    t0 = ceil(yl(1)/(s(1)+eps()))*s(1);
+    t1 = floor(yl(2)/(s(2)+eps()))*s(2);
     ryl = [t0 t1];
