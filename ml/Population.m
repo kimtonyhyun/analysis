@@ -9,6 +9,7 @@ classdef Population < handle
     properties(Access = private)
         W
         b
+        intercept
     end
 
     methods
@@ -22,6 +23,7 @@ classdef Population < handle
             obj.data = data;
             [obj.num_trials,obj.num_cells] = size(data);
             obj.b = 0;
+            obj.intercept = 0;
             obj.W = eye(obj.num_cells);
             obj.num_embedding_dims = obj.num_cells;
         end
@@ -70,6 +72,11 @@ classdef Population < handle
                     error('Need labels for PLS')
                 end
                 [obj.b,obj.W] = do_PLS(obj.data,num_comp,idx,labels);
+            elseif strcmp(method,'logistic_reg')
+                if ~exist('labels','var')
+                    error('Need labels for classification')
+                end
+                [obj.b,obj.W,obj.intercept] = do_logistic_lasso(obj.data,idx,labels);
             end
             obj.num_embedding_dims = size(obj.W,2);
         end
@@ -84,7 +91,7 @@ classdef Population < handle
             if  size(A,2)~=obj.num_cells
                 error('Inputs need to have row dimension = num_cells')
             end
-            X = bsxfun(@minus,A,obj.b)*obj.W;
+            X = bsxfun(@minus,A,obj.b)*obj.W+obj.intercept;
         end
         
         function d = dist(obj,A,B)
@@ -139,3 +146,15 @@ function [mu,coeff] = do_PLS(data,num_comp,idx,labels)
     coeff = (XL \ coeff')';
     coeff = coeff(:,1:num_comp);
 end
+
+function [mu,coeff,intercept] = do_logistic_lasso(data,idx,labels)
+    % Use PCA to retain 90% of variance
+    [mu,coeff] = do_PCA(data,0,idx);
+    % Get PCA scores
+    PCA_scores = bsxfun(@minus,data(idx,:),mu)*coeff;
+    % Do lassoglm
+    [B,fit_info] = lassoglm(PCA_scores,labels,'binomial','lambda',0.1,'NumLambda',1,'alpha',0.5);
+    coeff = coeff*B;
+    intercept = fit_info.Intercept;
+end
+
