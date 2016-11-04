@@ -4,6 +4,7 @@ classdef Population < handle
         num_trials
         num_embedding_dims
         data
+        var_explained
     end
 
     properties(Access = private)
@@ -24,6 +25,7 @@ classdef Population < handle
             [obj.num_trials,obj.num_cells] = size(data);
             obj.b = 0;
             obj.intercept = 0;
+            obj.var_explained = [];
             obj.W = eye(obj.num_cells);
             obj.num_embedding_dims = obj.num_cells;
         end
@@ -60,13 +62,16 @@ classdef Population < handle
                             idx = varargin{i+1};
                         case 'method'
                             method = varargin{i+1};
+                            % Clear var_explained everytime a method is
+                            % called
+                            obj.var_explained = [];
                         case 'labels'
                             labels = varargin{i+1};
                     end
                 end
             end
             if strcmp(method,'PCA')
-                [obj.b,obj.W] = do_PCA(obj.data,num_comp,idx);
+                [obj.b,obj.W,obj.var_explained] = do_PCA(obj.data,num_comp,idx);
             elseif strcmp(method,'PLS')
                 if ~exist('labels','var')
                     error('Need labels for PLS')
@@ -81,20 +86,28 @@ classdef Population < handle
             obj.num_embedding_dims = size(obj.W,2);
         end
         
-        function X = represent(obj,A)
+        function X = represent(obj,A,dims)
         % Representation in the reduced dimension space.
         %
         % Inputs:
         %   A: 2D array with shape [_,num_cells].
+        % Optional inputs:
+        %   dims = 1D array of dimensions to use for computing the
+        %       reduced dimension representation.
         % Outputs:
         %   X: Reduced dimension representation of the input with shape
+            if exist('dims','var')
+                dims(dims>obj.num_embedding_dims) = [];  % get rid of invalid idx
+            else
+                dims = 1:obj.num_embedding_dims;
+            end
             if  size(A,2)~=obj.num_cells
                 error('Inputs need to have row dimension = num_cells')
             end
-            X = bsxfun(@minus,A,obj.b)*obj.W+obj.intercept;
+            X = bsxfun(@minus,A,obj.b)*obj.W(:,dims)+obj.intercept;
         end
         
-        function d = dist(obj,A,B)
+        function d = dist(obj,A,B,dims)
         % Calculate distance between the rows of A and mean of B in the
         % representation space.
         %
@@ -102,15 +115,23 @@ classdef Population < handle
         %   A: 2D array with shape [_,num_cells]
         %
         %   B: 2D array with shape [_,num_cells]
+        % Optional inputs:
+        %   dims = 1D array of dimensions to use for computing the
+        %       reduced dimension representation.
         % Outputs:
         %   d: distances, 1D array with same length as size(A,1)
         %
+            if exist('dims','var')
+                dims(dims>obj.num_embedding_dims) = [];  % get rid of invalid idx
+            else
+                dims = 1:obj.num_embedding_dims;
+            end
             if size(B,2)~= obj.num_cells || size(A,2)~=obj.num_cells
                 error('Inputs need to have row dimension = num_cells')
             end
-            mean_B = mean(B,1);
-            diff =  bsxfun(@minus,A,mean_B);
-            diff = diff*obj.W;
+            A_reduced = obj.represent(A,dims);
+            B_reduced = obj.represent(mean(B,1),dims);
+            diff =  bsxfun(@minus,A_reduced,B_reduced);
             d = sum(diff.^2,2);
         end
 
@@ -123,10 +144,10 @@ end
 % Utility functions
 %------------------
 
-function [mu,coeff] = do_PCA(data,num_comp,idx)
-    [coeff,~,latent,~,explained,mu] = pca(data(idx,:));
+function [mu,coeff,var_explained] = do_PCA(data,num_comp,idx)
+    [coeff,~,latent,~,var_explained,mu] = pca(data(idx,:));
     if num_comp==0
-        cum_explained = cumsum(explained);
+        cum_explained = cumsum(var_explained);
         num_comp = find(cum_explained>90,1);
     end
     coeff = coeff(:,1:num_comp)*diag(sqrt(1./latent(1:num_comp)));
@@ -134,7 +155,7 @@ end
 
 function [mu,coeff] = do_PLS(data,num_comp,idx,labels)
     % Use PCA to retain 90% of variance
-    [mu,coeff] = do_PCA(data,0,idx);
+    [mu,coeff,~] = do_PCA(data,0,idx);
     % If pca returns less comps than num_comp, override num_comp
     if size(coeff,2)<num_comp || num_comp==0
         num_comp = size(coeff,2);
