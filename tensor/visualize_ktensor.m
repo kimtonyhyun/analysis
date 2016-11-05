@@ -62,7 +62,7 @@ else
 end
 
 % set up the axes
-[Ax,BigAx] = setup_axes(nr, nf, res.space, res.names);
+[Ax,BigAx] = setup_axes(res.nfactors, nf, res.space, res.names);
 
 % The 'sortdim' option sorts the entries along an axis by the top factor.
 % This is useful if the tensor does not have a natural ordering along
@@ -90,7 +90,7 @@ for idx = 1:length(tnsrlist)
     % main loop for plotting
     for f = 1:nf
 
-        for r = 1:nr
+        for r = 1:res.nfactors
             
             % fetch the axes to plot on
             axes(Ax(r,f));
@@ -118,7 +118,7 @@ for idx = 1:length(tnsrlist)
 
             % make plots
             x = 1:sz(f);
-            y = X.u{f}(prm{f},r);
+            y = X.u{f}(prm{f},r)*nthroot(X.lambda(r),nf);
 
             % line plot
             if mkline
