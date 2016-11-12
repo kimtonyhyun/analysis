@@ -220,6 +220,292 @@ classdef MultiDay < handle
             matched_ids = obj.matched_indices(:, obj.full_to_sparse(day_idx));
             unmatched_ids = setdiff(all_cell_ids, matched_ids);
         end
+
+        function trial_map = filter_trials(md,varargin)
+            % TRIAL_MAP = FILTER_TRIALS(MD, OPTS...)
+            %
+            % Returns a num_trials x 2 matrix of integers specifying day number and
+            % trial number for trials that meet specified criteria. For example, the
+            % following returns trials starting in east arm, ending in north arm:
+            %
+            % trial_map = filter_trials(md, 'start', 'east', 'end', 'north')
+            
+            % preallocate
+            max_trials = 0;
+            for d = md.valid_days
+                max_trials = max_trials + length(md.day(d).trials);
+            end
+            trial_map = zeros(max_trials,2);
+            
+            % filter each day
+            a = 1;
+            for d = md.valid_days
+                trial_idx = find(filter_trials(md.day(d),varargin{:}));
+                b = a-1 + length(trial_idx);
+                trial_map(a:b,1) = d;
+                trial_map(a:b,2) = trial_idx;
+                a = b+1;
+            end
+            
+            % truncate unused storage
+            trial_map = trial_map(1:b,:);
+        end
+
+        function [X, meta, neuron_map, trial_map] = export(md, varargin)
+        % [X, meta, neuron_map, trial_map] = EXPORT(md)
+        %
+        % Exports cross-day aligned cell traces (via MultiDay) into a lightweight
+        % format (description below) for tensor analysis
+        %
+        % Output format:
+        %   X: Column cell vector [M x 1] where M is the total number 
+        %      of trials across all days of the requested 'trial_type' (e.g. 'en')
+        %       
+        %      X{j} is a matrix of cell traces, in the format
+        %      [num_matched_cells x num_frames_in_trial_j].
+        %
+        %   neuron_map: Matrix [num_matched_cells x num_days] that maps each 
+        %      matched neuron to its per-day neuron index.
+        %
+        %   trial_map: Matrix [M x 2] where M is the total number of trials of 
+        %      requested 'trial_type'. For the i-th trial, K(i,1) is the day index 
+        %      of that trial, and K(i,2) is the trial index in the original day.
+        
+            % By default, export full traces. Allow user to specify
+            % otherwise with the 'extent' optional argument.
+            extent = 'full';
+            for k = 1:length(varargin)-1
+                v = varargin{k};
+                if ischar(v) && strcmp('extent',v)
+                    extent = varargin{k+1};
+                end
+            end
+            
+            % get trial map (filtering out those specified)
+            trial_map = filter_trials(md, varargin{:});
+
+            % neuron map for matching cells across days
+            neuron_map = md.matched_indices;
+
+            % activity traces for each trial
+            [X,x,y] = export_traces(md, trial_map, extent);
+
+            % metadata for each trial (start, end, turn, correct, etc.)
+            meta = export_metadata(md, trial_map);
+            meta.x = x; % also export position
+            meta.y = y;
+            
+        end % export
+
+        function meta = export_metadata(md, trial_map)
+        % X = EXPORT_METADATA(md, trial_map)
+        %
+        % Exports traces of all trials specified by trial_map into
+        % a cell array X.
+
+            num_trials = size(trial_map,1);
+
+            % get moving average of turn probability on each day
+            ndays = length(md.valid_days);
+            tp = cell(ndays);
+            for di = 1:ndays
+                d = md.valid_days(di);
+                tp{di} = est_turn_probabilities(md.day(d));
+            end
+
+            % copy selected trials into lightweight cell array
+            meta.start = cell(num_trials,1);
+            meta.end = cell(num_trials,1);
+            meta.correct = zeros(num_trials,1);
+            meta.day = zeros(num_trials,1);
+            meta.turn = cell(num_trials,1);
+            meta.turn_prob = zeros(num_trials,1);
+            for k = 1:num_trials
+                % day and neuron indices
+                d = trial_map(k,1);
+                trial = md.day(d).trials(trial_map(k,2));
+
+                % basic metadata associated with this trial
+                meta.start{k} = trial.start;
+                meta.end{k} = trial.end;
+                meta.correct(k) = trial.correct;
+                meta.day(k) = d;
+                meta.turn{k} = trial.turn;
+
+                % turn probability estimated for this trial
+                di = md.valid_days == d;
+                meta.turn_prob(k) = tp{di}(trial_map(k,2));
+            end
+
+            % mark each trial as allo vs ego-centric
+            meta.strategy = cell(num_trials,1);
+            e0 = NaN; % trial index of last east start
+            w0 = NaN; % trial index of last west start
+            for k = 1:num_trials
+                pk = meta.turn_prob(k);
+                if strcmp(meta.start{k},'east')
+                    if ~isnan(w0) && ~isnan(pk)
+                        pl = meta.turn_prob(w0);
+                        if pk > 0.99 && pl > 0.99
+                            meta.strategy{k} = 'ego-right';
+                        elseif pk < 0.01 && pl < 0.01
+                            meta.strategy{k} = 'ego-left';
+                        elseif pk > 0.99 && pl < 0.01
+                            meta.strategy{k} = 'allo-north';
+                        elseif pk < 0.01 && pl > 0.99
+                            meta.strategy{k} = 'allo-south';
+                        end
+                    end
+                    e0 = k;
+                elseif strcmp(meta.start{k},'west')
+                    if ~isnan(e0) && ~isnan(pk)
+                        pl = meta.turn_prob(e0);
+                        if pk > 0.99 && pl > 0.99
+                            meta.strategy{k} = 'ego-right';
+                        elseif pk < 0.01 && pl < 0.01
+                            meta.strategy{k} = 'ego-left';
+                        elseif pk > 0.99 && pl < 0.01
+                            meta.strategy{k} = 'allo-south';
+                        elseif pk < 0.01 && pl > 0.99
+                            meta.strategy{k} = 'allo-north';
+                        end
+                    end
+                    w0 = k;
+                else
+                    meta.strategy{k} = 'probe';
+                end
+                if isempty(meta.strategy{k})
+                    meta.strategy{k} = 'NA';
+                end
+            end
+        end % export_metadata
+
+        function [X,x,y] = export_traces(md, trial_map, extent)
+        % X = EXPORT_TRACES(md, trial_map)
+        %
+        % Exports traces of all trials specified by trial_map into
+        % a cell array X.
+
+            num_trials = size(trial_map,1);
+            X = cell(num_trials,1);
+            x = cell(num_trials,1);
+            y = cell(num_trials,1);
+            for k = 1:num_trials
+                % day and neuron indices
+                d = trial_map(k,1);
+                ni = md.matched_indices(:,md.valid_days == d);
+
+                % traces for this trial
+                trial = md.day(d).trials(trial_map(k,2));
+                [t,x{k},y{k}] = truncate_trial(trial.centroids, trial.start, extent);
+                X{k} = trial.traces(ni,t);
+            end
+
+            function [t_idx,x,y] = truncate_trial(xy, start_arm, extent)
+                % x and y coordinates
+                x = xy(:,1);
+                y = xy(:,2);
+
+                % truncate as specified
+                if strcmp(extent, 'full')
+                    t_idx = true(size(x));   
+                elseif strcmp(extent, 'first')
+                    switch start_arm
+                        case 'east'
+                            t_idx = y > east_start_boundary(x);
+                        case 'west'
+                            t_idx = y < west_start_boundary(x);
+                        otherwise
+                            error('extent not implemented for probe trials');
+                    end
+                elseif strcmp(extent,'second')
+                    switch start_arm
+                        case 'east'
+                            t_idx = y < east_start_boundary(x);
+                        case 'west'
+                            t_idx = y > west_start_boundary(x);
+                        otherwise
+                            error('extent not implemented for probe trials');
+                    end
+                else
+                    error('extent not specified correctly')
+                end
+                
+                x = x(t_idx,:);
+                y = y(t_idx,:);
+                
+            end % truncate_trial
+
+            function y = east_start_boundary(x)
+                y = -x+600;
+            end
+
+            function y = west_start_boundary(x)
+                y = -x+450;
+            end
+        end % export_traces
+
+        % Display functions
+        %------------------------------------------------------------
+        function summary(obj)
+            % summary stats
+            fprintf('\n<strong>Multi-Day Summary</strong>\n\n')
+            
+            for d = obj.valid_days
+                summary(obj.day(d),d)
+                fprintf('\n')
+            end
+
+        end % summary
+
+        function plot_summary(md)
+            trial_map = filter_trials(md, 'start', {'east','west'});
+            meta = export_metadata(md, trial_map);
+            ndays = length(md.valid_days);
+
+            ei = strcmp(meta.start,'east');
+            wi = strcmp(meta.start,'west');
+
+            for di = 1:ndays
+                d = md.valid_days(di);
+
+                subplot(ndays,2,2*(di-1)+1)
+                plot_panel(meta, ei & (meta.day==d));
+                title(sprintf('day %i, east starts',d))
+
+                subplot(ndays,2,2*(di-1)+2)
+                plot_panel(meta, wi & (meta.day==d));
+                title(sprintf('day %i, west starts',d))
+            end
+
+            function plot_panel(meta,idx)
+                N = sum(idx);
+                x = 1:N;
+                y = strcmp('right',meta.turn(idx));
+                c = repmat([0 0 0], N, 1);
+                s = 15*ones(N,1);
+
+                strat = meta.strategy(idx);
+                a = strcmp(strat,'allo-north') | strcmp(strat,'allo-south');
+                e = strcmp(strat,'ego-left') | strcmp(strat,'ego-right');
+
+                s(a|e) = 30;
+                if sum(a) > 0
+                    c(a,:) = repmat([1 0 0],sum(a),1);
+                end
+                if sum(e) > 0
+                    c(e,:) = repmat([0 0 1],sum(e),1);
+                end
+
+                hold on
+                plot(meta.turn_prob(idx))
+                scatter(x,y,s,c,'filled')
+                ylim([-0.1,1.1])
+                ylabel('p(turn right)')
+            end
+
+        end % plot_summary
+
     end
 
     % Private methods for implementing the cross-day matching logic
@@ -330,5 +616,6 @@ classdef MultiDay < handle
             fprintf('  Removed %d inconsistent matches!\n', num_invalid_matches);
             
         end % verify_match_consistency
+
     end
 end
