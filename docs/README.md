@@ -26,3 +26,7 @@ info.num_pairs: Number of filter-trace pairs in file
 filters: [height x width x num_pairs]
 traces: [num_frames x num_pairs]
 ```
+
+## Specialized analytic approaches
+
+- [CPD tensor factorization](tensor.md)
