@@ -32,13 +32,13 @@ The first step is to export data from the `MultiDay` object:
 The `export` function (which lives in `ds/@MultiDay/MultiDay.m`) provides options to filter the trials that are exported. For example, the following will filter out any probe trials (i.e. trials starting in the north or south arms):
 
 ```matlab
-[X, meta, neuron_map, trial_map] = export(md,'start',{'east','west'});
+[X, meta, neuron_map, trial_map] = export(md, 'start', {'east','west'});
 ```
 
 You can also constrain the data to the first or second half of each trial. For example,
 
 ```matlab
-[X, meta, neuron_map, trial_map] = export(md,'extent','first');
+[X, meta, neuron_map, trial_map] = export(md, 'extent', 'first');
 ```
 
 Truncates the data for each trial once the mouse moves out of the starting arm.
@@ -52,6 +52,24 @@ Before fitting tensor decompositions, we need to convert `X` from the cell array
 ```
 
 At the moment, we just do linear interpolation/stretching to convert all trials to the same length. In the future I want this function to support other options - in particular, approaches based on dynamic time warping or aligning the activity traces to the mouse position.
+
+#### Normalizing/Standardizing data
+
+From day-to-day there appears to be significant fluctuations in the mean fluorescence of each cell. This can pollute the results of the CP decomposition, so it is useful to mean-subtract within each cell for each day. This is done by:
+
+```matlab
+>> X = normalize_tensor(X, meta);
+```
+
+In pseudocode, this computes:
+
+```
+for each neuron
+  for each day
+    X[neuron,:,day] -= mean(X[neuron,:,day])
+  end
+end
+```
 
 #### Fitting the CPD model and making a scree plot
 
@@ -151,3 +169,15 @@ visualize_resids(X,Xest,md,trial_map);
 Produces a plot like:
 
 ![CPD residual analysis](cpd_resids.png)
+
+## Non-negative Decompositions
+
+Just as [non-negative matrix factorization (NMF)](https://en.wikipedia.org/wiki/Non-negative_matrix_factorization) extends PCA by constraining the loadings/components to be non-negative, we can try fitting non-negative tensor decompositions. The `fit_cpd` contains an option to do this:
+
+```matlab
+[cpd_list,rsq] = fit_cpd(Xnrn, 'nonneg', true); % fits 10 non-neg rank 15 cp models
+```
+
+Everything else should work as described in the previous section. For example, `visualize_neuron_ktensor` can produce something that looks like this:
+
+![Non-negative CP Factors](nncpd_factors.png)
