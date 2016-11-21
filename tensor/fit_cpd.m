@@ -10,7 +10,8 @@ p = inputParser;
 p.addParameter('num_starts', 10);
 p.addParameter('min_rank', 15);
 p.addParameter('max_rank', 15);
-p.addParameter('printitn',0);
+p.addParameter('printitn',true);
+p.addParameter('nonneg',false);
 p.parse(varargin{:});
 
 ns = p.Results.num_starts;
@@ -32,7 +33,12 @@ itercount = 0;
 for a = randperm(ns*nr)
     h = waitbar(itercount/(nr*ns));
     [r,~] = ind2sub([nr,ns],a);
-	decomp = normalize(cp_als(Xt,min_rank+r-1,'printitn',p.Results.printitn));
+    
+    if p.Results.nonneg
+        decomp = normalize(cp_nnals(Xt,min_rank+r-1,'printitn',p.Results.printitn));
+    else
+        decomp = normalize(cp_als(Xt,min_rank+r-1,'printitn',p.Results.printitn));
+    end
 
 	cpd(a).rank = min_rank+r-1;
 	cpd(a).Rsq = 1 - norm(Xt-full(decomp))/norm(Xt - mean(X(:)));
