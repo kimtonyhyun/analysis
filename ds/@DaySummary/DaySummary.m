@@ -410,8 +410,11 @@ classdef DaySummary < handle
         end
 
         function strategy = get_strategy(obj)
-            % Computes the best navigation strategy for the first and second half
-            % of the trials.
+            % Computes the navigation strategy (one of 'allo-north',
+            % 'allo-south', 'ego-left', 'ego-right') that best describes
+            % the apparent behavior of the mouse, for the first and latter
+            % halves of the session.
+            
             strategy = {'', ''};
             nk = obj.num_trials;
             idx = [1:floor(nk/2); ceil(1+nk/2):nk];
@@ -545,7 +548,7 @@ classdef DaySummary < handle
                 fprintf('<strong>Day #%i Summary</strong>\n', num)
                 disp('---------------')
             end
-            disp([num2str(obj.num_cells), ' cells, ',...
+            disp([num2str(obj.num_classified_cells), ' classified cells, ',...
                   num2str(obj.num_trials), ' trials'])
             
             % strategy
