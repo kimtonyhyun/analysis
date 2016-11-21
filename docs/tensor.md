@@ -127,7 +127,7 @@ The last command should produce a series of plots that look like this (press the
 
 This figure plots a single neuron `X(i,:,:)` on 25 random trials.
 The raw data is plotted in red/blue traces respectively denoting east/west trial starts.
-The model fit is the blace trace in all plots.
+The model fit is the black trace in all plots.
 
 It is also possible to examine the model fit across all trials, i.e. examining slices through the third mode of the tensor `X(:,:,i)`.
 
