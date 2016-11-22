@@ -1,6 +1,21 @@
-function traces = get_dff_traces(ds, M_dff)
+function traces = get_dff_traces(ds, M_dff, varargin)
 % Compute DFF traces associated with classified cells from a DaySummary,
 % and saves the result as a rec file. Assumes that M_dff is a DFF movie!
+%
+% Note that the length of traces is derived from the length of the movie.
+% The DaySummary only provides the spatial filters.
+
+remove_baseline = false;
+
+for k = 1:length(varargin)
+    vararg = varargin{k};
+    if ischar(vararg)
+        switch lower(vararg)
+            case 'fix_baseline'
+                remove_baseline = true;
+        end
+    end
+end
 
 [height, width, num_frames] = size(M_dff);
 num_pixels = height*width;
@@ -23,13 +38,23 @@ end
 fprintf('%s: Computing traces...\n', datestr(now));
 traces = filters' * M_dff;
 
+% Reshape to standard form
+filters = reshape(filters, height, width, num_cells);
+traces = traces'; % [num_frames x num_cells]
+
+if remove_baseline
+    fprintf('%s: Applying baseline correction to DFF traces...\n', datestr(now));
+    for k = 1:num_cells
+        trace = traces(:,k);
+        traces(:,k) = fix_baseline(trace);
+    end
+end
+
 % Save as Rec file
 %------------------------------------------------------------
 info.type = 'get_dff_traces';
 info.num_pairs = num_cells;
-
-filters = reshape(filters, height, width, num_cells);
-traces = traces'; % [num_frames x num_pairs]
+info.options.remove_baseline = remove_baseline;
 
 timestamp = datestr(now, 'yymmdd-HHMMSS');
 rec_savename = sprintf('rec_%s.mat', timestamp);
