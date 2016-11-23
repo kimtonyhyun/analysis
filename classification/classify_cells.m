@@ -73,7 +73,7 @@ while (cell_idx <= num_candidates)
         switch (resp)
             % Classication options
             %------------------------------------------------------------
-            case {'p', 'c'} % Cell
+            case 'c' % Cell
                 [~, movie_clim] = view_cell_interactively(ds, cell_idx,...
                                     M, fps, movie_clim);
                 resp2 = input(sprintf('  Confirm classification ("%s") >> ', resp), 's');
@@ -83,7 +83,7 @@ while (cell_idx <= num_candidates)
                     go_to_next_unlabeled_cell();
                 end
 
-            case {'p!', 'c!', 'n'} % Classify without viewing trace
+            case {'c!', 'n'} % Classify without viewing trace
                 set_label(cell_idx, resp(1));
                 go_to_next_unlabeled_cell();
                 
