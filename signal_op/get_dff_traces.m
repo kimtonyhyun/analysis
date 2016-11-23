@@ -7,6 +7,7 @@ function traces = get_dff_traces(ds, M_dff, varargin)
 
 remove_baseline = false;
 
+% TODO: Option for truncating the spatial filter
 for k = 1:length(varargin)
     vararg = varargin{k};
     if ischar(vararg)
