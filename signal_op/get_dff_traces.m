@@ -6,9 +6,9 @@ function traces = get_dff_traces(ds, M_dff, varargin)
 % The DaySummary only provides the spatial filters.
 
 % TODOs:
-%   - Option for truncating the spatial filter
 %   - Run least squares, rather than projection through movie
 
+truncate_filter = false;
 remove_baseline = false;
 
 for k = 1:length(varargin)
@@ -17,6 +17,9 @@ for k = 1:length(varargin)
         switch lower(vararg)
             case 'fix_baseline'
                 remove_baseline = true;
+            case 'truncate'
+                fprintf('%s: Filter will be truncated...\n', datestr(now));
+                truncate_filter = true;
         end
     end
 end
@@ -34,6 +37,9 @@ fprintf('%s: Building filter matrix of %d classified cells...\n',...
 for k = 1:num_cells
     cell_idx = cell_indices(k);
     filter = ds.cells(cell_idx).im;
+    if truncate_filter
+        filter = filter .* ds.cells(cell_idx).mask;
+    end
     filter = filter / sum(filter(:)); % Normalize filter to 1
     
     filters(:,k) = reshape(filter, num_pixels, 1);
@@ -58,7 +64,10 @@ end
 %------------------------------------------------------------
 info.type = 'get_dff_traces';
 info.num_pairs = num_cells;
+
+% Note the parameters used in DFF recomputation
 info.options.remove_baseline = remove_baseline;
+info.options.truncate_filter = truncate_filter;
 
 timestamp = datestr(now, 'yymmdd-HHMMSS');
 rec_savename = sprintf('rec_%s.mat', timestamp);
