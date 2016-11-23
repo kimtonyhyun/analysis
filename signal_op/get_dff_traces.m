@@ -5,9 +5,12 @@ function traces = get_dff_traces(ds, M_dff, varargin)
 % Note that the length of traces is derived from the length of the movie.
 % The DaySummary only provides the spatial filters.
 
+% TODOs:
+%   - Option for truncating the spatial filter
+%   - Run least squares, rather than projection through movie
+
 remove_baseline = false;
 
-% TODO: Option for truncating the spatial filter
 for k = 1:length(varargin)
     vararg = varargin{k};
     if ischar(vararg)
