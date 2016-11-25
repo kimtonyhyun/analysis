@@ -38,7 +38,7 @@ function raster = plot_cell_raster(obj, cell_idx, varargin)
         end
     end
 
-    imagesc(resample_grid, 1:size(raster,1), raster);
+    imagesc(resample_grid, 1:num_filtered_trials, raster);
     colormap jet;
     xlabel('Trial phase [a.u.]');
     xlim([0 1]);
