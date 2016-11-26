@@ -71,6 +71,8 @@ function raster = plot_aligned_cell_raster(obj, cell_idx, varargin)
 end
 
 function [pre_offset, post_offset] = compute_offsets(frame_indices)
+    frame_indices = double(frame_indices);
+    
     close_gate_frames = frame_indices(:,3);
     frame_indices = frame_indices - repmat(close_gate_frames, [1 4]); % Align each trial to closing of gate
     
