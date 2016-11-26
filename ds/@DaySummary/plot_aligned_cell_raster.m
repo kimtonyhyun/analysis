@@ -36,9 +36,10 @@ function raster = plot_aligned_cell_raster(obj, cell_idx, varargin)
         if display_trial(k)
             counter = counter + 1;
 
+            % Compute aligned frame indices into current trial
             ti = obj.trial_indices(k,:);
             ti = ti - (ti(1)-1);
-            cgf = ti(3);
+            cgf = ti(3); % close gate frame
             pre_frame = cgf + pre_offset;
             post_frame = cgf + post_offset;
 
@@ -71,6 +72,8 @@ function raster = plot_aligned_cell_raster(obj, cell_idx, varargin)
 end
 
 function [pre_offset, post_offset] = compute_offsets(frame_indices)
+    % Compute the maximum length of pre- and post-close-gate frames that is
+    % common to all trials
     frame_indices = double(frame_indices);
     
     close_gate_frames = frame_indices(:,3);
