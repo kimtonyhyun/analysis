@@ -1,7 +1,8 @@
 function classify_cells(ds, M, varargin)
 % Perform manual classification of candidate filter/trace pairs
-
-% Note: Default options configured for the PlusMaze experiment!
+%
+% Note: The DaySummary object should NOT be instantiated with
+%       'excludeprobe'
 show_raster = true;
 fps = 10;
 
