@@ -94,9 +94,12 @@ end
         %------------------------------------------------------------
         trial_frames = double(ds.trial_indices(trial_idx, :)); % [start open-gate close-gate end]
         trial_frames = trial_frames - trial_frames(1) + 1;
-        close_gate_frame = trial_frames(3);
         
-        trial_frames = trial_frames - close_gate_frame; % Time relative to gate close
+        align_index = 3; % Align to closing of gate
+        align_str = 'Frames relative to gate close';
+        alignment_frame = trial_frames(align_index);
+        
+        trial_frames = trial_frames - alignment_frame; % Time relative to gate close
         
         subplot(3,4,[3 4]);
         plot(trial_frames(1):trial_frames(4), trace, 'LineWidth', 2, 'HitTest', 'off');
@@ -104,7 +107,7 @@ end
         ylim(scale);
         grid on;
         title(sprintf('Trial %d', trial_idx));
-        xlabel('Frames relative to gate close');
+        xlabel(align_str);
         ylabel('Signal [a.u.]');
         hold on;
         
@@ -156,15 +159,15 @@ end
         
         function update_frame(~, ~)
             cp = get(trace_axis, 'CurrentPoint');
-            sel_frame = round(cp(1)); % X point of click (i.e. frame relative to gate close)
+            sel_frame = round(cp(1)); % X point of click
             
-            sel_frame = sel_frame + close_gate_frame;
+            sel_frame = sel_frame + alignment_frame;
             sel_frame = max(sel_frame, 1);
             sel_frame = min(sel_frame, num_frames_in_trial);
             
             % Update visuals
-            set(t, 'XData', (sel_frame-close_gate_frame)*[1 1]);
-            set(d, 'XData', (sel_frame-close_gate_frame), 'YData', trace(sel_frame));
+            set(t, 'XData', (sel_frame-alignment_frame)*[1 1]);
+            set(d, 'XData', (sel_frame-alignment_frame), 'YData', trace(sel_frame));
             set(hb, 'CData', Mb(:,:,sel_frame));
             
             subplot(3,4,[7 8 11 12]);

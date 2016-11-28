@@ -9,13 +9,19 @@ function raster = plot_cell_raster(obj, cell_idx, varargin)
 % e.g. "plot_cell_raster(cell_idx, 'start', 'east')"
 %
 
+    align_index = 3; % By default, align to the closing of gate
+    
     display_trial = ones(obj.num_trials, 1);
     draw_correct = 0;
+    
     if ~isempty(varargin)
         for k = 1:length(varargin)
             vararg = varargin{k};
             if ischar(vararg)
                 switch lower(vararg)
+                    case 'align'
+                        align_index = varargin{k+1};
+                        
                     case 'draw_correct'
                         draw_correct = 1;
                 end
@@ -27,7 +33,17 @@ function raster = plot_cell_raster(obj, cell_idx, varargin)
 
     num_filtered_trials = sum(display_trial);
 
-    [pre_offset, post_offset] = compute_offsets(obj.trial_indices);
+    switch align_index
+        case 1
+            align_str = 'Frames relative to trial start';
+        case 2
+            align_str = 'Frames relative to gate open';
+        case 3
+            align_str = 'Frames relative to gate close';
+        case 4
+            align_str = 'Frames relative to trial end';
+    end
+    [pre_offset, post_offset] = compute_offsets(obj.trial_indices, align_index);
     num_trunc_frames = post_offset-pre_offset+1;
 
     raster = zeros(num_filtered_trials, num_trunc_frames);
@@ -41,9 +57,9 @@ function raster = plot_cell_raster(obj, cell_idx, varargin)
             % Compute aligned frame indices into current trial
             ti = obj.trial_indices(k,:);
             ti = ti - (ti(1)-1);
-            cgf = ti(3); % close gate frame
-            pre_frame = cgf + pre_offset;
-            post_frame = cgf + post_offset;
+            af = ti(align_index); % alignment frame
+            pre_frame = af + pre_offset;
+            post_frame = af + post_offset;
 
             tr = obj.get_trace(cell_idx, k);
             raster(counter,:) = tr(pre_frame:post_frame);
@@ -54,7 +70,7 @@ function raster = plot_cell_raster(obj, cell_idx, varargin)
 
     imagesc(pre_offset:post_offset, 1:num_filtered_trials, raster);
     colormap jet;
-    xlabel('Frames relative to gate close');
+    xlabel(align_str);
     ylabel('Trial index');
     set(gca, 'TickLength', [0 0]);
 
@@ -73,13 +89,13 @@ function raster = plot_cell_raster(obj, cell_idx, varargin)
     end
 end
 
-function [pre_offset, post_offset] = compute_offsets(frame_indices)
-    % Compute the maximum length of pre- and post-close-gate frames that is
+function [pre_offset, post_offset] = compute_offsets(frame_indices, align_index)
+    % Compute the maximum length of pre- and post-alignment frames that is
     % common to all trials
     frame_indices = double(frame_indices);
     
-    close_gate_frames = frame_indices(:,3);
-    frame_indices = frame_indices - repmat(close_gate_frames, [1 4]); % Align each trial to closing of gate
+    alignment_frames = frame_indices(:,align_index);
+    frame_indices = frame_indices - repmat(alignment_frames, [1 4]); % Align each trial to closing of gate
     
     pre_offset = max(frame_indices(:,1));
     post_offset = min(frame_indices(:,4));
