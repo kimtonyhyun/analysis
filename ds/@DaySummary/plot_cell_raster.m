@@ -1,11 +1,13 @@
 function raster = plot_cell_raster(obj, cell_idx, varargin)
+% Plots a raster of cell activity, where trials are aligned to the closing
+% gate frame.
+%
 % Optional argument 'draw_correct' will place a box at the end
 % of each trial indicating correct (green) or incorrect (red)
 %
 % Additional optional arguments allow for filtering of trials,
 % e.g. "plot_cell_raster(cell_idx, 'start', 'east')"
 %
-% Note: May merge into 'plot_cell_raster' in the future...
 
     display_trial = ones(obj.num_trials, 1);
     draw_correct = 0;
