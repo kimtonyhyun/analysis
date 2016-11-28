@@ -11,25 +11,28 @@ if nargin==5
 end
 
 if dim == 1
-    ystr = 'trial';
+    tstr = 'neuron'; % title string
+    ystr = 'trial';  % y-axis string
 elseif dim == 3
     Xest = permute(Xest,[3 2 1]);
     X = permute(X,[3 2 1]);
-    ystr = 'neuron';
+    tstr = 'trial';  % title string
+    ystr = 'neuron'; % y-axis string
 else
     error('cant vizualize that')
 end
 
+% sample along the third mode of tensor for subplots
 s = randsample(1:size(X,3),25);
 xlimits = [1, size(X,2)];
 
-nframes = size(X,1);
-for n = 1:nframes
+for n = 1:size(X,1)
     clf()
+    
     ylimits = [Inf,-Inf];
     for k = 1:25
-        
-        % select day summary
+
+        % select DaySummary from MultiDay object
         if dim == 1
             trialX = k;
         else
@@ -37,7 +40,7 @@ for n = 1:nframes
         end
         day = trial_map(trialX,1);
         trialDAY = trial_map(trialX,2);
-        
+
         ax(k) = subplot(5,5,k);
         cla; hold on
         if strcmp(md.day(day).trials(trialDAY).start, 'east')
@@ -57,6 +60,12 @@ for n = 1:nframes
     end
     linkaxes(ax)
     ylim(ylimits)
+
+    % title at the top (invisible large axes)
+    axes();
+    axis off
+    title([tstr, ' ', num2str(n)], 'fontsize', 15);
+
     if isempty(outdir)
         pause
     else

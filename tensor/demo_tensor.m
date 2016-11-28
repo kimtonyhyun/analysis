@@ -1,4 +1,5 @@
-[X, meta, neuron_map, trial_map] = export_traces(md);
+% NOTE: Need to pre-load data as a MultiDay object called `md`
+[X, meta, neuron_map, trial_map] = export(md);
 
 % TODO: consider standardize before warp?
 % X = standardize(X,trial_map);
