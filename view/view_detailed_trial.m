@@ -92,36 +92,35 @@ end
         
         % Show trace
         %------------------------------------------------------------
-        trial_frame_indices = double(ds.trial_indices(trial_idx, :)); % [start open-gate close-gate end]
-        trial_frame_indices = trial_frame_indices - trial_frame_indices(1);
-        num_trials_in_frame = trial_frame_indices(4) + 1;
-        trial_markers = trial_frame_indices / num_trials_in_frame;
+        trial_frames = double(ds.trial_indices(trial_idx, :)); % [start open-gate close-gate end]
+        trial_frames = trial_frames - trial_frames(1) + 1;
+        close_gate_frame = trial_frames(3);
+        
+        trial_frames = trial_frames - close_gate_frame; % Time relative to gate close
         
         subplot(3,4,[3 4]);
-        trial_phase = linspace(0, 1, num_frames_in_trial);
-        plot(trial_phase, trace, 'LineWidth', 2, 'HitTest', 'off');
-        xlim([0 1]);
+        plot(trial_frames(1):trial_frames(4), trace, 'LineWidth', 2, 'HitTest', 'off');
+        xlim(trial_frames([1 4]));
         ylim(scale);
         grid on;
         title(sprintf('Trial %d', trial_idx));
-        xlabel('Trial phase [a.u.]');
+        xlabel('Frames relative to gate close');
         ylabel('Signal [a.u.]');
         hold on;
         
-        plot(trial_markers(2)*[1 1], scale, 'r--', 'HitTest', 'off'); % Open-gate
-        plot(trial_markers(3)*[1 1], scale, 'r--', 'HitTest', 'off'); % Close-gate
+        plot(trial_frames(2)*[1 1], scale, 'r--', 'HitTest', 'off'); % Open-gate
         
-        if ds.is_tracking_loaded
-            trial = ds.trials(trial_idx);
-            movement_onset = trial.movement_onset_frame / num_trials_in_frame;
-            turn_onset = trial.turn_onset_frame / num_trials_in_frame;
-            plot(movement_onset*[1 1], scale, 'k--', 'HitTest', 'off');
-            plot(turn_onset*[1 1], scale, 'k--', 'HitTest', 'off');
-        end
+%         if ds.is_tracking_loaded
+%             trial = ds.trials(trial_idx);
+%             movement_onset = trial.movement_onset_frame / num_trials_in_frame;
+%             turn_onset = trial.turn_onset_frame / num_trials_in_frame;
+%             plot(movement_onset*[1 1], scale, 'k--', 'HitTest', 'off');
+%             plot(turn_onset*[1 1], scale, 'k--', 'HitTest', 'off');
+%         end
         
         % Markers for indicating current frame
-        t = plot(0*[1 1], scale, 'ButtonDownFcn', @start_drag); % Vertical bar -- can be dragged
-        d = plot(0, trace(1), 'o',... % Dot
+        t = plot(trial_frames(1)*[1 1], scale, 'ButtonDownFcn', @start_drag); % Vertical bar -- can be dragged
+        d = plot(trial_frames(1), trace(1), 'o',... % Dot
                  'MarkerFaceColor', 'b', 'MarkerSize', 8,...
                  'HitTest', 'off');
         trace_axis = gca;
@@ -136,7 +135,7 @@ end
         set(gca, 'YTick', []);
         axis image;
         colormap gray;
-        title(sprintf('Frame 1 of %d', num_trials_in_frame));
+        title(sprintf('Frame 1 of %d', num_frames_in_trial));
         
         % If tracking data loaded, overlay the positional information
         if (ds.is_tracking_loaded)
@@ -156,18 +155,19 @@ end
         
         function update_frame(~, ~)
             cp = get(trace_axis, 'CurrentPoint');
-            sel_phase = cp(1); % X point of click
-            sel_phase = max(sel_phase, 0);
-            sel_phase = min(sel_phase, 1);
-            sel_frame = 1 + round((num_frames_in_trial-1) * sel_phase);
+            sel_frame = round(cp(1)); % X point of click (i.e. frame relative to gate close)
+            
+            sel_frame = sel_frame + close_gate_frame;
+            sel_frame = max(sel_frame, 1);
+            sel_frame = min(sel_frame, num_frames_in_trial);
             
             % Update visuals
-            set(t, 'XData', sel_phase*[1 1]);
-            set(d, 'XData', sel_phase, 'YData', trace(sel_frame));
+            set(t, 'XData', (sel_frame-close_gate_frame)*[1 1]);
+            set(d, 'XData', (sel_frame-close_gate_frame), 'YData', trace(sel_frame));
             set(hb, 'CData', Mb(:,:,sel_frame));
             
             subplot(3,4,[7 8 11 12]);
-            title(sprintf('Frame %d of %d', sel_frame, num_trials_in_frame));
+            title(sprintf('Frame %d of %d', sel_frame, num_frames_in_trial));
             
             if (ds.is_tracking_loaded)
                 centroid = ds.trials(trial_idx).centroids(sel_frame, :);
