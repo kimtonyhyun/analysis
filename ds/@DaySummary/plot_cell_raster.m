@@ -1,9 +1,13 @@
 function raster = plot_cell_raster(obj, cell_idx, varargin)
-    % Optional argument 'draw_correct' will place a box at the end
-    % of each trial indicating correct (green) or incorrect (red)
-    %
-    % Additional optional arguments allow for filtering of trials,
-    % e.g. "plot_cell_raster(cell_idx, 'start', 'east')"
+% Plots a raster of cell activity, where trials are aligned to the closing
+% gate frame.
+%
+% Optional argument 'draw_correct' will place a box at the end
+% of each trial indicating correct (green) or incorrect (red)
+%
+% Additional optional arguments allow for filtering of trials,
+% e.g. "plot_cell_raster(cell_idx, 'start', 'east')"
+%
 
     display_trial = ones(obj.num_trials, 1);
     draw_correct = 0;
@@ -21,41 +25,62 @@ function raster = plot_cell_raster(obj, cell_idx, varargin)
         display_trial = obj.filter_trials(varargin{:});
     end
 
-    resample_grid = linspace(0, 1, 1000);
     num_filtered_trials = sum(display_trial);
-    raster = zeros(num_filtered_trials, length(resample_grid));
+
+    [pre_offset, post_offset] = compute_offsets(obj.trial_indices);
+    num_trunc_frames = post_offset-pre_offset+1;
+
+    raster = zeros(num_filtered_trials, num_trunc_frames);
     correctness = zeros(num_filtered_trials);
+
     counter = 0;
     for k = 1:obj.num_trials
         if display_trial(k)
-            counter = counter+1;
-            line = obj.get_trace(cell_idx, k);
-            raster(counter,:) = interp1(linspace(0,1,length(line)),...
-                              line,...
-                              resample_grid,...
-                              'pchip');
+            counter = counter + 1;
+
+            % Compute aligned frame indices into current trial
+            ti = obj.trial_indices(k,:);
+            ti = ti - (ti(1)-1);
+            cgf = ti(3); % close gate frame
+            pre_frame = cgf + pre_offset;
+            post_frame = cgf + post_offset;
+
+            tr = obj.get_trace(cell_idx, k);
+            raster(counter,:) = tr(pre_frame:post_frame);
+
             correctness(counter) = obj.trials(k).correct;
         end
     end
 
-    imagesc(resample_grid, 1:size(raster,1), raster);
+    imagesc(pre_offset:post_offset, 1:num_filtered_trials, raster);
     colormap jet;
-    xlabel('Trial phase [a.u.]');
-    xlim([0 1]);
+    xlabel('Frames relative to gate close');
     ylabel('Trial index');
     set(gca, 'TickLength', [0 0]);
-    
+
     if (draw_correct)
-        corr_width = 0.025;
+        corr_width = 0.025*num_trunc_frames;
         for k = 1:num_filtered_trials
             if correctness(k)
                 corr_color = 'g';
             else
                 corr_color = 'r';
             end
-            rectangle('Position', [1 k-0.5 corr_width 1],...
+            rectangle('Position', [post_offset k-0.5 corr_width 1],...
                       'FaceColor', corr_color);
         end
-        xlim([0 1+corr_width]);
+        xlim([pre_offset post_offset+corr_width]);
     end
+end
+
+function [pre_offset, post_offset] = compute_offsets(frame_indices)
+    % Compute the maximum length of pre- and post-close-gate frames that is
+    % common to all trials
+    frame_indices = double(frame_indices);
+    
+    close_gate_frames = frame_indices(:,3);
+    frame_indices = frame_indices - repmat(close_gate_frames, [1 4]); % Align each trial to closing of gate
+    
+    pre_offset = max(frame_indices(:,1));
+    post_offset = min(frame_indices(:,4));
 end

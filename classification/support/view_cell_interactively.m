@@ -3,12 +3,13 @@ function [resp, movie_clim] = view_cell_interactively(ds, cell_idx, movie, fps, 
 %   the provided miniscope movie.
 
 filter = ds.cells(cell_idx).im;
-trace_orig  = ds.get_trace(cell_idx);
+
+[trace_orig, frames_to_movie] = ds.get_trace(cell_idx);
 trace_fixed = fix_baseline(trace_orig);
 time = 1/fps*((1:length(trace_orig))-1);
 
 % Some parameters
-ic_filter_threshold = 0.3; % For generating the filter outline
+filter_threshold = 0.3; % For generating the filter outline
 num_neighbors_to_show = 10;
 
 % Display parameters
@@ -24,10 +25,10 @@ axis image;
 xlabel('x [px]');
 ylabel('y [px]');
 hold on;
-ic_boundaries = compute_ic_boundary(filter, ic_filter_threshold);
-for i = 1:length(ic_boundaries)
-    ic_boundary = ic_boundaries{i};
-    plot(ic_boundary(:,1), ic_boundary(:,2), 'c', 'LineWidth', 2);
+boundaries = compute_ic_boundary(filter, filter_threshold);
+for i = 1:length(boundaries)
+    boundary = boundaries{i};
+    plot(boundary(:,1), boundary(:,2), 'c', 'LineWidth', 2);
 end
 
 % Plot boundaries of other cells, and retrieve their handles so that
@@ -282,7 +283,7 @@ end
             frames = active_periods(selected_idx,1):...
                      active_periods(selected_idx,2);
             for k = frames
-                A = movie(:,:,k);
+                A = movie(:,:,frames_to_movie(k));
                 set(h, 'CData', A);
 
                 % Update time indicators and dot

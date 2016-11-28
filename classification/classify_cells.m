@@ -1,7 +1,6 @@
 function classify_cells(ds, M, varargin)
 % Perform manual classification of candidate filter/trace pairs
 
-% Note: Default options configured for the PlusMaze experiment!
 show_raster = true;
 fps = 10;
 
