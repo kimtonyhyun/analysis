@@ -109,6 +109,7 @@ end
         hold on;
         
         plot(trial_frames(2)*[1 1], scale, 'r--', 'HitTest', 'off'); % Open-gate
+        plot(trial_frames(3)*[1 1], scale, 'r--', 'HitTest', 'off'); % Close-gate
         
 %         if ds.is_tracking_loaded
 %             trial = ds.trials(trial_idx);
