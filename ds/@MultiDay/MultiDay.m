@@ -251,8 +251,6 @@ classdef MultiDay < handle
             trial_map = trial_map(1:b,:);
         end
 
-        
-
         % Display functions
         %------------------------------------------------------------
         function summary(obj)
@@ -263,7 +261,6 @@ classdef MultiDay < handle
                 summary(obj.day(d),d)
                 fprintf('\n')
             end
-
         end % summary
 
         function plot_summary(md)
@@ -311,12 +308,11 @@ classdef MultiDay < handle
                 ylim([-0.1,1.1])
                 ylabel('p(turn right)')
             end
-
         end % plot_summary
 
-    end
+    end % Public methods
 
-    % Private methods for implementing the cross-day matching logic
+    % Private methods
     %------------------------------------------------------------
     methods (Access=private)
         function [M, assignments] = compute_all_matches(obj)
