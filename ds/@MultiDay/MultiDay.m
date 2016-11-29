@@ -240,7 +240,7 @@ classdef MultiDay < handle
             % filter each day
             a = 1;
             for d = md.valid_days
-                trial_idx = find(filter_trials(md.day(d),varargin{:}));
+                trial_idx = find(md.day(d).filter_trials(varargin{:}));
                 b = a-1 + length(trial_idx);
                 trial_map(a:b,1) = d;
                 trial_map(a:b,2) = trial_idx;

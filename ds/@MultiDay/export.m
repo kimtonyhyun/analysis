@@ -1,42 +1,40 @@
 function [X, meta, neuron_map, trial_map] = export(md, varargin)
 % [X, meta, neuron_map, trial_map] = EXPORT(md)
 %
-% Exports cross-day aligned cell traces (via MultiDay) into a lightweight
-% format (description below) for tensor analysis
+% Exports cross-day aligned cell traces from MultiDay into a lightweight
+% format for further analysis (e.g. tensor analysis, decoding, etc.)
 %
 % Output format:
-%   X: Column cell vector [M x 1] where M is the total number 
-%      of trials across all days of the requested 'trial_type' (e.g. 'en')
-%       
-%      X{j} is a matrix of cell traces, in the format
-%      [num_matched_cells x num_frames_in_trial_j].
 %
-%   neuron_map: Matrix [num_matched_cells x num_days] that maps each 
+%   X: Cross-day traces formatted into a [neurons x time x trials] matrix.
+%       Note that all trials will be formatted to the same length.
+%
+%   meta: Metadata associated with each trial (e.g. start location, etc.)
+%
+%   neuron_map: Matrix [neurons x num_days] that maps each 
 %      matched neuron to its per-day neuron index.
 %
-%   trial_map: Matrix [M x 2] where M is the total number of trials of 
-%      requested 'trial_type'. For the i-th trial, K(i,1) is the day index 
-%      of that trial, and K(i,2) is the trial index in the original day.
+%   trial_map: Matrix [trials x 2] where trial_map(i,1) is the day index 
+%      and trial_map(i,2) is the trial index in the original day.
+%
 
-    % By default, export full traces. Allow user to specify
-    % otherwise with the 'extent' optional argument.
-    extent = 'full';
-    for k = 1:length(varargin)-1
-        v = varargin{k};
-        if ischar(v) && strcmp('extent',v)
-            extent = varargin{k+1};
-        end
-    end
+    time_warping_method = 'naive';
 
     % get trial map (filtering out those specified)
-    trial_map = filter_trials(md, varargin{:});
+    trial_map = md.filter_trials(varargin{:});
 
     % neuron map for matching cells across days
     neuron_map = md.matched_indices;
 
     % activity traces for each trial
-    [X,x,y] = export_traces(md, trial_map, extent);
-
+    switch time_warping_method
+        case 'naive'
+            extent = 'full';
+            [X,x,y] = export_traces(md, trial_map, extent);
+        otherwise
+            error('Time warping method not recognized.');
+    end
+    
     % metadata for each trial (start, end, turn, correct, etc.)
     meta = export_metadata(md, trial_map);
     meta.x = x; % also export position
