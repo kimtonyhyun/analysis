@@ -31,9 +31,7 @@ function [X, xs, ys] = export_traces_naive(md, trial_map, extent)
         
         % Resample each trial to common number of samples
         orig_grid = linspace(0, 1, size(traces,2));
-        for m = 1:num_cells
-            X(m,:,k) = interp1(orig_grid, traces(m,:), resample_grid);
-        end
+        X(:,:,k) = interp1(orig_grid, traces', resample_grid)';
         xs{k} = interp1(orig_grid, x, resample_grid);
         ys{k} = interp1(orig_grid, y, resample_grid);
     end
