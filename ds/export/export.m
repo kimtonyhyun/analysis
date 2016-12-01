@@ -18,8 +18,21 @@ function [X, meta, neuron_map, trial_map] = export(md, varargin)
 %      and trial_map(i,2) is the trial index in the original day.
 %
 
-    time_warping_method = 'naive';
+    timewarp_method = 'naive';
 
+    extent = 'full'; % Used with timewarp_method == 'naive'
+    
+    for k = 1:length(varargin)
+        vararg = varargin{k};
+        if ischar(vararg)
+            switch lower(vararg)
+                case 'extent'
+                    % Used with time_warping_method=='naive'
+                    extent = varargin{k+1}; % 'full', 'first', or 'second'
+            end
+        end
+    end
+    
     % get trial map (filtering out those specified)
     trial_map = md.filter_trials(varargin{:});
 
@@ -27,11 +40,11 @@ function [X, meta, neuron_map, trial_map] = export(md, varargin)
     neuron_map = md.matched_indices;
 
     % activity traces for each trial
-    switch time_warping_method
+    switch timewarp_method
         case 'naive'
             % 'naive' method will take each trial, and rescale time so
             % that each trial has the same number of samples.
-            extent = 'full';
+            fprintf('  Exporting MD with NAIVE time warping method (extent="%s")...\n', extent);
             [X,x,y] = export_traces_naive(md, trial_map, extent);
             
         case 'align'
