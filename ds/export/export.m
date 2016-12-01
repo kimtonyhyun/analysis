@@ -21,6 +21,7 @@ function [X, meta, neuron_map, trial_map] = export(md, varargin)
     timewarp_method = 'naive';
 
     extent = 'full'; % Used with timewarp_method == 'naive'
+    align_idx = 3; % Used with timewarp_method == 'align'
     
     for k = 1:length(varargin)
         vararg = varargin{k};
@@ -56,8 +57,8 @@ function [X, meta, neuron_map, trial_map] = export(md, varargin)
             % taking as many samples that is common to all trials (i.e.
             % bounded by the shortest trial). Time is not scaled, and can
             % be directly compared between trials.
-            
-            align_idx = 3; % Closing of gate
+            fprintf('  Exporting MD with ALIGN time warping method (align_idx=%d)...\n', align_idx);
+            [X,x,y] = export_traces_align(md, trial_map, align_idx);
             
         otherwise
             error('Time warping method not recognized.');

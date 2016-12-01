@@ -1,0 +1,1 @@
+function [X, xs, ys] = export_traces_align(md, trial_map, align_idx)
