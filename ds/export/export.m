@@ -27,7 +27,6 @@ function [X, meta, neuron_map, trial_map] = export(md, varargin)
         if ischar(vararg)
             switch lower(vararg)
                 case 'extent'
-                    % Used with time_warping_method=='naive'
                     extent = varargin{k+1}; % 'full', 'first', or 'second'
             end
         end

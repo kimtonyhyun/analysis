@@ -80,7 +80,7 @@ function [X, xs, ys] = export_traces_naive(md, trial_map, extent)
                 % For 'second' half of trial, we expect t_idx to be 0 at the
                 % beginning of the trial, and 1 at the end. Filter for the LAST
                 % contiguous block of 1s.
-                t_idx = fliplr(cumprod(fliplr(t_idx)));
+                t_idx = flipud(cumprod(flipud(t_idx)));
             
             otherwise
                 error('extent not specified correctly')
