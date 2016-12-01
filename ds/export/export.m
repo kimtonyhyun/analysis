@@ -29,8 +29,12 @@ function [X, meta, neuron_map, trial_map] = export(md, varargin)
         if ischar(vararg)
             switch lower(vararg)
                 case 'method'
-                    timewarp_method = varargin{k+1};
-                case 'extent'
+                    timewarp_method = lower(varargin{k+1});
+                case {'align_idx', 'align_index'} % Used with 'align' timewarp
+                    align_idx = varargin{k+1};
+                    assert(any(align_idx == [1 2 3 4]),...
+                           'Align index must be one of 1, 2, 3, 4!');
+                case 'extent' % 'naive' timewarping
                     extent = varargin{k+1}; % 'full', 'first', or 'second'
             end
         end
@@ -64,7 +68,7 @@ function [X, meta, neuron_map, trial_map] = export(md, varargin)
             [X,x,y] = export_traces_align(md, trial_map, align_idx);
             
         otherwise
-            error('Time warping method not recognized.');
+            error('Time warping method ("%s") not recognized.', timewarp_method);
     end
     
     % metadata for each trial (start, end, turn, correct, etc.)
