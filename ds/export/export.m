@@ -7,7 +7,8 @@ function [X, meta, neuron_map, trial_map] = export(md, varargin)
 % Output format:
 %
 %   X: Cross-day traces formatted into a [neurons x time x trials] matrix.
-%       Note that all trials will be formatted to the same length.
+%       Note that all trials will be formatted to the same length, using
+%       one of several "timewarp" methods.
 %
 %   meta: Metadata associated with each trial (e.g. start location, etc.)
 %
@@ -18,15 +19,17 @@ function [X, meta, neuron_map, trial_map] = export(md, varargin)
 %      and trial_map(i,2) is the trial index in the original day.
 %
 
-    timewarp_method = 'naive';
+    timewarp_method = 'align';
 
-    extent = 'full'; % Used with timewarp_method == 'naive'
-    align_idx = 3; % Used with timewarp_method == 'align'
+    extent = 'full'; % Used with 'naive' time warping
+    align_idx = 3; % Used with 'align' time warping
     
     for k = 1:length(varargin)
         vararg = varargin{k};
         if ischar(vararg)
             switch lower(vararg)
+                case 'method'
+                    timewarp_method = varargin{k+1};
                 case 'extent'
                     extent = varargin{k+1}; % 'full', 'first', or 'second'
             end
