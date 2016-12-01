@@ -11,7 +11,7 @@ function meta = export_metadata(md, trial_map)
     tp = cell(ndays);
     for di = 1:ndays
         d = md.valid_days(di);
-        tp{di} = est_turn_probabilities(md.day(d));
+        tp{di} = md.day(d).est_turn_probabilities;
     end
 
     % copy selected trials into lightweight cell array
@@ -21,6 +21,7 @@ function meta = export_metadata(md, trial_map)
     meta.day = zeros(num_trials,1);
     meta.turn = cell(num_trials,1);
     meta.turn_prob = zeros(num_trials,1);
+    
     for k = 1:num_trials
         % day and neuron indices
         d = trial_map(k,1);
@@ -39,6 +40,7 @@ function meta = export_metadata(md, trial_map)
     end
 
     % mark each trial as allo vs ego-centric
+    % THK: This looks largely redundant with DaySummary.get_strategy?
     meta.strategy = cell(num_trials,1);
     e0 = NaN; % trial index of last east start
     w0 = NaN; % trial index of last west start

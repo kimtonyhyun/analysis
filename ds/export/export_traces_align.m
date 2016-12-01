@@ -11,7 +11,8 @@ function [X, xs, ys] = export_traces_align(md, trial_map, align_idx)
 % The number of samples within a trial is the maximum that is common to all
 % trials. There is no per-trial temporal renormalization.
 %
-% Also provides the mouse's trajectory on each trial.
+% Also provides the mouse's trajectory on each trial. Samples of the
+% trajectory and traces are temporally aligned.
 %
 
 % Concatenate trial index information across all days. THK: Consider moving
