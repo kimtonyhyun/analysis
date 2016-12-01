@@ -1,9 +1,11 @@
 function [X, xs, ys] = export_traces_naive(md, trial_map, extent)
-% X = EXPORT_TRACES(md, trial_map)
+% X = EXPORT_TRACES_NAIVE(md, trial_map, extent)
 %
 % Exports traces of all trials specified by trial_map into a 3D matrix 'X'
 %   with dimensions [neurons x time x trials]. Each trial has been time
-%   normalized to have the same length (in number of samples).
+%   normalized to have the same length (in number of samples). Parameter
+%   'extent' is one of 'full', 'first', 'second' and allows for
+%   specification of sub-portions of trials.
 %
 % Also provides the mouse's trajectory on each trial. Trajectories are also
 %   time normalized.
