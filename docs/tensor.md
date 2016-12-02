@@ -31,7 +31,7 @@ The first step is to export data from the `MultiDay` object:
 
 `neuron_map` and `trial_map` are matrices that match the trials and neurons in `X` back to the original multiday object.
 
-The `export` function (which lives in `ds/@MultiDay/MultiDay.m`) provides options to filter the trials that are exported. For example, the following will filter out any probe trials (i.e. trials starting in the north or south arms):
+The `export` function provides options to filter the trials that are exported. For example, the following will filter out any probe trials (i.e. trials starting in the north or south arms):
 
 ```matlab
 [X, meta, neuron_map, trial_map] = export(md, 'start', {'east','west'});
