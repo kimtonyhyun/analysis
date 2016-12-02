@@ -23,7 +23,9 @@ The first step is to export data from the `MultiDay` object:
 [X, meta, neuron_map, trial_map] = export(md);
 ```
 
-`X` is a cell array holding the neural activity on each trial. Each entry in the cell array is a matrix with `N` rows and a variable number of columns (depending on the number of frames captured on each trial). *The neurons are matched across all trials* (e.g. the first row in all matrices is the trace corresponding to the same neuron).
+`X` is a three-dimensional tensor (`[neurons x time x trials]`) that contains the neural activity for all trials in `md`. Note that:
+- Neurons are matched across all trials (including across days), and
+- All trials have been "timewarp"-ed to have the same number of samples.
 
 `meta` is a struct array holding the metadata for each trial. For example, `meta.start` is a cell array holding the start location of each trial.
 
@@ -42,16 +44,6 @@ You can also constrain the data to the first or second half of each trial. For e
 ```
 
 Truncates the data for each trial once the mouse moves out of the starting arm.
-
-#### Warping the trials to a common length
-
-Before fitting tensor decompositions, we need to convert `X` from the cell array format to a 3-dimensional array. This is achieved by:
-
-```matlab
->> X = timewarp(X)
-```
-
-At the moment, we just do linear interpolation/stretching to convert all trials to the same length. In the future I want this function to support other options - in particular, approaches based on dynamic time warping or aligning the activity traces to the mouse position.
 
 #### Normalizing/Standardizing data
 
