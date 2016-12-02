@@ -37,14 +37,6 @@ The `export` function provides options to filter the trials that are exported. F
 [X, meta, neuron_map, trial_map] = export(md, 'start', {'east','west'});
 ```
 
-You can also constrain the data to the first or second half of each trial. For example,
-
-```matlab
-[X, meta, neuron_map, trial_map] = export(md, 'extent', 'first');
-```
-
-Truncates the data for each trial once the mouse moves out of the starting arm.
-
 #### Normalizing/Standardizing data
 
 From day-to-day there appears to be significant fluctuations in the mean fluorescence of each cell. This can pollute the results of the CP decomposition, so it is useful to mean-subtract within each cell for each day. This is done by:
