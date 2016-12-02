@@ -13,3 +13,7 @@ options.CELLMaxoptions.selectRandomFrames = 1;
 options.CELLMaxoptions.numFramesRandom = 4000;
 options.CELLMaxoptions.minIters = 52;
 options.CELLMaxoptions.initMethod = 'ica';
+
+% Run CM deterministically
+options.CELLMaxoptions.generateNovelSeed = 0;
+options.CELLMaxoptions.randNumGenSeed = 1;
