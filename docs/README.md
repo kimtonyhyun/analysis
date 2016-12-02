@@ -9,6 +9,7 @@ The Matlab-based analysis workflow for the strategy shifting experiment at Herri
 3. [Cross-dataset alignment](alignment.md)
 4. [Use of `MultiDay`](multiday.md)
   * Use of `browse_multiday`
+  * Use of `export`
 
 ## Standard data formats
 
