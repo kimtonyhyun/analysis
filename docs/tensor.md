@@ -23,7 +23,7 @@ The first step is to export data from the `MultiDay` object:
 [X, meta, neuron_map, trial_map] = export(md);
 ```
 
-`X` is a three-dimensional tensor (`[neurons x time x trials]`) that contains the neural activity for all trials in `md`. Note that:
+`X` is a three-dimensional tensor (`[neurons x time x trials]`) that contains the neural activity for all neurons and trials in `md`. Note that:
 - Neurons are matched across all trials (including across days), and
 - All trials have been "timewarp"-ed to have the same number of samples.
 
