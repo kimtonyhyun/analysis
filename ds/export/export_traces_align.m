@@ -1,4 +1,4 @@
-function [X, xs, ys] = export_traces_align(md, trial_map, align_idx)
+function [X, xs, ys, alignment_axis] = export_traces_align(md, trial_map, align_idx)
 % X = EXPORT_TRACES_ALIGN(md, trial_map, align_idx)
 %
 % Exports traces of all trials specified by trial_map into a 3D matrix 'X'
@@ -22,7 +22,8 @@ for di = md.valid_days
     trial_indices = [trial_indices; md.day(di).trial_indices]; %#ok<AGROW>
 end
 [pre_offset, post_offset] = compute_frame_offsets(trial_indices, align_idx);
-num_trunc_frames = post_offset - pre_offset + 1;
+alignment_axis = pre_offset:post_offset;
+num_trunc_frames = length(alignment_axis);
 
 num_cells = md.num_cells;
 num_trials = size(trial_map, 1);

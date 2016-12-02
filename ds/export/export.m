@@ -43,6 +43,9 @@ function [X, meta, neuron_map, trial_map] = export(md, varargin)
     % get trial map (filtering out those specified)
     trial_map = md.filter_trials(varargin{:});
 
+    % metadata for each trial (start, end, turn, correct, etc.)
+    meta = export_metadata(md, trial_map);
+    
     % neuron map for matching cells across days
     neuron_map = md.matched_indices;
 
@@ -65,14 +68,13 @@ function [X, meta, neuron_map, trial_map] = export(md, varargin)
             % bounded by the shortest trial). Time is not scaled, and can
             % be directly compared between trials.
             fprintf('  Exporting MD with ALIGN time warping method (align_idx=%d)...\n', align_idx);
-            [X,x,y] = export_traces_align(md, trial_map, align_idx);
-            
+            [X, x, y, align_axis] = export_traces_align(md, trial_map, align_idx);
+            meta.align_axis = align_axis;
+
         otherwise
             error('Time warping method ("%s") not recognized.', timewarp_method);
     end
     
-    % metadata for each trial (start, end, turn, correct, etc.)
-    meta = export_metadata(md, trial_map);
     meta.x = x; % also export position
     meta.y = y;
 
