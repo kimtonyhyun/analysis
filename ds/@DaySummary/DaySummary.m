@@ -490,7 +490,7 @@ classdef DaySummary < handle
         end
         
         function set_unlabeled_cells(obj)
-            unlabeled_cells = cellfun(@isempty, obj.get_class);
+            unlabeled_cells = find(cellfun(@isempty, obj.get_class))';
             obj.apply_labels_to('not a cell', unlabeled_cells);
         end
         
