@@ -1,4 +1,4 @@
-function [X, meta, neuron_map, trial_map] = export(md, varargin)
+function [X, trial_meta, export_info] = export(md, varargin)
 % [X, meta, neuron_map, trial_map] = EXPORT(md)
 %
 % Exports cross-day aligned cell traces from MultiDay into a lightweight
@@ -10,13 +10,15 @@ function [X, meta, neuron_map, trial_map] = export(md, varargin)
 %       Note that all trials will be formatted to the same length, using
 %       one of several "timewarp" methods.
 %
-%   meta: Metadata associated with each trial (e.g. start location, etc.)
+%   trial_meta: Metadata associated with each trial (e.g. start loc, etc.)
 %
-%   neuron_map: Matrix [neurons x num_days] that maps each 
-%      matched neuron to its per-day neuron index.
+%   export_info: Struct containing additional info such as:
+%       info.neuron_map: Matrix [neurons x num_days] that maps each 
+%                        matched neuron to its per-day neuron index.
 %
-%   trial_map: Matrix [trials x 2] where trial_map(i,1) is the day index 
-%      and trial_map(i,2) is the trial index in the original day.
+%       info.trial_map: Matrix [trials x 2] where trial_map(i,1) is the day 
+%                       index and trial_map(i,2) is the trial index in the
+%                       original day.
 %
 
     timewarp_method = 'align';
@@ -39,16 +41,14 @@ function [X, meta, neuron_map, trial_map] = export(md, varargin)
             end
         end
     end
-    
+       
     % get trial map (filtering out those specified)
     trial_map = md.filter_trials(varargin{:});
 
-    % metadata for each trial (start, end, turn, correct, etc.)
-    meta = export_metadata(md, trial_map);
+    export_info.timewarp_method = timewarp_method;
+    export_info.trial_map = trial_map;
+    export_info.neuron_map = md.matched_indices;
     
-    % neuron map for matching cells across days
-    neuron_map = md.matched_indices;
-
     % activity traces for each trial
     switch timewarp_method
         case 'naive'
@@ -56,6 +56,7 @@ function [X, meta, neuron_map, trial_map] = export(md, varargin)
             % that each trial has the same number of samples.
             fprintf('  Exporting MD with NAIVE time warping method (extent="%s")...\n', extent);
             [X,x,y] = export_traces_naive(md, trial_map, extent);
+            export_info.naive.extent = extent;
             
         case 'align'
             % 'align' method will align each trial to one of four
@@ -69,13 +70,15 @@ function [X, meta, neuron_map, trial_map] = export(md, varargin)
             % be directly compared between trials.
             fprintf('  Exporting MD with ALIGN time warping method (align_idx=%d)...\n', align_idx);
             [X, x, y, align_axis] = export_traces_align(md, trial_map, align_idx);
-            meta.align_axis = align_axis;
+            export_info.align.idx = align_idx;
+            export_info.align.axis = align_axis;
 
         otherwise
             error('Time warping method ("%s") not recognized.', timewarp_method);
     end
     
-    meta.x = x; % also export position
-    meta.y = y;
-
+    % metadata for each trial (start, end, turn, correct, etc.)
+    trial_meta = export_metadata(md, trial_map);
+    trial_meta.x = x; % also export position
+    trial_meta.y = y;
 end % export
