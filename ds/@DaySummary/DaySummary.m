@@ -489,6 +489,11 @@ classdef DaySummary < handle
             obj.apply_labels_to([], cell_indices);
         end
         
+        function set_unlabeled_cells(obj)
+            unlabeled_cells = cellfun(@isempty, obj.get_class);
+            obj.apply_labels_to('not a cell', unlabeled_cells);
+        end
+        
         % Load behavior movie
         %------------------------------------------------------------
         function loaded = is_behavior_loaded(obj)
