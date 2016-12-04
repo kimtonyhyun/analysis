@@ -21,7 +21,7 @@ function [X, trial_meta, export_info] = export(md, varargin)
 %                       original day.
 %
 
-    timewarp_method = 'align';
+    timewarp_method = 'align_to';
 
     extent = 'full'; % Used with 'naive' time warping
     align_idx = 3; % Used with 'align' time warping
@@ -32,10 +32,12 @@ function [X, trial_meta, export_info] = export(md, varargin)
             switch lower(vararg)
                 case 'method'
                     timewarp_method = lower(varargin{k+1});
-                case {'align_idx', 'align_index'} % Used with 'align' timewarp
-                    align_idx = varargin{k+1};
-                    assert(any(align_idx == [1 2 3 4]),...
-                           'Align index must be one of 1, 2, 3, 4!');
+                case 'align_to' % Used with 'align' timewarp
+                    align_to = varargin{k+1};
+                    align_events = {'start', 'open', 'close', 'end'};
+                    align_idx = find(strcmp(align_events, align_to));
+                    assert(~isempty(align_idx),...
+                           'Align_to must be one of: %s', strjoin(align_events, ', '));
                 case 'extent' % 'naive' timewarping
                     extent = varargin{k+1}; % 'full', 'first', or 'second'
             end
@@ -58,7 +60,7 @@ function [X, trial_meta, export_info] = export(md, varargin)
             [X,x,y] = export_traces_naive(md, trial_map, extent);
             export_info.naive.extent = extent;
             
-        case 'align'
+        case {'align', 'align_to'}
             % 'align' method will align each trial to one of four
             % intra-trial events:
             %   (1) Start of trial
