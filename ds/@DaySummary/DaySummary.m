@@ -261,7 +261,8 @@ classdef DaySummary < handle
             end
             filtered_trials = filtered_trials';
 
-            % helper function to filter cell arrays of strings
+            % helper function to filter cell arrays of strings, i.e. enable
+            % selectors such as: filter_trials('start', {'east', 'west'})
             function mask = trial_filter(~, trial_data, selection)
                 if ischar(selection)
                     mask = strcmp(trial_data,selection);
@@ -283,10 +284,16 @@ classdef DaySummary < handle
             count = sum(obj.is_cell);
         end
         
-        function [trace, frame_indices] = get_trace(obj, cell_idx, selected_trials)
-            if ~exist('selected_trials', 'var')
-                selected_trials = 1:obj.num_trials;
+        function [trace, frame_indices, selected_trials] = get_trace(obj, cell_idx, varargin)
+            selected_trials = 1:obj.num_trials;
+            for k = 1:length(varargin)
+                vararg = varargin{k};
+                if isnumeric(vararg)
+                    selected_trials = vararg;
+                end
             end
+            filtered_trials = find(obj.filter_trials(varargin{:}));
+            selected_trials = intersect(selected_trials, filtered_trials)';
             
             trace = [];
             frame_indices = [];
