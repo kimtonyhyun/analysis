@@ -20,21 +20,23 @@ The sections below walks through the demo script and provides brief explanations
 The first step is to export data from the `MultiDay` object:
 
 ```matlab
-[X, meta, neuron_map, trial_map] = export(md);
+[X, trial_meta, info] = export(md);
 ```
 
 `X` is a three-dimensional tensor (`[neurons x time x trials]`) that contains the neural activity for all neurons and trials in `md`. Note that:
 - Neurons are matched across all trials (including across days), and
 - All trials have been "timewarp"-ed to have the same number of samples.
 
-`meta` is a struct array holding the metadata for each trial. For example, `meta.start` is a cell array holding the start location of each trial.
+`trial_meta` is a struct array holding the metadata for each trial. For example, `trial_meta.start` is a cell array holding the start location of each trial.
 
-`neuron_map` and `trial_map` are matrices that match the trials and neurons in `X` back to the original multiday object.
+`info` is a struct containing additional information associated with the `export` run. For example:
+- `info.neuron_map` matches the neurons in `X` to their indicies for each day of the `MultiDay`, and
+- `info.trial_map` matches the trials in `X` to their `[day, trial_idx_in_day]` indices. 
 
 The `export` function provides options to filter the trials that are exported. For example, the following will filter out any probe trials (i.e. trials starting in the north or south arms):
 
 ```matlab
-[X, meta, neuron_map, trial_map] = export(md, 'start', {'east','west'});
+[X, trial_meta, info] = export(md, 'start', {'east','west'});
 ```
 
 #### Normalizing/Standardizing data
@@ -42,7 +44,7 @@ The `export` function provides options to filter the trials that are exported. F
 From day-to-day there appears to be significant fluctuations in the mean fluorescence of each cell. This can pollute the results of the CP decomposition, so it is useful to mean-subtract within each cell for each day. This is done by:
 
 ```matlab
->> X = normalize_tensor(X, meta);
+>> X = normalize_tensor(X, trial_meta);
 ```
 
 In pseudocode, this computes:
@@ -92,7 +94,7 @@ Next, let's visualize the factors. Each factor is a triplet of three vectors, an
 Below, I visualized the factors for a rank 15 model using the command:
 
 ```matlab
-visualize_neuron_ktensor(cpd.decomp, meta, 'start')
+visualize_neuron_ktensor(cpd.decomp, trial_meta, 'start')
 ```
 
 ![CPD factors](cpd_factors.png)
@@ -102,12 +104,12 @@ Because the ordering of the neurons in the data tensor `X` isn't especially mean
 The second colum of plots shows the 15 *within trial factors*.
 The third column of plots shows the 15 *across trial factors*, with the east and west starts colored in blue and red respectively.
 
-You can change the coloring of the across trial factors (right column) by inputting a string that matches one of the fieldnames in the `meta` struct:
+You can change the coloring of the across trial factors (right column) by inputting a string that matches one of the fieldnames in the `trial_meta` struct:
 
 ```matlab
-visualize_neuron_ktensor(cpd.decomp, meta, 'correct') % colors correct vs incorrect trials
-visualize_neuron_ktensor(cpd.decomp, meta, 'day') % colors by session
-visualize_neuron_ktensor(cpd.decomp, meta, 'strategy') % colors by inferred navigation strategy
+visualize_neuron_ktensor(cpd.decomp, trial_meta, 'correct') % colors correct vs incorrect trials
+visualize_neuron_ktensor(cpd.decomp, trial_meta, 'day') % colors by session
+visualize_neuron_ktensor(cpd.decomp, trial_meta, 'strategy') % colors by inferred navigation strategy
 ```
 
 #### Visualizing the model fit
@@ -120,7 +122,7 @@ Xest = full(cpd.decomp);
 Xest = Xest.data;
 
 % plot fit across neurons
-visualize_fit(X,Xest,1,md,trial_map);
+visualize_fit(X,Xest,1,md,info.trial_map);
 ```
 
 The last command should produce a series of plots that look like this (press the space button to go to the next plot and `Control-C` / `Command-C` to interrupt the program).
@@ -135,7 +137,7 @@ It is also possible to examine the model fit across all trials, i.e. examining s
 
 ```matlab
 % plot fit across trials
-visualize_fit(X,Xest,3,md,trial_map);
+visualize_fit(X,Xest,3,md,info.trial_map);
 ```
 
 ![CPD factors](cpd_fit3.png)
@@ -147,7 +149,7 @@ To look at this we examine the residuals for each neuron, trial phase, and trial
 
 ```matlab
 % plot fit across trials
-visualize_resids(X,Xest,md,trial_map);
+visualize_resids(X,Xest,md,info.trial_map);
 ```
 
 Produces a plot like:
