@@ -1,5 +1,5 @@
 function [X, trial_meta, export_info] = export(md, varargin)
-% [X, meta, neuron_map, trial_map] = EXPORT(md)
+% [X, trial_meta, export_info] = EXPORT(md)
 %
 % Exports cross-day aligned cell traces from MultiDay into a lightweight
 % format for further analysis (e.g. tensor analysis, decoding, etc.)
