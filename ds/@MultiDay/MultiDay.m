@@ -240,7 +240,7 @@ classdef MultiDay < handle
             % filter each day
             a = 1;
             for d = md.valid_days
-                trial_idx = find(filter_trials(md.day(d),varargin{:}));
+                trial_idx = find(md.day(d).filter_trials(varargin{:}));
                 b = a-1 + length(trial_idx);
                 trial_map(a:b,1) = d;
                 trial_map(a:b,2) = trial_idx;
@@ -250,8 +250,6 @@ classdef MultiDay < handle
             % truncate unused storage
             trial_map = trial_map(1:b,:);
         end
-
-        
 
         % Display functions
         %------------------------------------------------------------
@@ -263,7 +261,6 @@ classdef MultiDay < handle
                 summary(obj.day(d),d)
                 fprintf('\n')
             end
-
         end % summary
 
         function plot_summary(md)
@@ -311,12 +308,11 @@ classdef MultiDay < handle
                 ylim([-0.1,1.1])
                 ylabel('p(turn right)')
             end
-
         end % plot_summary
 
-    end
+    end % Public methods
 
-    % Private methods for implementing the cross-day matching logic
+    % Private methods
     %------------------------------------------------------------
     methods (Access=private)
         function [M, assignments] = compute_all_matches(obj)
