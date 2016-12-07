@@ -23,6 +23,7 @@ dimnull = 2*N-L;
 
 vec=1; Nullmat = zeros(2*N+1,2*N);
 Nullmat(N,1)=1/2;Nullmat(N+2,1)=-1/2;
+
 for dum=2:2:2*N
    vec = conv([1 -2 1],vec); 
    coln = Nullmat(:,dum);
@@ -36,7 +37,7 @@ for dum=2:2:2*N
 end;
 
 Nullmat = Nullmat(:,(L+1):end);
-Nullmat = sym(Nullmat);
+%Nullmat = sym(Nullmat);
 
 if ~isempty(Nullmat)    
     coefs = (Nullmat'*Nullmat)\Nullmat'*p;
@@ -46,6 +47,7 @@ else
     h = 1; 
 end;
 h = double(h);
+
 if nargout==0
     disp('SG Filter impulse response (to be used with conv(x,h) command):');
     fliplr(h),
