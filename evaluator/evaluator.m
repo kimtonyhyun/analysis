@@ -24,7 +24,7 @@ while (1);
     val = str2double(resp);
     if ~isnan(val) % Is a number
         if (1 <= val) && (val <= num_neurons)
-            cidx = find(sort_idx==val,1);
+            cidx = val;
         else
             fprintf('  Sorry, %d is not a valid cell index\n', val);
         end
