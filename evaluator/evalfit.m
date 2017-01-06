@@ -1,4 +1,4 @@
-function evaluator(X, Xest, scores)
+function evalfit(X, Xest, scores)
 
 assert(all(size(X)==size(Xest)),...
     'Raw and fitted data do not have the same dimensions!');
