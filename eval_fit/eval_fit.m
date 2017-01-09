@@ -1,10 +1,23 @@
-function eval_fit(X, Xest, scores)
+function eval_fit(X, Xest, scores, varargin)
 
 assert(all(size(X)==size(Xest)),...
     'Raw and fitted data do not have the same dimensions!');
 
 [num_neurons, samples_per_trial, num_trials] = size(X);
 num_score_types = length(scores);
+
+% Default options and process varargin
+%------------------------------------------------------------
+selected_cells = 1:num_neurons;
+for v = 1:length(varargin)
+    vararg = varargin{v};
+    if ischar(vararg)
+        switch lower(vararg)
+            case 'cells'
+                selected_cells = varargin{v+1};
+        end
+    end
+end
 
 % Browser loop
 %------------------------------------------------------------
@@ -14,17 +27,19 @@ score = scores(1);
 cidx = 1;
 
 while (1);
-    draw_cell(cidx);
+    cell_idx = selected_cells(cidx);
+    draw_cell(cell_idx);
     
     % Ask user for command
-    prompt = sprintf('Evaluator (%s, Cell %d of %d) >> ',...
-                     score.name, cidx, num_neurons);
+    prompt = sprintf('Evaluator (%s, Cell %d) >> ',...
+                     score.name, cell_idx);
     resp = strtrim(input(prompt, 's'));
     
     val = str2double(resp);
     if ~isnan(val) % Is a number
-        if (1 <= val) && (val <= num_neurons)
-            cidx = val;
+        cidx2 = find(selected_cells == val, 1);
+        if ~isempty(cidx2)
+            cidx = cidx2;
         else
             fprintf('  Sorry, %d is not a valid cell index\n', val);
         end
@@ -38,7 +53,7 @@ while (1);
         %------------------------------------------------------------
         switch resp(1)
             case 'n' % Next
-                if (cidx < num_neurons)
+                if (cidx < length(selected_cells))
                     cidx = cidx + 1;
                 else
                     fprintf('  Already at final cell!\n');
