@@ -17,5 +17,5 @@ switch score.name
         good_fits = setdiff((1:num_cells)', [okay_fits; bad_fits]);
         
     otherwise
-        error('Score name "%s" is not supported!', score.name);
+        error('  Grouping of score type "%s" is not supported!', score.name);
 end
