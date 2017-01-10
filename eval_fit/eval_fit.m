@@ -31,8 +31,8 @@ while (1);
     draw_cell(cell_idx);
     
     % Ask user for command
-    prompt = sprintf('Evaluator (%s, Cell %d) >> ',...
-                     score.name, cell_idx);
+    prompt = sprintf('Evaluator (Cell %d, %s=%.4f) >> ',...
+                     cell_idx, score.name, score.vals_n(cell_idx));
     resp = strtrim(input(prompt, 's'));
     
     val = str2double(resp);
