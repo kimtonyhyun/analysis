@@ -7,7 +7,7 @@ score = struct('name', '',...       % String name of score
                'vals', [],...      % Scores: [num_neurons x num_trials]
                'vals_n', []);      % Score per neuron: [num_neurons x 1]
 
-num_score_types = 3;
+num_score_types = 4;
 scores = repmat(score, num_score_types, 1);
             
 scores(1).name = 'Rsq';
@@ -24,3 +24,8 @@ Xmax = squeeze(max(X,[],2));
 scores(3).vals = Xmax - Xmin;
 scores(3).vals_n = max(Xmax,[],2) - min(Xmin,[],2);
 scores(3).sort_order = 'descend';
+
+scores(4).name = 'Signed diff';
+scores(4).vals = squeeze(sum(X-Xest,2));
+scores(4).vals_n = sum(scores(4).vals, 2);
+scores(4).sort_order = 'descend';
