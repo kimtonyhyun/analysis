@@ -70,7 +70,8 @@ while (1);
                 if length(resp) == 1
                     fprintf('  Available scores:\n');
                     for s = 1:num_score_types
-                        fprintf('  %d: %s\n', s, scores(s).name);
+                        fprintf('  %d: %s (%.4f)\n',...
+                                s, scores(s).name, scores(s).vals_n(cell_idx));
                     end
                 else
                     val = str2double(resp(2));
