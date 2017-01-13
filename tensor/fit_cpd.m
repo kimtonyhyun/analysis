@@ -44,6 +44,7 @@ for s = 1:ns
 
     	cpd(s,r).error = sqrt(normX^2 + norm(decomp)^2 - 2*innerprod(Xt, decomp));
     	cpd(s,r).decomp = decomp;
+        itercount = itercount+1;
     end
 end
 close(h)
