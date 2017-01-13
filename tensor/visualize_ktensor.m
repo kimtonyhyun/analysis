@@ -1,31 +1,29 @@
-function [Ax, BigAx, fh] = visualize_ktensor(tnsrlist, varargin)
-% VISUALIZE_KTENSOR, given a cell array of ktensors, plot the factors
+function [Ax, G, BigAx] = visualize_ktensor(X, varargin)
+% PLOT Plot the factor matrices of a ktensor
 %
-%     [Ax, BigAx, FigHandle] = VISUALIZE_KTENSOR(X)
-%     [Ax, BigAx, FigHandle] = VISUALIZE_KTENSOR({X,Y,...})
+%     [Ax, G, BigAx] = PLOT(X)
+%
+%MATLAB Tensor Toolbox.
+%Copyright 2015, Sandia Corporation.
+
+% This is the MATLAB Tensor Toolbox by T. Kolda, B. Bader, and others.
+% http://www.sandia.gov/~tgkolda/TensorToolbox.
+% Copyright (2015) Sandia Corporation. Under the terms of Contract
+% DE-AC04-94AL85000, there is a non-exclusive license for use of this
+% work by or on behalf of the U.S. Government. Export of this data may
+% require a license from the United States Government.
+% The full license terms can be found in the file LICENSE.txt
+
 
 % check inputs
-if ~iscell(tnsrlist) && ~isa(tnsrlist,'ktensor')
-    error('input must be a ktensor or cell array of ktensors')
-elseif ~iscell(tnsrlist)
-    tnsrlist = {tnsrlist};
+if ~isa(X,'ktensor')
+    error('input must be a ktensor')
 end
 
 % tensor order, shape, and rank
-nf = ndims(tnsrlist{1});
-sz = size(tnsrlist{1});
-nr = length(tnsrlist{1}.lambda);
-
-% check that order, shapr, rank are consistent for all ktensors
-for idx = 2:length(tnsrlist)
-    if ndims(tnsrlist{idx}) ~= nf
-        error(['ktensor at index ',num2str(idx),' has inconsistent number of dimensions.'])
-    elseif ~all(size(tnsrlist{idx}) == sz)
-        error(['ktensor at index ',num2str(idx),' has inconsistent shape.'])
-    elseif length(tnsrlist{idx}.lambda) ~= nr
-        error(['ktensor at index ',num2str(idx),' has inconsistent rank.'])
-    end
-end
+nf = ndims(X);
+sz = size(X);
+nr = length(X.lambda);
 
 % parse optional inputs
 params = inputParser;
@@ -33,36 +31,39 @@ params = inputParser;
 params.addParameter('nfactors', nr);
 params.addParameter('align', true);
 params.addParameter('space', 0.1);
-params.addParameter('names', cell(1, nf));
+params.addParameter('title', cell(1,nf));
 params.addParameter('plots', repmat({'line'}, [1 nf]));
 params.addParameter('a', repmat({10}, [1 nf]));
-params.addParameter('c', cell(1, nf));
+params.addParameter('c', cell(1,nf));
+params.addParameter('markertype', repmat({'o'}, [1 nf]));
+params.addParameter('filled', true(1,nf));
 params.addParameter('linespec', repmat({'-'}, [1 nf]));
 params.addParameter('link_yax', false(1,nf));
 params.addParameter('ylims', cell(1, nf));
-params.addParameter('pause', false);
-params.addParameter('figure', -1);
 params.addParameter('greedy', nr>5);
 params.addParameter('permute', false(1,nf));
 params.addParameter('linewidth', ones(1,3));
+params.addParameter('xlabel', repmat({''}, [1 nf]));
+params.addParameter('XTick', cell(1,nf));
+params.addParameter('XTickLabel', cell(1,nf));
+params.addParameter('axes', []);
 
 params.parse(varargin{:});
 res = params.Results;
 
-% TODO, other params: markertype %
-
-% get appropriate figure
-if isnumeric(res.figure) && res.figure < 1
-    fh = figure();
-elseif isgraphics(res.figure)
-    fh = figure(res.figure);
-    clf()
-else
-    error('invalid figure handle')
-end
-
 % set up the axes
-[Ax,BigAx] = setup_axes(res.nfactors, nf, res.space, res.names);
+if isempty(res.axes)
+    [Ax,BigAx] = setup_axes(nr, nf, res.space);
+else
+    Ax = res.axes
+    if size(Ax,1) ~= nr
+        error('User-provided Axes do not match the rank of the provided tensor.')
+    elseif size(Ax,2) ~= nf
+        error('User-provided Axes do not match the order of the provided tensor.')
+    end
+    BigAx = []; % don't return if user provides axes
+end
+format_axes(Ax, res.title, res.xlabel, res.XTick, res.XTickLabel);
 
 % The 'sortdim' option sorts the entries along an axis by the top factor.
 % This is useful if the tensor does not have a natural ordering along
@@ -70,87 +71,61 @@ end
 prm = cell(1, nf);
 for f = 1:nf
     if res.permute(f)
-        [~,prm{f}] = sort(tnsrlist{1}.u{f}(:,1),'descend');
+        [~,prm{f}] = sort(X.u{f}(:,1),'descend');
     else
         prm{f} = 1:sz(f);
     end
 end
 
-% iterate over ktensors
-for idx = 1:length(tnsrlist)
+% main loop %
+% iterate over factors (columns of plot)
+G = gobjects(nr, nf);
+for f = 1:nf
 
-    if idx > 1 && res.align
-        % align to first ktensor in list
-        [~,X] = score(tnsrlist{1}, tnsrlist{idx}, 'greedy', res.greedy);
-    else
-        % don't do alignment
-        X = tnsrlist{idx};
-    end
+    % iterate over model rank (rows of plot)
+    for r = 1:nr
+        
+        % fetch the axes to plot on
+        axes(Ax(r,f));
+        hold on
 
-    % main loop for plotting
-    for f = 1:nf
+        % plot x vs y
+        x = 1:sz(f);
+        y = X.u{f}(prm{f},r);
 
-        for r = 1:res.nfactors
-            
-            % fetch the axes to plot on
-            axes(Ax(r,f));
-            hold on
+        % make the plot
+        switch res.plots{f}
+            case 'line'
+                G(r, f) = plot(x, y, res.linespec{f}, 'linewidth', res.linewidth(f));
 
-            % determine what to plot
-            mkline = false;
-            mkscat = false;
-            mkbar = false;
-            switch res.plots{f}
-                case 'line'
-                    mkline = true;
-                case 'scatter'
-                    mkscat = true;
-                case 'bar'
-                    mkbar = true;
-                case 'scatterline'
-                case 'linescatter'
-                    mkscat = true;
-                    mkline = true;
-                otherwise
-                    warn('did not understand plot type, defaulting to line plot.');
-                    mkline = true;
-            end
-
-            % make plots
-            x = 1:sz(f);
-            y = X.u{f}(prm{f},r)*nthroot(X.lambda(r),nf);
-
-            % line plot
-            if mkline
-                plot(x, y, res.linespec{f}, 'linewidth', res.linewidth(f))
-            end
-
-            % scatter plot
-            if mkscat
+            case 'scatter'
                 if isempty(res.c{f})
-                    scatter(x, y, res.a{f})                        
+                    if res.filled
+                        G(r, f) = scatter(x, y, res.a{f}, res.markertype{f}, 'filled');
+                    else
+                        G(r, f) = scatter(x, y, res.a{f}, res.markertype{f});
+                    end
                 else
-                    scatter(x, y, res.a{f}, res.c{f}, 'filled')
+                    if res.filled
+                        G(r, f) = scatter(x, y, res.a{f}, res.c{f}, res.markertype{f}, 'filled');
+                    else
+                        G(r, f) = scatter(x, y, res.a{f}, res.c{f}, res.markertype{f});
+                    end
                 end
-            end
 
-            % bar plot
-            if mkbar
-                bar(x, y)
-            end
+            case 'bar'
+                G(r, f) = bar(x, y);
 
-            % make axes tight
-            axis tight
+            otherwise
+                error('Did not understand plot type.')
+
         end
-    end
 
-
-    % if user wants, pause before plotting next ktensor
-    if res.pause
-        pretty_ylims(Ax, res.ylims, res.link_yax);        
-        pause
+        % make axes tight
+        axis tight
     end
 end
+
 
 % make the ylims look nice before returning
 pretty_ylims(Ax, res.ylims, res.link_yax);        
@@ -159,7 +134,7 @@ pretty_ylims(Ax, res.ylims, res.link_yax);
 % LOCAL FUNCTIONS %
 %%%%%%%%%%%%%%%%%%%
 
-function [Ax,BigAx] = setup_axes(nr, nf, space, names)
+function [Ax,BigAx] = setup_axes(nr, nf, space)
 
     % allocate storage
     Ax = gobjects(nr,nf);
@@ -167,7 +142,6 @@ function [Ax,BigAx] = setup_axes(nr, nf, space, names)
     
     % setup axes
     for f = 1:nf
-
         % invisible subplot bounding box
         BigAx(f) = subplot(1,3,f);
         set(BigAx(f),'Visible','off')
@@ -180,12 +154,27 @@ function [Ax,BigAx] = setup_axes(nr, nf, space, names)
         for r = 1:nr
             axPos = [pos(1) pos(2)+(nr-r)*h w*(1-space) h*(1-space)];
             Ax(r,f) = axes('Position',axPos);
+        end
+    end
 
-            if ~isempty(names{f}) && r == 1
-                title(names{f})
+function format_axes(Ax, ttl, xlab, xt, xtl)
+    [nr,nf] = size(Ax);
+    for f = 1:nf
+        for r = 1:nr
+            if ~isempty(ttl{f}) && r == 1
+                set(Ax(1,f).Title,'String',ttl{f})
             end
             if r ~= nr
-                set(Ax(r,f),'XTick',[])
+                set(Ax(r,f),'XTick',[]);
+                set(Ax(r,f),'XColor','w');
+            else
+                if ~isempty(xt{f})
+                    Ax(r,f).XTick = xt{f};
+                end
+                if ~isempty(xtl{f})
+                    Ax(r,f).XTickLabel = xtl{f};
+                end
+                xlabel(Ax(r,f),xlab{f})
             end
             if mod(r,2) == 0
                 set(Ax(r,f),'YAxisLocation','right')
@@ -229,13 +218,12 @@ function pretty_ylims(Ax, ylimits, link)
             for r = 1:nr
                 yt = pretty_axticks(get(Ax(r,f), 'ylim'));
                 set(Ax(r,f), 'YTick', yt);
+                set(Ax(r,f), 'TickDir', 'out')
             end
         end
     end
 
 function ryl = pretty_axticks(yl)
-    % round ylimits to 2 significant digits
-    s = 10.^(floor(log10(abs(yl))-1));
-    t0 = ceil(yl(1)/(s(1)+eps()))*s(1);
-    t1 = floor(yl(2)/(s(2)+eps()))*s(2);
+    t0 = round(ceil(yl(1)*100)/100,2);
+    t1 = round(floor(yl(2)*100)/100,2);
     ryl = [t0 t1];
