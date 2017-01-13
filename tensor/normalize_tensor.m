@@ -6,6 +6,7 @@ function [ Xnrm ] = normalize_tensor( X, trial_meta )
 % Each neuron is rescaled so that the fluorescence ranges from zero to one
 % on each day.
 
+
 % dimensions
 [N,T,K] = size(X); %#ok<ASGLU>
 Xnrm = X;
