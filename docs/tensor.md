@@ -60,37 +60,34 @@ We would like to get a sense of how well fit the model is to the data as a funct
 To do this, we use the `fit_cpd` function:
 
 ```matlab
-cpd_list = fit_cpd(X, 'min_rank', 1, 'max_rank', 15, 'num_starts', 10)
+[models, best_models] = fit_cpd(X, 'min_rank', 1, 'max_rank', 15, 'num_starts', 10)
 ```
 
 This will fit models from 1 factor up to 15 factors, and fit each model from 10 different random initializations.
 (In practice, I've reassuringly observed that different initializations produce similar models.)
-The results are returned in a 1-dimensional struct array `cpd_list` which holds the outcome of each optimization.
-The CPD tensor decomposition is stored as a field `decomp` and the normalized error of the model is stored as a field `error`.
+A 2D-struct array `models` holds the outcome of all optimizations -- `models(s,r).decomp` is the rank-`r` CP decomposition fitted on optimization run `s`, and `models(s,r).error` gives a measure of the model reconstruction error:
 
+```
+reconstruction_error = norm(model_estimate - data_tensor) / norm(data_tensor)
+```
+
+`fit_cpd` also returns `best_models` which is just a 1D struct array holding the models with minimal reconstruction error -- `best_models(r).decomp` is the best rank-`r` fit.
 These results are commonly summarized with a [scree plot](http://support.minitab.com/en-us/minitab/17/topic-library/modeling-statistics/multivariate/principal-components-and-factor-analysis/what-is-a-scree-plot/).
 The following command will produce a nicely formatted scree plot, given the struct array of cpd fits:
 
 ```matlab
-visualize_rank(cpd_list);
+cpd_scree_plot(models);
 ```
 
 ![CPD scree plot](cpd_scree.png)
 
 #### Visualizing the factors
 
-Typically, we will just pick the model with the lowest error to analyze further:
-
-```matlab
-[~,best_idx] = min([cpd_list.error]);
-cpd = cpd_list(best_idx);
-```
-
 Next, let's visualize the factors. Each factor is a triplet of three vectors, and the number of factors is the *rank* of the model.
 Below, I visualized the factors for a rank 15 model using the command:
 
 ```matlab
-visualize_neuron_ktensor(cpd.decomp, trial_meta, 'start')
+visualize_neuron_ktensor(best_models(15).decomp, trial_meta, 'start')
 ```
 
 ![CPD factors](cpd_factors.png)
@@ -103,9 +100,9 @@ The third column of plots shows the 15 *across trial factors*, with the east and
 You can change the coloring of the across trial factors (right column) by inputting a string that matches one of the fieldnames in the `trial_meta` struct:
 
 ```matlab
-visualize_neuron_ktensor(cpd.decomp, trial_meta, 'correct') % colors correct vs incorrect trials
-visualize_neuron_ktensor(cpd.decomp, trial_meta, 'day') % colors by session
-visualize_neuron_ktensor(cpd.decomp, trial_meta, 'strategy') % colors by inferred navigation strategy
+visualize_neuron_ktensor(best_models(15).decomp, trial_meta, 'correct') % colors correct vs incorrect trials
+visualize_neuron_ktensor(best_models(15).decomp, trial_meta, 'day') % colors by session
+visualize_neuron_ktensor(best_models(15).decomp, trial_meta, 'strategy') % colors by inferred navigation strategy
 ```
 
 #### Visualizing the model fit
@@ -114,11 +111,11 @@ It is useful to view the model's prediction and the raw data on the same plot, t
 
 ```matlab
 % get the full reconstructed tensor from the model
-Xest = full(cpd.decomp);
+Xest = full(best_models(15).decomp);
 Xest = Xest.data;
 
 % plot fit across neurons
-visualize_fit(X,Xest,1,md,info.trial_map);
+visualize_fit(X, Xest, 1, md, info.trial_map);
 ```
 
 The last command should produce a series of plots that look like this (press the space button to go to the next plot and `Control-C` / `Command-C` to interrupt the program).
@@ -157,7 +154,7 @@ Produces a plot like:
 Just as [non-negative matrix factorization (NMF)](https://en.wikipedia.org/wiki/Non-negative_matrix_factorization) extends PCA by constraining the loadings/components to be non-negative, we can try fitting non-negative tensor decompositions. The `fit_cpd` contains an option to do this:
 
 ```matlab
-[cpd_list,rsq] = fit_cpd(Xnrn, 'method', 'cp_nnals'); % fits 10 non-neg rank 15 cp models
+[nn_models,nn_best_models] = fit_cpd(X, 'method', 'cp_nnals'); % fits 10 non-neg rank 15 cp models
 ```
 
 Everything else should work as described in the previous section. For example, `visualize_neuron_ktensor` can produce something that looks like this:
