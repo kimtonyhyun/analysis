@@ -3,7 +3,6 @@ function S = cpd_pairwise_similarities(models, varargin)
 % fitted cpd models.
 %
 %     [similarity_matrix] = cpd_pairwise_similarities(models)
-%     [similarity_matrix] = cpd_pairwise_similarities(models, )
 
 S = zeros(length(models));
 
@@ -17,3 +16,4 @@ for a = 1:length(models)
     end
     fprintf('\n')
 end
+
