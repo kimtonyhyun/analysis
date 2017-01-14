@@ -1,4 +1,4 @@
-function models = fit_cpd(X,varargin)
+function [models, best_models] = fit_cpd(X,varargin)
 % FIT_CPD, fits a series of cp decompositions of increasing rank and
 % plots the percentage of variance explained as function of model
 % complexity
@@ -50,3 +50,12 @@ for s = 1:ns
     end
 end
 fprintf('\n')
+
+best_models(1, max_rank) = struct('error', NaN, 'decomp', []);
+for r = 1:(min_rank-1)
+    best_models(r).error = NaN;
+end
+for r = min_rank:max_rank
+    [~,s] = min([models(:,r).error])
+    best_models(r) = models(s,r)
+end
