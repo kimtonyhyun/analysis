@@ -20,32 +20,31 @@ max_rank = p.Results.max_rank;
 
 % create tensor object
 Xt = tensor(X);
+normX = norm(Xt);
 
 % create struct array
 nr = max_rank-min_rank+1;
-cpd(1,ns*nr) = struct('error',0,'decomp',[]);
+cpd(max_rank, ns) = struct('error',0,'decomp',[]);
 
 % main loop
 % iterate in random order for a better waitbar
 itercount = 0;
-for a = randperm(ns*nr)
-    h = waitbar(itercount/(nr*ns));
-    [r,~] = ind2sub([nr,ns],a);
-    
-    switch p.Results.method
-    case 'cp_nnals'
-        decomp = normalize(cp_nnals(Xt,min_rank+r-1,'printitn',p.Results.printitn));
-    case 'cp_als'
-        decomp = normalize(cp_als(Xt,min_rank+r-1,'printitn',p.Results.printitn));
-    case 'cprand'
-        decomp = normalize(cprand(Xt,min_rank+r-1,'printitn',p.Results.printitn));
-    end
+for s = 1:ns
+    for r = min_rank:max_rank
+        h = waitbar(itercount/(nr*ns));
+        
+        switch p.Results.method
+        case 'cp_nnals'
+            decomp = normalize(cp_nnals(Xt,min_rank+r-1,'printitn',p.Results.printitn));
+        case 'cp_als'
+            decomp = normalize(cp_als(Xt,min_rank+r-1,'printitn',p.Results.printitn));
+        case 'cprand'
+            decomp = normalize(cprand(Xt,min_rank+r-1,'printitn',p.Results.printitn));
+        end
 
-	cpd(a).error = norm(Xt-full(decomp))/norm(Xt - mean(X(:)));
-	cpd(a).decomp = decomp;
-    itercount = itercount+1;
+    	cpd(s,r).error = sqrt(normX^2 + norm(decomp)^2 - 2*innerprod(Xt, decomp));
+    	cpd(s,r).decomp = decomp;
+        itercount = itercount+1;
+    end
 end
 close(h)
-
-% return a ROW vector for easy iteration
-cpd = cpd';

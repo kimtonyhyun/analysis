@@ -41,20 +41,15 @@ The `export` function provides options to filter the trials that are exported. F
 
 #### Normalizing/Standardizing data
 
-From day-to-day there appears to be significant fluctuations in the mean fluorescence of each cell. This can pollute the results of the CP decomposition, so it is useful to mean-subtract within each cell for each day. This is done by:
+From day-to-day there appears to be significant fluctuations in the mean fluorescence of each cell. Additionally the baseline can drift slightly from trial-to-trial. Thus, we normalize the data by the following two steps:
+
+* For every trial, shift each neuron's trace so that it's minimum value is zero
+* For every trial, divide each neuron's trace by the max fluorescence value for the neuron observed on that day/session.
+
+This is done with the following function:
 
 ```matlab
->> X = normalize_tensor(X, trial_meta);
-```
-
-In pseudocode, this computes:
-
-```
-for each neuron
-  for each day
-    X[neuron,:,day] -= mean(X[neuron,:,day])
-  end
-end
+X = normalize_tensor( X, trial_meta )
 ```
 
 #### Fitting the CPD model and making a scree plot
@@ -65,13 +60,14 @@ We would like to get a sense of how well fit the model is to the data as a funct
 To do this, we use the `fit_cpd` function:
 
 ```matlab
-[cpd_list, rsq] = fit_cpd(X, 'min_rank', 1, 'max_rank', 15, 'num_starts', 10)
+cpd_list = fit_cpd(X, 'min_rank', 1, 'max_rank', 15, 'num_starts', 10)
 ```
 
 This will fit models from 1 factor up to 15 factors, and fit each model from 10 different random initializations.
 (In practice, I've reassuringly observed that different initializations produce similar models.)
 The results are returned in a 1-dimensional struct array `cpd_list` which holds the outcome of each optimization.
-The vector `rsq` holds the coefficient of determination (R<sup>2</sup>) for each optimzation as a measure of the fit.
+The CPD tensor decomposition is stored as a field `decomp` and the normalized error of the model is stored as a field `error`.
+
 These results are commonly summarized with a [scree plot](http://support.minitab.com/en-us/minitab/17/topic-library/modeling-statistics/multivariate/principal-components-and-factor-analysis/what-is-a-scree-plot/).
 The following command will produce a nicely formatted scree plot, given the struct array of cpd fits:
 
@@ -83,10 +79,10 @@ visualize_rank(cpd_list);
 
 #### Visualizing the factors
 
-Typically, we will just pick the model with the highest R<sup>2</sup> to analyze further:
+Typically, we will just pick the model with the lowest error to analyze further:
 
 ```matlab
-[~,best_idx] = max(rsq);
+[~,best_idx] = min([cpd_list.error]);
 cpd = cpd_list(best_idx);
 ```
 
@@ -137,7 +133,7 @@ It is also possible to examine the model fit across all trials, i.e. examining s
 
 ```matlab
 % plot fit across trials
-visualize_fit(X,Xest,3,md,info.trial_map);
+visualize_fit(X, Xest, 3, md, trial_map);
 ```
 
 ![CPD factors](cpd_fit3.png)
@@ -149,7 +145,7 @@ To look at this we examine the residuals for each neuron, trial phase, and trial
 
 ```matlab
 % plot fit across trials
-visualize_resids(X,Xest,md,info.trial_map);
+visualize_resids(X, Xest, md, trial_map);
 ```
 
 Produces a plot like:
@@ -161,7 +157,7 @@ Produces a plot like:
 Just as [non-negative matrix factorization (NMF)](https://en.wikipedia.org/wiki/Non-negative_matrix_factorization) extends PCA by constraining the loadings/components to be non-negative, we can try fitting non-negative tensor decompositions. The `fit_cpd` contains an option to do this:
 
 ```matlab
-[cpd_list,rsq] = fit_cpd(Xnrn, 'nonneg', true); % fits 10 non-neg rank 15 cp models
+[cpd_list,rsq] = fit_cpd(Xnrn, 'method', 'cp_nnals'); % fits 10 non-neg rank 15 cp models
 ```
 
 Everything else should work as described in the previous section. For example, `visualize_neuron_ktensor` can produce something that looks like this:

@@ -1,6 +1,10 @@
-function [ Xnrm ] = normalize_tensor( X, meta )
-%NORMALIZE_TENSOR Regress away main effect of day
-%   X = NORMALIZE_TENSOR(X, meta)
+function [ Xnrm ] = normalize_tensor( X, trial_meta )
+%NORMALIZE_TENSOR Across-day normalization for fluorescence values.
+% 
+%   X = NORMALIZE_TENSOR(X, trial_meta)
+%
+% Each neuron is rescaled so that the fluorescence ranges from zero to one
+% on each day.
 
 
 % dimensions
@@ -8,12 +12,12 @@ function [ Xnrm ] = normalize_tensor( X, meta )
 Xnrm = X;
 
 % get indices for day
-days = unique(meta.day);
+days = unique(trial_meta.day);
 ndays = length(days);
 d = zeros(K,1);
 tn = zeros(K,1); % trial within day
 for d_ = 1:ndays
-    idx = meta.day == days(d_);
+    idx = trial_meta.day == days(d_);
     d(idx) = d_;
     tn(idx) = 1:sum(idx);
 end
@@ -33,12 +37,3 @@ for d_ = 1:ndays
     amp = max(Xd(:,:), [], 2);
     Xnrm(:,:,idx) = Xd ./ repmat(amp, 1, T, sum(idx));
 end
-
-% % subtract off average
-% for d_ = 1:ndays
-%     idx = (d==d_);
-%     Xd = X(:,:,idx); % data on day d_
-%     avg_d = mean(Xd(:,:),2); % average for each cell on day d_
-%     Xnrm(:,:,idx) = Xd - repmat(avg_d, 1, T, sum(idx));
-% end
-
