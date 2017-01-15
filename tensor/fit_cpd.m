@@ -1,16 +1,16 @@
-function cpd = fit_cpd(X,varargin)
+function [models, best_models] = fit_cpd(X,varargin)
 % FIT_CPD, fits a series of cp decompositions of increasing rank and
 % plots the percentage of variance explained as function of model
 % complexity
 %
-%     [cpd_list,rsq] = fit_cpd(X,[num_starts,10],[min_rank,1],[max_rank,15])
+%     [models,rsq] = fit_cpd(X,[num_starts,10],[min_rank,1],[max_rank,15])
 
 % parse optional inputs
 p = inputParser;
 p.addParameter('num_starts', 10);
 p.addParameter('min_rank', 15);
 p.addParameter('max_rank', 15);
-p.addParameter('printitn',true);
+p.addParameter('printitn',false);
 p.addParameter('method','cp_als');
 p.parse(varargin{:});
 
@@ -23,28 +23,39 @@ Xt = tensor(X);
 normX = norm(Xt);
 
 % create struct array
-nr = max_rank-min_rank+1;
-cpd(max_rank, ns) = struct('error',0,'decomp',[]);
+models(ns, max_rank) = struct('error', NaN, 'decomp', []);
+for s = 1:ns
+    for r = 1:max_rank
+        models(s,r).error = NaN;
+    end
+end
 
 % main loop
 % iterate in random order for a better waitbar
-itercount = 0;
 for s = 1:ns
+    fprintf(['\nOPTIMIZATION RUN ' num2str(s) '\n\t rank: '])
     for r = min_rank:max_rank
-        h = waitbar(itercount/(nr*ns));
-        
+        fprintf([num2str(r) '.'])
         switch p.Results.method
         case 'cp_nnals'
-            decomp = normalize(cp_nnals(Xt,min_rank+r-1,'printitn',p.Results.printitn));
+            decomp = normalize(cp_nnals(Xt,min_rank+r-1,'printitn',false));
         case 'cp_als'
-            decomp = normalize(cp_als(Xt,min_rank+r-1,'printitn',p.Results.printitn));
+            decomp = normalize(cp_als(Xt,min_rank+r-1,'printitn',false));
         case 'cprand'
-            decomp = normalize(cprand(Xt,min_rank+r-1,'printitn',p.Results.printitn));
+            decomp = normalize(cprand(Xt,min_rank+r-1,'printitn',false));
         end
 
-    	cpd(s,r).error = sqrt(normX^2 + norm(decomp)^2 - 2*innerprod(Xt, decomp));
-    	cpd(s,r).decomp = decomp;
-        itercount = itercount+1;
+    	models(s,r).error = sqrt(normX^2 + norm(decomp)^2 - 2*innerprod(Xt, decomp)) / normX;
+    	models(s,r).decomp = decomp;
     end
 end
-close(h)
+fprintf('\n')
+
+best_models(1, max_rank) = struct('error', NaN, 'decomp', []);
+for r = 1:(min_rank-1)
+    best_models(r).error = NaN;
+end
+for r = min_rank:max_rank
+    [~,s] = min([models(:,r).error])
+    best_models(r) = models(s,r)
+end
