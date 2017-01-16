@@ -10,7 +10,7 @@ p = inputParser;
 p.addParameter('num_starts', 10);
 p.addParameter('min_rank', 15);
 p.addParameter('max_rank', 15);
-p.addParameter('printitn',false);
+p.addParameter('verbose', true);
 p.addParameter('method','cp_als');
 p.parse(varargin{:});
 
@@ -33,7 +33,9 @@ end
 % main loop
 % iterate in random order for a better waitbar
 for s = 1:ns
-    fprintf(['\nOPTIMIZATION RUN ' num2str(s) '\n\t rank: '])
+    if p.Results.verbose
+        fprintf(['\nOPTIMIZATION RUN ' num2str(s) '\n\t fitting models, rank: '])
+    end
     for r = min_rank:max_rank
         fprintf([num2str(r) '.'])
         switch p.Results.method
@@ -49,13 +51,16 @@ for s = 1:ns
     	models(s,r).decomp = decomp;
     end
 end
-fprintf('\n')
+
+if p.Results.verbose
+    fprintf('\n')
+end
 
 best_models(1, max_rank) = struct('error', NaN, 'decomp', []);
 for r = 1:(min_rank-1)
     best_models(r).error = NaN;
 end
 for r = min_rank:max_rank
-    [~,s] = min([models(:,r).error])
-    best_models(r) = models(s,r)
+    [~,s] = min([models(:,r).error]);
+    best_models(r) = models(s,r);
 end
