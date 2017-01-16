@@ -4,16 +4,27 @@ function S = cpd_pairwise_similarities(models, varargin)
 %
 %     [similarity_matrix] = cpd_pairwise_similarities(models)
 
-S = zeros(length(models));
+n_models = length(models);
+S = zeros(n_models);
 
-fprintf('Calculating pairwise similarities...\n')
+disp('Calculating pairwise similarities...')
+
+n_iter = n_models + (n_models^2)/2;
+iter = 0;
+prog = 0.1;
+
 for a = 1:length(models)
-    fprintf(repmat(' ', 1, a))
     for b = a:length(models)
-        fprintf('*')
         S(a,b) = score(models(a).decomp, models(b).decomp, varargin{:});
         S(b,a) = S(a,b);
+        
+        % display progress
+        iter = iter+1;
+        if iter/n_iter > prog
+        	disp([num2str(prog*100) '% done.'])
+        	prog = prog+0.1;
+        end
     end
-    fprintf('\n')
 end
 
+disp('100% done.')
