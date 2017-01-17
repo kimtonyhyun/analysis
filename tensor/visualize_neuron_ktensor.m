@@ -1,4 +1,4 @@
-function visualize_neuron_ktensor(decomp, meta, trialcolor)
+function [Ax, G, BigAx] = visualize_neuron_ktensor(decomp, meta, trialcolor)
 % VISUALIZE_NEURON_KTENSOR, wraps VISUALIZE_KTENSOR for multi-day data
 %
 %     [Ax, BigAx, FigHandle] = VISUALIZE_NEURON_KTENSOR(X)
@@ -28,8 +28,8 @@ nm = {'neuron factors', 'time factors', 'trial factors'};
 lspc = {[], '-r', '-k'};
 lw = [0 2 1];
 
-visualize_ktensor(decomp, 'c', c, 'plots', plt, ...
+[Ax, G, BigAx] = visualize_ktensor(decomp, 'c', c, 'plots', plt, ...
                   'permute', prm, 'linewidth', lw, ...
-                  'names', nm, 'linespec', lspc);
+                  'title', nm, 'linespec', lspc);
 
 

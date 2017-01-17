@@ -115,7 +115,7 @@ end
 
 if (isa(X,'sptensor') || isa(X,'tensor')) && (exist('cpals_core','file') == 3)
  
-    %fprintf('Using C++ code\n');
+    fprintf('Using C++ code\n');
     [lambda,U] = cpals_core(X, Uinit, fitchangetol, maxiters, dimorder);
     P = ktensor(lambda,U);
     
