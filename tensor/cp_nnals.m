@@ -63,76 +63,71 @@ end
 
 %% Main Loop: Iterate until convergence
 
-if (isa(X,'sptensor') || isa(X,'tensor')) && (exist('cpals_core','file') == 3)
- 
-    %fprintf('Using C++ code\n');
-    [lambda,U] = cpals_core(X, Uinit, fitchangetol, maxiters, dimorder);
-    P = ktensor(lambda,U);
-    
-else
-    
-    UtU = zeros(R,R,N);
-    for n = 1:N
-        if ~isempty(U{n})
-            UtU(:,:,n) = U{n}'*U{n};
-        end
-    end
-    
-    for iter = 1:maxiters
-        
-        fitold = fit;
-        
-        % Iterate over all N modes of the tensor
-        for n = dimorder(1:end)
-            
-            % Calculate Unew = X_(n) * khatrirao(all U except n, 'r').
-            Unew = mttkrp(X,U,n);
-            
-            % Compute the matrix of coefficients for linear system
-            Y = prod(UtU(:,:,[1:n-1 n+1:N]),3);
-            Unew = nnlsm_blockpivot(Y', Unew')';
+UtU = zeros(R,R,N);
+for n = 1:N
+if ~isempty(U{n})
+    UtU(:,:,n) = U{n}'*U{n};
+end
+end
+
+for iter = 1:maxiters
+
+    fitold = fit;
+
+    % Iterate over all N modes of the tensor
+    for n = dimorder(1:end)
+
+        % Calculate Unew = X_(n) * khatrirao(all U except n, 'r').
+        Unew = mttkrp(X,U,n);
+
+        % Compute the matrix of coefficients for linear system
+        Y = prod(UtU(:,:,[1:n-1 n+1:N]),3);
+        Unew = nnlsm_blockpivot(Y', Unew')';
+        if norm(Unew, 'fro') < eps()
+            Unew = rand(size(Unew));
+        else
             if issparse(Unew)
                 Unew = full(Unew);   % for the case R=1
             end
-                        
+
             % Normalize each vector to prevent singularities in coefmatrix
             if iter == 1
                 lambda = sqrt(sum(Unew.^2,1))'; %2-norm
             else
                 lambda = max( max(abs(Unew),[],1), 1 )'; %max-norm
             end            
-            
+
             Unew = bsxfun(@rdivide, Unew, lambda');
 
-            U{n} = Unew;
-            UtU(:,:,n) = U{n}'*U{n};
         end
-        
-        P = ktensor(lambda,U);
-        if normX == 0
-            fit = norm(P)^2 - 2 * innerprod(X,P);
-        else
-            normresidual = sqrt( normX^2 + norm(P)^2 - 2 * innerprod(X,P) );
-            fit = 1 - (normresidual / normX); %fraction explained by model
-        end
-        fitchange = abs(fitold - fit);
-        
-        % Check for convergence
-        if (iter > 1) && (fitchange < fitchangetol)
-            flag = 0;
-        else
-            flag = 1;
-        end
-        
-        if (mod(iter,printitn)==0) || ((printitn>0) && (flag==0))
-            fprintf(' Iter %2d: f = %e f-delta = %7.1e\n', iter, fit, fitchange);
-        end
-        
-        % Check for convergence
-        if (flag == 0)
-            break;
-        end        
-    end   
+        U{n} = Unew;
+        UtU(:,:,n) = U{n}'*U{n};
+    end
+
+    P = ktensor(lambda,U);
+    if normX == 0
+        fit = norm(P)^2 - 2 * innerprod(X,P);
+    else
+        normresidual = sqrt( normX^2 + norm(P)^2 - 2 * innerprod(X,P) );
+        fit = 1 - (normresidual / normX); %fraction explained by model
+    end
+    fitchange = abs(fitold - fit);
+
+    % Check for convergence
+    if (iter > 1) && (fitchange < fitchangetol)
+        flag = 0;
+    else
+        flag = 1;
+    end
+
+    if (mod(iter,printitn)==0) || ((printitn>0) && (flag==0))
+        fprintf(' Iter %2d: f = %e f-delta = %7.1e\n', iter, fit, fitchange);
+    end
+
+    % Check for convergence
+    if (flag == 0)
+        break;
+    end        
 end
 
 
