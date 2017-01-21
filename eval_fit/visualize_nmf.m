@@ -10,7 +10,7 @@ for i = 1:num_trials
     plot(Tk(i,:), '.');
 end
 xlim([1 num_samples]);
-title(sprintf('Factor k=%d', k));
+title(sprintf('NMF Factor k=%d', k));
 
 trace_avg = mean(Tk,1);
 plot(trace_avg, 'r', 'LineWidth', 3);
