@@ -12,6 +12,7 @@ p.addParameter('min_rank', 15);
 p.addParameter('max_rank', 15);
 p.addParameter('verbose', true);
 p.addParameter('method','cp_als');
+p.addParameter('num_samples',@(r) ceil(10*r*log(r)));
 p.parse(varargin{:});
 
 ns = p.Results.num_starts;
@@ -44,7 +45,8 @@ for s = 1:ns
         case 'cp_als'
             decomp = normalize(cp_als(Xt,min_rank+r-1,'printitn',false));
         case 'cprand'
-            decomp = normalize(cprand(Xt,min_rank+r-1,'printitn',false));
+            ns = p.Results.num_samples(r);
+            decomp = normalize(cprand(Xt,min_rank+r-1,'printitn',false,'num_samples',ns,'fft',1));
         end
 
     	models(s,r).error = sqrt(normX^2 + norm(decomp)^2 - 2*innerprod(Xt, decomp)) / normX;

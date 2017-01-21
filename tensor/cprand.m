@@ -183,7 +183,9 @@ function [P,Uinit,output] = cprand(X,R,varargin)
         Xfit_mean = mean((Xfit_vals - Ps).^2);
         testfit = 1 - sqrt(Xfit_mean*prod(size(X)))/normX;
     end
-    fprintf(' Final fit = %e Final estimated fit = %e \n', fit, testfit);
+    if printitn>0
+        fprintf(' Final fit = %e Final estimated fit = %e \n', fit, testfit);
+    end
     %end
 
     output = struct;
