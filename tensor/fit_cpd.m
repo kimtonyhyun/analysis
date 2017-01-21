@@ -47,6 +47,8 @@ for s = 1:ns
         case 'cprand'
             ns = p.Results.num_samples(r);
             decomp = normalize(cprand(Xt, r, 'printitn', false, 'num_samples', ns, 'fft', 1));
+        otherwise
+            error('fitting method not recognized');
         end
 
     	models(s,r).error = sqrt(normX^2 + norm(decomp)^2 - 2*innerprod(Xt, decomp)) / normX;
