@@ -130,7 +130,7 @@ function [Ax,BigAx] = setup_axes(nr, nf, space)
     % setup axes
     for f = 1:nf
         % invisible subplot bounding box
-        BigAx(f) = subplot(1,3,f);
+        BigAx(f) = subplot(1, nf, f);
         set(BigAx(f),'Visible','off')
         pos = get(BigAx(f),'Position');
         w = pos(3);
