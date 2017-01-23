@@ -1,4 +1,4 @@
-function [ln, sc] = cpd_scree_plot(models)
+function cpd_scree_plot(models)
 % CPD_SCREE_PLOT, plots a scree plot given struct array of model fits
 %
 %     models = fit_cpd(data, ...)
@@ -12,16 +12,21 @@ max_rank = size(models, 2);
 % scree plot
 figure();
 hold on
-sc = [];
+ln = plot(1:max_rank, [models(1,:).error], '-', 'linewidth', 2, 'color', [1.0 0.4 0.4]);
 for r = 1:max_rank
     err = [models(:,r).error];
-    mean_err(r) = mean(err); %#ok<AGROW>
-    sc_ = plot(r*ones(n_replicates,1), err, '.k', 'markersize', 20);
-    sc = [sc; sc_]; %#ok<AGROW>
+    plot(r*ones(n_replicates,1), err, '.k', 'markersize', 20);
 end
-rnks = find(~isnan(mean_err));
-ln = plot(rnks, mean_err(rnks), '-', 'linewidth', 2, 'color', [1.0 0.4 0.4]);
-uistack(ln, 'bottom')
 xlabel('rank of model')
 ylabel('normalized error')
+ylim([0,1])
+
+figure();
+hold on
+for r = 1:max_rank
+	similarity = [models(:,r).similarity];
+    plot(r*ones(n_replicates,1), similarity, '.k', 'markersize', 20);
+end
+xlabel('rank of model')
+ylabel('similarity to best fit')
 ylim([0,1])
