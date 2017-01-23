@@ -14,7 +14,8 @@ if nargin >=3
 end
 
 % the neuron order is arbitrary, so permute/sort it along the first factor
-prm = [true false false];
+[~, n_idx] = sort(sum(abs(decomp.u{1}), 2), 'descend');
+decomp.u{1} = decomp.u{1}(n_idx, :) .* repmat(decomp.lambda', length(n_idx), 1);
 
 % bar plot for neuron factors
 % line plot for within trial factors
@@ -29,7 +30,10 @@ lspc = {[], '-r', '-k'};
 lw = [0 2 1];
 
 [Ax, G, BigAx] = visualize_ktensor(decomp, 'c', c, 'plots', plt, ...
-                  'permute', prm, 'linewidth', lw, ...
+                  'linewidth', lw, 'link_yax', [true, true, true], ...
                   'title', nm, 'linespec', lspc);
 
 
+set(Ax(1:end-1,:), 'YTickLabel', [])
+set(Ax, 'YAxisLocation', 'left')
+set(Ax(end, :), 'TickDir', 'out')

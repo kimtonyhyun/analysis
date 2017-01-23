@@ -64,7 +64,7 @@ end
 for r = 1:max_rank
     % sort models from best to worst
     err = [models(:, r).error];
-    [~,sort_idx] = sort(err, 'descend');
+    [~,sort_idx] = sort(err);
     models(:, r) = models(sort_idx, r);
 
     % calculate similarities of all fits to the best fit

@@ -40,8 +40,7 @@ params.addParameter('filled', true(1,nf));
 params.addParameter('linespec', repmat({'-'}, [1 nf]));
 params.addParameter('link_yax', false(1,nf));
 params.addParameter('ylims', cell(1, nf));
-params.addParameter('greedy', nr>5);
-params.addParameter('permute', false(1,nf));
+params.addParameter('greedy', nr>7);
 params.addParameter('linewidth', ones(1,3));
 params.addParameter('xlabel', repmat({''}, [1 nf]));
 params.addParameter('XTick', cell(1,nf));
@@ -65,18 +64,6 @@ else
 end
 format_axes(Ax, res.title, res.xlabel, res.XTick, res.XTickLabel);
 
-% The 'sortdim' option sorts the entries along an axis by the top factor.
-% This is useful if the tensor does not have a natural ordering along
-% a certain dimension.
-prm = cell(1, nf);
-for f = 1:nf
-    if res.permute(f)
-        [~,prm{f}] = sort(X.u{f}(:,1),'descend');
-    else
-        prm{f} = 1:sz(f);
-    end
-end
-
 % main loop %
 % iterate over factors (columns of plot)
 G = gobjects(nr, nf);
@@ -91,7 +78,7 @@ for f = 1:nf
 
         % plot x vs y
         x = 1:sz(f);
-        y = X.u{f}(prm{f},r);
+        y = X.u{f}(:, r);
 
         % make the plot
         switch res.plots{f}
