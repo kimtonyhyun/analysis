@@ -55,7 +55,7 @@ res = params.Results;
 if isempty(res.axes)
     [Ax,BigAx] = setup_axes(nr, nf, res.space);
 else
-    Ax = res.axes
+    Ax = res.axes;
     if size(Ax,1) ~= nr
         error('User-provided Axes do not match the rank of the provided tensor.')
     elseif size(Ax,2) ~= nf
