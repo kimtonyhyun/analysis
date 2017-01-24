@@ -1,9 +1,9 @@
-function [models, best_models] = fit_cpd(X,varargin)
+function models = fit_cpd(X,varargin)
 % FIT_CPD, fits a series of cp decompositions of increasing rank and
 % plots the percentage of variance explained as function of model
 % complexity
 %
-%     [models,rsq] = fit_cpd(X,[num_starts,10],[min_rank,1],[max_rank,15])
+%     models = fit_cpd(X,[num_starts,10],[min_rank,1],[max_rank,15])
 
 % parse optional inputs
 p = inputParser;
@@ -24,10 +24,10 @@ Xt = tensor(X);
 normX = norm(Xt);
 
 % create struct array
-models(ns, max_rank) = struct('error', NaN, 'decomp', []);
 for s = 1:ns
     for r = 1:max_rank
-        models(s,r).error = NaN;
+        models(s,r).decomp = [];
+        models(s,r).error = inf;
     end
 end
 
@@ -57,14 +57,20 @@ for s = 1:ns
 end
 
 if p.Results.verbose
-    fprintf('\n')
+    fprintf('\nCalculating fit statistics....\n')
 end
 
-best_models(1, max_rank) = struct('error', NaN, 'decomp', []);
-for r = 1:(min_rank-1)
-    best_models(r).error = NaN;
-end
-for r = min_rank:max_rank
-    [~,s] = min([models(:,r).error]);
-    best_models(r) = models(s,r);
+% sort the fits from best to worst error
+for r = 1:max_rank
+    % sort models from best to worst
+    err = [models(:, r).error];
+    [~,sort_idx] = sort(err);
+    models(:, r) = models(sort_idx, r);
+
+    % calculate similarities of all fits to the best fit
+    best = models(1, r).decomp;
+    models(1, r).similarity = NaN;
+    for s = 2:ns
+        models(s, r).similarity = score(best, models(s, r).decomp, 'greedy', r>7);
+    end
 end
