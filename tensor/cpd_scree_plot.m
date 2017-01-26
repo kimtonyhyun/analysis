@@ -32,16 +32,19 @@ ylabel('similarity to best fit')
 ylim([0,1])
 
 figure();
-colors = [linspace(0,1,max_rank)', zeros(max_rank,1), zeros(max_rank,1)];
-for r = 1:max_rank
-	hold on
-	x = (1:n_replicates-1)';
+valid_ranks = find(~arrayfun(@isempty, {models(1,:).decomp}));
+p = auto_subplots(length(valid_ranks));
+s = 1;
+for r = valid_ranks
+	subplot(p(1), p(2), s);
+    x = [models(2:end,r).error]';
 	y = [models(2:end,r).similarity]';
-    scatter(x, y, [], colors(r,:), 'filled');
-    yy = smooth(x, y, 10);%,'loess');
-    ln = plot(x, yy, 'linewidth', 2);
-    ln.Color=[colors(r,:), 0.5];
+    plot(x - models(1,r).error, y, '.k');
+    ylim([0,1])
+    title(['rank-' num2str(r)])
+    xlabel('difference in error')
+    ylabel('similarity to best fit')
+    s = s + 1;
 end
-xlabel('rank of model')
-ylabel('similarity to best fit')
-ylim([0,1])
+linkaxes(findobj(gcf,'type','axes'), 'x');
+
