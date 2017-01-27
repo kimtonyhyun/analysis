@@ -30,3 +30,21 @@ end
 xlabel('rank of model')
 ylabel('similarity to best fit')
 ylim([0,1])
+
+figure();
+valid_ranks = find(~arrayfun(@isempty, {models(1,:).decomp}));
+p = auto_subplots(length(valid_ranks));
+s = 1;
+for r = valid_ranks
+	subplot(p(1), p(2), s);
+    x = [models(2:end,r).error]';
+	y = [models(2:end,r).similarity]';
+    plot(x - models(1,r).error, y, '.k');
+    ylim([0,1])
+    title(['rank-' num2str(r)])
+    xlabel('difference in error')
+    ylabel('similarity to best fit')
+    s = s + 1;
+end
+linkaxes(findobj(gcf,'type','axes'), 'x');
+

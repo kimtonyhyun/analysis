@@ -7,8 +7,8 @@ function [Ax, G, BigAx] = visualize_neuron_ktensor(decomp, meta, trialcolor, neu
 %     ----------
 %     trialcolor : 'start', 'error', 'end', etc.
 
-if nargin == 3
-    neuron_sort_method = 'sort_once'
+if nargin == 2
+    neuron_sort_method = 'sort once';
 end
 
 
@@ -23,10 +23,10 @@ decomp.u{1} = decomp.u{1} .* repmat(decomp.lambda', size(decomp.u{1}, 1), 1);
 decomp.lambda = ones(size(decomp.lambda));
 
 switch neuron_sort_method
-case 'sort_once'
+case 'sort once'
     [~, n_idx] = sort(sum(abs(decomp.u{1}), 2), 'descend');
     decomp.u{1} = decomp.u{1}(n_idx, :);
-case 'sort_each'
+case 'sort each'
     for r = 1:size(decomp.u{1}, 2)
        [~, n_idx] = sort(abs(decomp.u{1}(:,r)), 'descend');
        decomp.u{1}(:,r) = decomp.u{1}(n_idx, r);
@@ -66,3 +66,11 @@ for m = 1:M
         set(Ax(m,n), 'Position', pos)
     end
 end
+
+for r = 1:size(Ax,1)
+  set(get(Ax(r,1), 'ylabel'), 'String', sprintf('r = %g ',r), 'Rotation', 0, 'HorizontalAlignment', 'right');
+end
+
+set(get(Ax(end,1), 'xlabel'), 'String', ['method = ' neuron_sort_method]);
+set(Ax(end,:), 'YAxisLocation', 'right')
+set(get(Ax(end,1), 'ylabel'), 'Position', get(get(Ax(1,1), 'ylabel'), 'Position'));
