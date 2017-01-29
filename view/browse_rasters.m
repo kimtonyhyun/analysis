@@ -94,7 +94,7 @@ end
         
             cell_idx = cells_on_page(i);
             ds.plot_cell_raster(cell_idx);
-            title(sprintf('Cell %d (%s)', cell_idx, ds.cells(cell_idx).label));
+            title(sprintf('Cell %d', cell_idx));
         end
         
         function cells_on_page = get_cells_on_page(page_idx)
