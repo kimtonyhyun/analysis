@@ -68,7 +68,7 @@ for m = 1:M
 end
 
 for r = 1:size(Ax,1)
-  set(get(Ax(r,1), 'ylabel'), 'String', sprintf('r = %g ',r), 'Rotation', 0, 'HorizontalAlignment', 'right');
+  set(get(Ax(r,1), 'ylabel'), 'String', sprintf('k = %g ',r), 'Rotation', 0, 'HorizontalAlignment', 'right');
 end
 
 set(get(Ax(end,1), 'xlabel'), 'String', ['method = ' neuron_sort_method]);
