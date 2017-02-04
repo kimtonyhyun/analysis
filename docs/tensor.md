@@ -65,8 +65,7 @@ models = fit_cpd(X, 'min_rank', 1, 'max_rank', 15, 'num_starts', 10)
 
 This will fit models from 1 factor up to 15 factors, and fit each model from 10 different random initializations.
 (In practice, I've reassuringly observed that different initializations produce similar models.)
-A 2D-struct array `models` holds the outcome of all optimizations -- `models(:,r).decomp` holds all the rank-`r` CP decompositions sorted from 
-to worst reconstruction error, and `models(s,r).error` gives a measure of the model reconstruction error:
+A 2D-struct array `models` holds the outcome of all optimizations -- `models(:,r).decomp` holds all the rank-`r` CP decompositions sorted from best to worst reconstruction error, and `models(s,r).error` gives a measure of the model reconstruction error:
 
 ```
 reconstruction_error = norm(model_estimate - data_tensor) / norm(data_tensor)
@@ -84,11 +83,16 @@ cpd_scree_plot(models);
 
 #### Visualizing the factors
 
-Next, let's visualize the factors. Each factor is a triplet of three vectors, and the number of factors is the *rank* of the model.
+Next, let's visualize the factors. For this example, we'll take the rank-15 CPD model with the best (smallest) reconstruction error:
+```
+cpd = models(1,15).decomp;
+```
+
+Each factor in a CPD model is a triplet of three vectors, and the number of factors is the *rank* of the model.
 Below, I visualized the factors for a rank 15 model using the command:
 
 ```matlab
-visualize_neuron_ktensor(models(1, 15).decomp, trial_meta, 'start')
+visualize_neuron_ktensor(cpd, trial_meta, 'start')
 ```
 
 ![CPD factors](cpd_factors.png)
@@ -101,9 +105,9 @@ The third column of plots shows the 15 *across trial factors*, with the east and
 You can change the coloring of the across trial factors (right column) by inputting a string that matches one of the fieldnames in the `trial_meta` struct:
 
 ```matlab
-visualize_neuron_ktensor(models(1, 15).decomp, trial_meta, 'correct') % colors correct vs incorrect trials
-visualize_neuron_ktensor(models(1, 15).decomp, trial_meta, 'day') % colors by session
-visualize_neuron_ktensor(models(1, 15).decomp, trial_meta, 'strategy') % colors by inferred navigation strategy
+visualize_neuron_ktensor(cpd, trial_meta, 'correct') % colors correct vs incorrect trials
+visualize_neuron_ktensor(cpd, trial_meta, 'day') % colors by session
+visualize_neuron_ktensor(cpd, trial_meta, 'strategy') % colors by inferred navigation strategy
 ```
 
 #### Visualizing the model fit
@@ -112,7 +116,7 @@ It is useful to view the model's prediction and the raw data on the same plot, t
 
 ```matlab
 % get the full reconstructed tensor from the model
-Xest = full(models(1, 15).decomp);
+Xest = full(cpd);
 Xest = Xest.data;
 
 % plot fit across neurons
