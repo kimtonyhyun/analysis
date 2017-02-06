@@ -61,7 +61,7 @@ if p.Results.verbose
 end
 
 % sort the fits from best to worst error
-for r = 1:max_rank
+for r = min_rank:max_rank
     % sort models from best to worst
     err = [models(:, r).error];
     [~,sort_idx] = sort(err);
