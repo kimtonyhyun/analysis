@@ -1,7 +1,7 @@
 function models = fit_cpd(X,varargin)
 % FIT_CPD, fits a series of cp decompositions of increasing rank and
 % plots the percentage of variance explained as function of model
-% complexity
+% complexity. By default, perform non-negative factorization.
 %
 %     models = fit_cpd(X,[num_starts,10],[min_rank,1],[max_rank,15])
 
@@ -11,7 +11,7 @@ p.addParameter('num_starts', 10);
 p.addParameter('min_rank', 15);
 p.addParameter('max_rank', 15);
 p.addParameter('verbose', true);
-p.addParameter('method','cp_als');
+p.addParameter('method','cp_nnals');
 p.addParameter('num_samples',@(r) ceil(10*r*log(r)));
 p.parse(varargin{:});
 
@@ -61,7 +61,7 @@ if p.Results.verbose
 end
 
 % sort the fits from best to worst error
-for r = 1:max_rank
+for r = min_rank:max_rank
     % sort models from best to worst
     err = [models(:, r).error];
     [~,sort_idx] = sort(err);
