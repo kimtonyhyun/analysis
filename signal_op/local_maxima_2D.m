@@ -58,7 +58,7 @@ end
             
 % Smooth image
 filt = (fspecial('gaussian', size_gauss_filter,sigma_gauss_filter));
-d=conv2(single(d),filt,'same') ;
+d=conv2(single(d),filt,'same');
 
 % Apply threshold again
 d=d.*(d>thresh);
