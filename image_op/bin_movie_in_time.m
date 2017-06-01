@@ -59,8 +59,12 @@ h5create(movie_out, movie_dataset,...
 copy_hdf5_params(movie_in, movie_out);
 
 % Update the FPS
-fps = h5read(movie_in, '/Params/FrameRate');
-h5write(movie_out, '/Params/FrameRate', fps / bin_factor);
+try
+    fps = h5read(movie_in, '/Params/FrameRate');
+    h5write(movie_out, '/Params/FrameRate', fps / bin_factor);
+catch
+    fprintf('Warning: Frame rate of file "%s" is unknown\n', movie_in);
+end
 
 h5create(movie_out, '/TimeBin/BinFactor', 1, 'Datatype', 'double');
 h5write(movie_out, '/TimeBin/BinFactor', bin_factor);
