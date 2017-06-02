@@ -112,7 +112,7 @@ h5create(movie_out, '/MotCorr/RefImg', size(im_ref), 'Datatype', 'single');
 h5write(movie_out, '/MotCorr/RefImg', im_ref);
 
 % Apply TurboReg
-frame_chunk_size = 500;
+frame_chunk_size = 1000;
 [frame_chunks, num_chunks] = make_frame_chunks(num_frames, frame_chunk_size);
 
 % Start parallel pool, if one does not exist already
