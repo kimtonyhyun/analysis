@@ -115,6 +115,11 @@ h5write(movie_out, '/MotCorr/RefImg', im_ref);
 frame_chunk_size = 500;
 [frame_chunks, num_chunks] = make_frame_chunks(num_frames, frame_chunk_size);
 
+% Start parallel pool, if one does not exist already
+if isempty(gcp('nocreate'))
+    parpool;
+end
+
 for i = 1:num_chunks
     fprintf('%s: Registering frames %d to %d (out of %d)...\n',...
         datestr(now), frame_chunks(i,1), frame_chunks(i,2), num_frames);
@@ -128,7 +133,7 @@ for i = 1:num_chunks
 
 	movie_chunk_reg = zeros(size(movie_chunk), 'single');
     
-    for frame_idx = 1:size(movie_chunk,3);
+    parfor frame_idx = 1:size(movie_chunk,3)
         im_coreg = single(movie_chunk(:,:,frame_idx));
         im_reg = transform(im_coreg);
         
