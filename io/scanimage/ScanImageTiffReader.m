@@ -8,6 +8,9 @@ classdef ScanImageTiffReader < handle
     % is usually a binary-blob that encodes data that needs to be
     % interpreted by scanimage.    
     
+    % THK (2017/06/02): Needed to install VC2015 redistributable from
+    %   https://www.microsoft.com/en-us/download/details.aspx?id=48145
+    
     properties(Access=private)
         h_ % A pointer to the internal file context.
     end
