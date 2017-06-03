@@ -9,7 +9,12 @@ function copy_hdf5_params(hdf5_from, hdf5_to)
 
 % Enumerate all 'Params' datasets in the source file
 params_root = '/Params';
-params = h5info(hdf5_from, params_root);
+try
+    params = h5info(hdf5_from, params_root);
+catch
+    fprintf('Warning: Source HDF5 file lacks "Params" directory\n');
+    return;
+end
 params = params.Datasets;
 num_params = length(params);
 
