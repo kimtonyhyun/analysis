@@ -27,6 +27,8 @@ switch tif_type
         type = 'uint16';
     case 'IEEE floating point'
         type = 'single';
+    case "Two's complement signed integer"
+        type = 'int16';
     otherwise
         error('load_movie_from_tif: Unrecognized type "%s"\n', tif_type);
 end
