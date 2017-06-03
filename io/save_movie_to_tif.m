@@ -21,6 +21,9 @@ switch (lower(type))
     case 'uint16'
         tagstruct.SampleFormat = Tiff.SampleFormat.UInt;
         tagstruct.BitsPerSample = 16;
+    case 'int16'
+        tagstruct.SampleFormat = Tiff.SampleFormat.Int;
+        tagstruct.BitsPerSample = 16;
     otherwise
         error('save_movie_to_tif: Unrecognized type "%s"\n', type);
 end
