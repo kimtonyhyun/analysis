@@ -21,16 +21,21 @@ num_tif_frames = length(info);
 width  = info(1).Width;
 height = info(1).Height;
 
-tif_type = info(1).SampleFormat;
-switch tif_type
-    case 'Unsigned integer'
-        type = 'uint16';
-    case 'IEEE floating point'
-        type = 'single';
-    case "Two's complement signed integer"
-        type = 'int16';
-    otherwise
-        error('load_movie_from_tif: Unrecognized type "%s"\n', tif_type);
+try
+    tif_type = info(1).SampleFormat;
+    switch tif_type
+        case 'Unsigned integer'
+            type = 'uint16';
+        case 'IEEE floating point'
+            type = 'single';
+        case "Two's complement signed integer"
+            type = 'int16';
+        otherwise
+            error('load_movie_from_tif: Unrecognized type "%s"\n', tif_type);
+    end
+catch
+    fprintf('Warning: Unable to detect SampleFormat. Assuming uint16!\n');
+    type = 'uint16';
 end
 
 % Load movie into memory
