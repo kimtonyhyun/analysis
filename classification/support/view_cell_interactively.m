@@ -1,4 +1,4 @@
-function [resp, persistent_state] = view_cell_interactively(ds, cell_idx, movie, fps, persistent_state)
+function [resp, state] = view_cell_interactively(ds, cell_idx, movie, fps, state)
 % Visually inspect the active portions of a trace side-by-side with
 %   the provided miniscope movie.
 
@@ -19,7 +19,7 @@ time_window = 100/fps; % Width of running window
 % Generate the outline of the filter
 %------------------------------------------------------------
 subplot(3,3,[4 5 7 8]);
-movie_clim = persistent_state.movie_clim;
+movie_clim = state.movie_clim;
 h = imagesc(rescale_filter_to_clim(filter, movie_clim), movie_clim);
 set(h, 'ButtonDownFcn', @add_point_of_interest);
 colormap gray;
@@ -60,7 +60,7 @@ for n = 1:num_other_cells
     end
     other_cell_handles(n) = plot(boundary(:,1), boundary(:,2), color);
 end
-show_map(persistent_state.show_map);
+show_map(state.show_map);
 
 % Plot boundaries and indices of the nearest neighbors of the
 % current cell
@@ -80,9 +80,17 @@ for n = 1:num_neighbors_to_show
                                  'Color', 'w',...
                                  'FontWeight', 'bold');
 end
-show_neighbors(persistent_state.show_neighbors);
+show_neighbors(state.show_neighbors);
 
-% Indicate the center of mass of the filter
+% Plot points of interest
+%------------------------------------------------------------
+num_points = size(state.points_of_interest, 1);
+for i = 1:num_points
+    pt = state.points_of_interest(i,:);
+    plot(pt(1), pt(2), 'r*');
+end
+
+% Indicate the center of mass of the current filter
 COM = ds.cells(cell_idx).com;
 plot(COM(1), COM(2), 'b.');
 hold off;
@@ -95,7 +103,7 @@ ylim(COM(2)+zoom_half_width*[-1 1]);
 
 % Compute the active portions of the trace
 %------------------------------------------------------------
-if persistent_state.baseline_removed
+if state.baseline_removed
     trace = trace_fixed;
 else
     trace = trace_orig;
@@ -103,7 +111,7 @@ end
 
 trace_max = max(trace);
 trace_min = min(trace);
-thresh_scale = persistent_state.threshold_scale;
+thresh_scale = state.threshold_scale;
 thresh = thresh_scale * (trace_max - trace_min) + trace_min;
 [active_periods, num_active_periods] = ...
     parse_active_frames(trace > thresh, active_frame_padding);
@@ -117,14 +125,14 @@ resp = lower(strtrim(input(prompt, 's')));
 val = str2double(resp);
 
 % State of interaction loop (will not carry over to other cells)
-non_persistent_state.last_val = [];
-non_persistent_state.zoomed = true;
+temp_state.last_val = [];
+temp_state.zoomed = true;
 
 while (1)
     if (~isnan(val)) % Is a number
         if ((1 <= val) && (val <= num_active_periods))
             display_active_period(val);
-            non_persistent_state.last_val = val;
+            temp_state.last_val = val;
         else
             fprintf('  Sorry, %d is not a valid period index for this trace\n', val);
         end
@@ -154,12 +162,12 @@ while (1)
                 
                 % Persist the threshold
                 if (0 < thresh_scale) && (thresh_scale < 1)
-                    persistent_state.threshold_scale = thresh_scale;
+                    state.threshold_scale = thresh_scale;
                 end
                 
             case 'b' % Fix "baseline"
-                persistent_state.baseline_removed = ~persistent_state.baseline_removed; % Toggle
-                if (persistent_state.baseline_removed)
+                state.baseline_removed = ~state.baseline_removed; % Toggle
+                if (state.baseline_removed)
                     trace = trace_fixed;
                     fprintf('  Showing trace with baseline correction\n');
                 else
@@ -173,20 +181,20 @@ while (1)
                 setup_traces();
                 
             case 'r' % "replay"
-                if ~isempty(non_persistent_state.last_val)
-                    display_active_period(non_persistent_state.last_val);
+                if ~isempty(temp_state.last_val)
+                    display_active_period(temp_state.last_val);
                 end
                             
             case 'z' % "zoom"
                 subplot(3,3,[4 5 7 8]); % Focus on the movie subplot
-                if (non_persistent_state.zoomed) % Return to original view
+                if (temp_state.zoomed) % Return to original view
                     xlim([1 width]);
                     ylim([1 height]);
-                    non_persistent_state.zoomed = false;
+                    temp_state.zoomed = false;
                 else
                     xlim(COM(1)+zoom_half_width*[-1 1]);
                     ylim(COM(2)+zoom_half_width*[-1 1]);
-                    non_persistent_state.zoomed = true;
+                    temp_state.zoomed = true;
                 end
                     
             case {'h', 'l'} % "higher/lower contrast"
@@ -202,15 +210,15 @@ while (1)
                         movie_clim(1), movie_clim(2));
                 end
                 set(gca, 'CLim', movie_clim);
-                persistent_state.movie_clim = movie_clim;
+                state.movie_clim = movie_clim;
                 
             case 'm' % Show "map" (i.e. all other cells)
-                persistent_state.show_map = ~persistent_state.show_map;
-                show_map(persistent_state.show_map);
+                state.show_map = ~state.show_map;
+                show_map(state.show_map);
 
             case 'n' % Show "neighbors"
-                persistent_state.show_neighbors = ~persistent_state.show_neighbors;
-                show_neighbors(persistent_state.show_neighbors);
+                state.show_neighbors = ~state.show_neighbors;
+                show_neighbors(state.show_neighbors);
                 
             otherwise
                 fprintf('  Sorry, could not parse "%s"\n', resp);
@@ -320,7 +328,15 @@ end
     end
 
     function add_point_of_interest(~, e)
-        fprintf('Plot clicked!\n');
+        coord = round(e.IntersectionPoint([1 2]));
+        
+        % Add new point of interest to plot
+        subplot(3,3,[4 5 7 8]);
+        hold on;
+        plot(coord(1), coord(2), 'r*');
+        hold off;
+        
+        state.points_of_interest = [state.points_of_interest; coord];
     end
 end % main function
 

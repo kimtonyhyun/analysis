@@ -1,8 +1,16 @@
-function classify_cells(ds, M, varargin)
+function points_of_interest = classify_cells(ds, M, varargin)
 % Perform manual classification of candidate filter/trace pairs
 
 show_raster = true;
 fps = 10;
+
+% Default parameters for "view_cell_interactively"
+state.movie_clim = [];
+state.show_map = true;
+state.show_neighbors = false;
+state.baseline_removed = true;
+state.threshold_scale = 0.25;
+state.points_of_interest = [];
 
 for i = 1:length(varargin)
     vararg = varargin{i};
@@ -12,15 +20,17 @@ for i = 1:length(varargin)
                 fps = varargin{i+1};
             case 'noraster' % Use with non-PlusMaze datasets
                 show_raster = false;
+            case 'poi' % Existing points of interest
+                state.points_of_interest = varargin{i+1};
         end
     end
 end
 
 % Initial processing of movie
 max_proj = max(M,[],3);
-movie_clim = compute_movie_scale(M);
+state.movie_clim = compute_movie_scale(M);
 fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
-    datestr(now), movie_clim(1), movie_clim(2));
+    datestr(now), state.movie_clim(1), state.movie_clim(2));
 fprintf('  %s: FPS is %.1f...\n', datestr(now), fps);
 
 % Load filter/trace pairs to be classified
@@ -37,13 +47,6 @@ hfig = figure;
 
 cell_idx = 1;
 prev_cell_idx = 1;
-
-% Default parameters for "view_cell_interactively"
-state.movie_clim = movie_clim;
-state.show_map = false;
-state.show_neighbors = false;
-state.baseline_removed = true;
-state.threshold_scale = 0.25;
 
 while (cell_idx <= num_candidates)
     if show_raster
@@ -104,6 +107,7 @@ while (cell_idx <= num_candidates)
                 display_map();
             case 'q' % Exit
                 close(hfig);
+                points_of_interest = state.points_of_interest;
                 break;
             case 's' % Save classification
                 ds.save_class(output_name);
