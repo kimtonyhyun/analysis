@@ -1,4 +1,4 @@
-function [resp, movie_clim] = view_cell_interactively(ds, cell_idx, movie, fps, movie_clim)
+function [resp, persistent_state] = view_cell_interactively(ds, cell_idx, movie, fps, persistent_state)
 % Visually inspect the active portions of a trace side-by-side with
 %   the provided miniscope movie.
 
@@ -19,6 +19,7 @@ time_window = 100/fps; % Width of running window
 % Generate the outline of the filter
 %------------------------------------------------------------
 subplot(3,3,[4 5 7 8]);
+movie_clim = persistent_state.movie_clim;
 h = imagesc(rescale_filter_to_clim(filter, movie_clim), movie_clim);
 colormap gray;
 axis image;
@@ -58,7 +59,7 @@ for n = 1:num_other_cells
     end
     other_cell_handles(n) = plot(boundary(:,1), boundary(:,2), color);
 end
-show_map(false); % Turn off the boundaries of other cells
+show_map(persistent_state.show_map);
 
 % Plot boundaries and indices of the nearest neighbors of the
 % current cell
@@ -77,7 +78,7 @@ for n = 1:num_neighbors_to_show
                                  'HorizontalAlignment', 'center',...
                                  'Color', color);
 end
-show_neighbors(false);
+show_neighbors(persistent_state.show_neighbors);
 
 % Indicate the center of mass of the filter
 COM = ds.cells(cell_idx).com;
@@ -92,7 +93,11 @@ ylim(COM(2)+zoom_half_width*[-1 1]);
 
 % Compute the active portions of the trace
 %------------------------------------------------------------
-trace = trace_fixed; % Start with baseline-corrected trace
+if persistent_state.baseline_removed
+    trace = trace_fixed;
+else
+    trace = trace_orig;
+end
 
 mad_scale = 10;
 mad = compute_mad(trace);
@@ -119,18 +124,15 @@ prompt = 'Cell viewer >> ';
 resp = lower(strtrim(input(prompt, 's')));
 val = str2double(resp);
 
-% State of interaction loop
-state.last_val = [];
-state.zoomed = true;
-state.show_map = false;
-state.show_neighbors = false;
-state.baseline_removed = true;
+% State of interaction loop (will not carry over to other cells)
+non_persistent_state.last_val = [];
+non_persistent_state.zoomed = true;
 
 while (1)
     if (~isnan(val)) % Is a number
         if ((1 <= val) && (val <= num_active_periods))
             display_active_period(val);
-            state.last_val = val;
+            non_persistent_state.last_val = val;
         else
             fprintf('  Sorry, %d is not a valid period index for this trace\n', val);
         end
@@ -138,9 +140,6 @@ while (1)
         switch (resp)
             case {'', 'q'} % "quit"
                 break;
-                
-%             case 'a' % "all"
-%                 display_active_period(1:num_active_periods);
                 
             case 't' % "threshold"
                 fprintf('  Please select a new threshold on the global trace\n');
@@ -160,12 +159,13 @@ while (1)
                 setup_traces();
                 
             case 'b' % Fix "baseline"
-                if (state.baseline_removed)
-                    trace = trace_orig;
-                    fprintf('  Showing original trace without baseline correction\n');
-                else
+                persistent_state.baseline_removed = ~persistent_state.baseline_removed; % Toggle
+                if (persistent_state.baseline_removed)
                     trace = trace_fixed;
                     fprintf('  Showing trace with baseline correction\n');
+                else
+                    trace = trace_orig;
+                    fprintf('  Showing original trace without baseline correction\n');
                 end
                 
                 thresh = mad_scale * compute_mad(trace);
@@ -173,23 +173,21 @@ while (1)
                     parse_active_frames(trace > thresh, active_frame_padding);
                 setup_traces();
                 
-                state.baseline_removed = ~state.baseline_removed; % Toggle
-                
             case 'r' % "replay"
-                if ~isempty(state.last_val)
-                    display_active_period(state.last_val);
+                if ~isempty(non_persistent_state.last_val)
+                    display_active_period(non_persistent_state.last_val);
                 end
                             
             case 'z' % "zoom"
                 subplot(3,3,[4 5 7 8]); % Focus on the movie subplot
-                if (state.zoomed) % Return to original view
+                if (non_persistent_state.zoomed) % Return to original view
                     xlim([1 width]);
                     ylim([1 height]);
-                    state.zoomed = false;
+                    non_persistent_state.zoomed = false;
                 else
                     xlim(COM(1)+zoom_half_width*[-1 1]);
                     ylim(COM(2)+zoom_half_width*[-1 1]);
-                    state.zoomed = true;
+                    non_persistent_state.zoomed = true;
                 end
                     
             case {'h', 'l'} % "higher/lower contrast"
@@ -205,14 +203,15 @@ while (1)
                         movie_clim(1), movie_clim(2));
                 end
                 set(gca, 'CLim', movie_clim);
+                persistent_state.movie_clim = movie_clim;
                 
             case 'm' % Show "map" (i.e. all other cells)
-                state.show_map = ~state.show_map;
-                show_map(state.show_map);
+                persistent_state.show_map = ~persistent_state.show_map;
+                show_map(persistent_state.show_map);
 
             case 'n' % Show "neighbors"
-                state.show_neighbors = ~state.show_neighbors;
-                show_neighbors(state.show_neighbors);
+                persistent_state.show_neighbors = ~persistent_state.show_neighbors;
+                show_neighbors(persistent_state.show_neighbors);
                 
             otherwise
                 fprintf('  Sorry, could not parse "%s"\n', resp);

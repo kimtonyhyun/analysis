@@ -38,6 +38,12 @@ hfig = figure;
 cell_idx = 1;
 prev_cell_idx = 1;
 
+% Default parameters for "view_cell_interactively"
+state.movie_clim = movie_clim;
+state.show_map = false;
+state.show_neighbors = false;
+state.baseline_removed = true;
+
 while (cell_idx <= num_candidates)
     if show_raster
         display_candidate_rasters(cell_idx);
@@ -73,8 +79,8 @@ while (cell_idx <= num_candidates)
             % Classication options
             %------------------------------------------------------------
             case 'c' % Cell
-                [~, movie_clim] = view_cell_interactively(ds, cell_idx,...
-                                    M, fps, movie_clim);
+                [~, state] = view_cell_interactively(ds, cell_idx,...
+                                    M, fps, state);
                 resp2 = input(sprintf('  Confirm classification ("%s") >> ', resp), 's');
                 resp2 = lower(strtrim(resp2));
                 if (strcmp(resp, resp2)) % Confirmed
