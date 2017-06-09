@@ -43,6 +43,7 @@ state.movie_clim = movie_clim;
 state.show_map = false;
 state.show_neighbors = false;
 state.baseline_removed = true;
+state.threshold_scale = 0.25;
 
 while (cell_idx <= num_candidates)
     if show_raster
@@ -79,8 +80,7 @@ while (cell_idx <= num_candidates)
             % Classication options
             %------------------------------------------------------------
             case 'c' % Cell
-                [~, state] = view_cell_interactively(ds, cell_idx,...
-                                    M, fps, state);
+                [~, state] = view_cell_interactively(ds, cell_idx, M, fps, state);
                 resp2 = input(sprintf('  Confirm classification ("%s") >> ', resp), 's');
                 resp2 = lower(strtrim(resp2));
                 if (strcmp(resp, resp2)) % Confirmed

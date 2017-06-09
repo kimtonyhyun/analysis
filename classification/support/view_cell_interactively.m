@@ -21,6 +21,7 @@ time_window = 100/fps; % Width of running window
 subplot(3,3,[4 5 7 8]);
 movie_clim = persistent_state.movie_clim;
 h = imagesc(rescale_filter_to_clim(filter, movie_clim), movie_clim);
+set(h, 'ButtonDownFcn', @add_point_of_interest);
 colormap gray;
 axis image;
 xlabel('x [px]');
@@ -76,7 +77,8 @@ for n = 1:num_neighbors_to_show
     neighbor_handles(n,1) = plot(boundary(:,1), boundary(:,2), color);
     neighbor_handles(n,2) = text(com(1), com(2), num2str(neighbor_idx),...
                                  'HorizontalAlignment', 'center',...
-                                 'Color', color);
+                                 'Color', 'w',...
+                                 'FontWeight', 'bold');
 end
 show_neighbors(persistent_state.show_neighbors);
 
@@ -99,22 +101,12 @@ else
     trace = trace_orig;
 end
 
-mad_scale = 10;
-mad = compute_mad(trace);
-
-% Adjust the threshold until we get at least one active period (up to a
-% limit). Purely for convenience.
-for i = 1:10
-    thresh = mad_scale * mad;
-    [active_periods, num_active_periods] =...
-        parse_active_frames(trace > thresh, active_frame_padding);
-    if (num_active_periods > 0)
-        break;
-    else
-        mad_scale = 0.8*mad_scale;
-    end
-end
-
+trace_max = max(trace);
+trace_min = min(trace);
+thresh_scale = persistent_state.threshold_scale;
+thresh = thresh_scale * (trace_max - trace_min) + trace_min;
+[active_periods, num_active_periods] = ...
+    parse_active_frames(trace > thresh, active_frame_padding);
 setup_traces();
 
 % Interaction loop:
@@ -151,12 +143,19 @@ while (1)
                         fprintf('  Error! New threshold must be defined on the GLOBAL trace\n');
                     end
                 end
-                fprintf('  New threshold value of %.3f selected!\n', thresh);
+                thresh_scale = (thresh - trace_min) / (trace_max - trace_min);
+                fprintf('  New threshold value of %.3f selected (%.1f%% of max)!\n',...
+                    thresh, thresh_scale*100);
 
                 % Recompute active periods and redraw
                 [active_periods, num_active_periods] =...
                     parse_active_frames(trace > thresh, active_frame_padding);
                 setup_traces();
+                
+                % Persist the threshold
+                if (0 < thresh_scale) && (thresh_scale < 1)
+                    persistent_state.threshold_scale = thresh_scale;
+                end
                 
             case 'b' % Fix "baseline"
                 persistent_state.baseline_removed = ~persistent_state.baseline_removed; % Toggle
@@ -320,6 +319,9 @@ end
         end
     end
 
+    function add_point_of_interest(~, e)
+        fprintf('Plot clicked!\n');
+    end
 end % main function
 
 function [active_frames, num_active] = parse_active_frames(binary_trace, half_width)
