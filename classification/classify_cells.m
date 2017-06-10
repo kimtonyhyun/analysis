@@ -5,12 +5,15 @@ show_raster = (ds.num_trials > 1);
 fps = 10;
 
 % Default parameters for "view_cell_interactively"
-state.movie_clim = [];
 state.show_map = true;
 state.show_neighbors = false;
 state.baseline_removed = true;
 state.threshold_scale = 0.25;
 state.points_of_interest = [];
+
+% Will be set below
+state.movie_clim = [];
+state.fig_handle = [];
 
 for i = 1:length(varargin)
     vararg = varargin{i};
@@ -44,7 +47,7 @@ assert(size(M,3) == ds.full_num_frames,...
 timestamp = datestr(now, 'yymmdd-HHMMSS');
 output_name = sprintf('class_%s.txt', timestamp);
 
-hfig = figure;
+state.fig_handle = figure;
 
 cell_idx = 1;
 prev_cell_idx = 1;
@@ -107,7 +110,7 @@ while (cell_idx <= num_candidates)
             case 'm' % View cell map
                 display_map();
             case 'q' % Exit
-                close(hfig);
+                close(state.fig_handle);
                 
                 break;
             case 's' % Save classification

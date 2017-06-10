@@ -18,10 +18,11 @@ time_window = 100/fps; % Width of running window
 
 % Set up GUI
 %------------------------------------------------------------
+set(state.fig_handle, 'WindowButtonUpFcn', @end_drag);
 global_trace = subplot(3,3,[1 2 3]);
 running_trace = subplot(3,3,[6 9]);
+movie_subplot = subplot(3,3,[4 5 7 8]);
 
-subplot(3,3,[4 5 7 8]);
 movie_clim = state.movie_clim;
 h = imagesc(rescale_filter_to_clim(filter, movie_clim), movie_clim);
 set(h, 'ButtonDownFcn', @add_point_of_interest);
@@ -106,7 +107,7 @@ zoom_half_width = min([width, height])/10;
 xlim(COM(1)+zoom_half_width*[-1 1]);
 ylim(COM(2)+zoom_half_width*[-1 1]);
 
-% Compute the active portions of the trace
+% Compute the active portions of the trace and display
 %------------------------------------------------------------
 if state.baseline_removed
     trace = trace_fixed;
@@ -154,7 +155,7 @@ while (1)
                         fprintf('  Error! New threshold must be defined on the GLOBAL trace\n');
                     end
                 end
-                thresh_scale = (thresh - trace_min) / (trace_max - trace_min);
+                thresh_scale = (thresh - min(trace)) / (max(trace) - min(trace));
                 fprintf('  New threshold value of %.3f selected (%.1f%% of max)!\n',...
                     thresh, thresh_scale*100);
 
@@ -189,7 +190,7 @@ while (1)
                 end
                             
             case 'z' % "zoom"
-                subplot(3,3,[4 5 7 8]); % Focus on the movie subplot
+                subplot(movie_subplot); % Focus on the movie subplot
                 if (temp_state.zoomed) % Return to original view
                     xlim([1 width]);
                     ylim([1 height]);
@@ -201,7 +202,7 @@ while (1)
                 end
                     
             case {'h', 'l'} % "higher/lower contrast"
-                subplot(3,3,[4 5 7 8]); % Focus on the movie subplot
+                subplot(movie_subplot); % Focus on the movie subplot
                 c_range = diff(movie_clim);
                 if (strcmp(resp, 'h'))
                     movie_clim = movie_clim + c_range*[0.1 -0.1];
@@ -261,7 +262,7 @@ end
         end
         xlim(x_range);
         ylim(y_range);
-        t_g = plot(time(1)*[1 1], y_range, 'k', 'HitTest', 'off'); % Time indicator
+        t_g = plot(time(1)*[1 1], y_range, 'k', 'ButtonDownFcn', @start_drag); % Time indicator
         xlabel('Time [s]');
         ylabel('Signal [a.u.]');
         title(sprintf('Source %d of %d', cell_idx, ds.num_cells));
@@ -293,23 +294,12 @@ end
         set(running_trace, 'ButtonDownFcn', @go_to_selected_frame);
     end % setup_traces
     
-    function display_active_period(selected_indices)
-        global t_g t_r dot;
-        
+    function display_active_period(selected_indices)        
         for selected_idx = selected_indices
             frames = active_periods(selected_idx,1):...
                      active_periods(selected_idx,2);
             for k = frames
-                A = movie(:,:,frames_to_movie(k));
-                set(h, 'CData', A);
-
-                % Update time indicators and dot
-                set(t_g, 'XData', time(k)*[1 1]);
-                set(t_r, 'XData', time(k)*[1 1]);
-                set(dot, 'XData', time(k), 'YData', trace(k));
-
-                % Update running trace
-                set(running_trace, 'XLim', time(k) + time_window/2*[-1 1]);
+                render_frame(k);
                 drawnow;
             end
         end
@@ -342,7 +332,7 @@ end
         coord = round(e.IntersectionPoint([1 2]));
         
         % Add new point of interest to plot
-        subplot(3,3,[4 5 7 8]);
+        subplot(movie_subplot);
         hold on;
         plot(coord(1), coord(2), 'r*');
         hold off;
@@ -351,18 +341,35 @@ end
     end
 
     function go_to_selected_frame(~, e)
-        global t_g t_r dot;
-        
         t = e.IntersectionPoint(1);
-        k = round(fps * t+1);
+        k = round(fps*t+1);
 %         k = max(1,k); k = min(length(frames_to_movie), k); % Clamp values
-        
+        render_frame(k);
+    end
+
+    function start_drag(~,~)
+        set(state.fig_handle, 'WindowButtonMotionFcn', @update_frame);
+    end
+
+    function end_drag(~,~)
+        set(state.fig_handle, 'WindowButtonMotionFcn', '');
+    end
+
+    function update_frame(~,~)
+        cp = get(global_trace, 'CurrentPoint');
+        t = cp(1);
+        k = round(fps*t+1);
+        render_frame(k);
+    end
+
+    function render_frame(k)
+        global t_g t_r dot;
         A = movie(:,:,frames_to_movie(k));
         set(h, 'CData', A);
         set(t_g, 'XData', time(k)*[1 1]);
         set(t_r, 'XData', time(k)*[1 1]);
         set(dot, 'XData', time(k), 'YData', trace(k));
-        set(running_trace, 'XLim', time(k) + time_window/2*[-1 1]);        
+        set(running_trace, 'XLim', time(k) + time_window/2*[-1 1]);      
     end
 end % main function
 
