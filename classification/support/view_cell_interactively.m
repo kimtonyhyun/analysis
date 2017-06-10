@@ -13,7 +13,7 @@ filter_threshold = 0.3; % For generating the filter outline
 num_neighbors_to_show = 10;
 
 % Display parameters
-active_frame_padding = 5*fps; % Used by 'parse_active_frames'
+active_frame_padding = round(5*fps); % Used by 'parse_active_frames'
 time_window = 100/fps; % Width of running window
 
 % Set up GUI
