@@ -16,8 +16,11 @@ num_neighbors_to_show = 10;
 active_frame_padding = 5*fps; % Used by 'parse_active_frames'
 time_window = 100/fps; % Width of running window
 
-% Generate the outline of the filter
+% Set up GUI
 %------------------------------------------------------------
+global_trace = subplot(3,3,[1 2 3]);
+running_trace = subplot(3,3,[6 9]);
+
 subplot(3,3,[4 5 7 8]);
 movie_clim = state.movie_clim;
 h = imagesc(rescale_filter_to_clim(filter, movie_clim), movie_clim);
@@ -27,6 +30,8 @@ axis image;
 xlabel('x [px]');
 ylabel('y [px]');
 hold on;
+
+% Show boundary of current filter
 boundaries = compute_ic_boundary(filter, filter_threshold);
 for i = 1:length(boundaries)
     boundary = boundaries{i};
@@ -115,6 +120,7 @@ thresh_scale = state.threshold_scale;
 thresh = thresh_scale * (trace_max - trace_min) + trace_min;
 [active_periods, num_active_periods] = ...
     parse_active_frames(trace > thresh, active_frame_padding);
+
 setup_traces();
 
 % Interaction loop:
@@ -232,7 +238,7 @@ end
     % Display subroutines
     %------------------------------------------------------------
     function setup_traces()
-        global running_trace t_g t_r dot;
+        global t_g t_r dot;
         
         x_range = [time(1) time(end)];
         y_range = [min(trace(:)) max(trace(:))];
@@ -240,50 +246,58 @@ end
         y_range = y_range + 0.1*y_delta*[-1 1];
         
         % Prepare global trace
-        global_trace = subplot(3,3,[1 2 3]);
-        plot(time, trace, 'b');
+        subplot(global_trace)
+        plot(time, trace, 'b', 'HitTest', 'off');
         hold on;
-        plot(x_range, thresh*[1 1], 'r--'); % Display threshold
+        plot(x_range, thresh*[1 1], 'r--', 'HitTest', 'off');
         for period_idx = 1:num_active_periods
             active_period = active_periods(period_idx, :);
             active_frames = active_period(1):active_period(2);
-            plot(time(active_frames), trace(active_frames), 'r');
+            plot(time(active_frames), trace(active_frames), 'r',...
+                 'HitTest', 'off');
             text(double(time(active_frames(1))),... % 'text' fails on single
                  double(y_range(2)),...
                  num2str(period_idx),...
                  'Color', 'r',...
-                 'VerticalAlignment', 'top');
+                 'VerticalAlignment', 'top',...
+                 'HitTest', 'off');
         end
         xlim(x_range);
         ylim(y_range);
-        t_g = plot(time(1)*[1 1], y_range, 'k'); % Time indicator
+        t_g = plot(time(1)*[1 1], y_range, 'k', 'HitTest', 'off'); % Time indicator
         xlabel('Time [s]');
         ylabel('Signal [a.u.]');
         title(sprintf('Source %d of %d', cell_idx, ds.num_cells));
         hold off;
-
+        
         % Prepare running trace
-        running_trace = subplot(3,3,[6 9]);
-        plot(time, trace, 'b');
+        subplot(running_trace);
+        plot(time, trace, 'b', 'HitTest', 'off');
         hold on;
         for period_idx = 1:num_active_periods
             active_period = active_periods(period_idx, :);
             active_frames = active_period(1):active_period(2);
-            plot(time(active_frames), trace(active_frames), 'r');
+            plot(time(active_frames), trace(active_frames), 'r',...
+                 'HitTest', 'off');
         end
         xlim([0 time_window]);
         ylim(y_range);
-        t_r = plot(time(1)*[1 1], y_range, 'k'); % Time indicator
+        t_r = plot(time(1)*[1 1], y_range, 'k', 'HitTest', 'off'); % Time indicator
         dot = plot(time(1), trace(1), 'or',...
                     'MarkerFaceColor', 'r',...
-                    'MarkerSize', 12); % Dot
+                    'MarkerSize', 12,...
+                    'HitTest', 'off'); % Dot
         xlabel('Time [s]');
         ylabel('Signal [a.u.]');
         hold off;
+        
+        % Event handlers for trace windows
+        set(global_trace, 'ButtonDownFcn', @go_to_selected_frame);
+        set(running_trace, 'ButtonDownFcn', @go_to_selected_frame);
     end % setup_traces
     
     function display_active_period(selected_indices)
-        global running_trace t_g t_r dot;
+        global t_g t_r dot;
         
         for selected_idx = selected_indices
             frames = active_periods(selected_idx,1):...
@@ -337,6 +351,21 @@ end
         hold off;
         
         state.points_of_interest = [state.points_of_interest; coord];
+    end
+
+    function go_to_selected_frame(~, e)
+        global t_g t_r dot;
+        
+        t = e.IntersectionPoint(1);
+        k = round(fps * t+1);
+%         k = max(1,k); k = min(length(frames_to_movie), k); % Clamp values
+        
+        A = movie(:,:,frames_to_movie(k));
+        set(h, 'CData', A);
+        set(t_g, 'XData', time(k)*[1 1]);
+        set(t_r, 'XData', time(k)*[1 1]);
+        set(dot, 'XData', time(k), 'YData', trace(k));
+        set(running_trace, 'XLim', time(k) + time_window/2*[-1 1]);        
     end
 end % main function
 
