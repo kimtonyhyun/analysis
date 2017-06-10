@@ -365,6 +365,7 @@ end
 
     function render_frame(k)
         global t_g t_r dot;
+        k = max(1,k); k = min(length(frames_to_movie),k); % Clamp
         A = movie(:,:,frames_to_movie(k));
         set(h, 'CData', A);
         set(t_g, 'XData', time(k)*[1 1]);
