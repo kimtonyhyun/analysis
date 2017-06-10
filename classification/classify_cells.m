@@ -1,7 +1,7 @@
-function points_of_interest = classify_cells(ds, M, varargin)
+function poi = classify_cells(ds, M, varargin)
 % Perform manual classification of candidate filter/trace pairs
 
-show_raster = true;
+show_raster = (ds.num_trials > 1);
 fps = 10;
 
 % Default parameters for "view_cell_interactively"
@@ -41,7 +41,8 @@ assert(size(M,3) == ds.full_num_frames,...
 
 % Begin classification
 %------------------------------------------------------------
-output_name = sprintf('class_%s.txt', datestr(now, 'yymmdd-HHMMSS'));
+timestamp = datestr(now, 'yymmdd-HHMMSS');
+output_name = sprintf('class_%s.txt', timestamp);
 
 hfig = figure;
 
@@ -107,7 +108,7 @@ while (cell_idx <= num_candidates)
                 display_map();
             case 'q' % Exit
                 close(hfig);
-                points_of_interest = state.points_of_interest;
+                
                 break;
             case 's' % Save classification
                 ds.save_class(output_name);
@@ -130,6 +131,19 @@ end
 
 % Save at end!
 ds.save_class(output_name);
+poi = state.points_of_interest;
+if ~isempty(poi)
+    num_points = size(poi,1);
+    poi_savename = sprintf('poi_%s.mat', timestamp);
+    save(poi_savename, 'poi');
+    if (num_points == 1)
+        pt_str = 'point';
+    else
+        pt_str = 'points';
+    end
+    fprintf('  Saved %d %s of interest to "%s"\n',...
+        num_points, pt_str, poi_savename);
+end
 
     % Auxiliary functions
     %------------------------------------------------------------
