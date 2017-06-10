@@ -114,10 +114,7 @@ else
     trace = trace_orig;
 end
 
-trace_max = max(trace);
-trace_min = min(trace);
-thresh_scale = state.threshold_scale;
-thresh = thresh_scale * (trace_max - trace_min) + trace_min;
+thresh = compute_threshold(trace, state.threshold_scale);
 [active_periods, num_active_periods] = ...
     parse_active_frames(trace > thresh, active_frame_padding);
 
@@ -181,7 +178,7 @@ while (1)
                     fprintf('  Showing original trace without baseline correction\n');
                 end
                 
-                thresh = mad_scale * compute_mad(trace);
+                thresh = compute_threshold(trace, state.threshold_scale);
                 [active_periods, num_active_periods] = ...
                     parse_active_frames(trace > thresh, active_frame_padding);
                 setup_traces();
@@ -407,6 +404,12 @@ function [active_frames, num_active] = parse_active_frames(binary_trace, half_wi
 
     active_frames = reshape(active_frames, 2, length(active_frames)/2)';
     num_active = size(active_frames, 1);
+end
+
+function thresh = compute_threshold(tr, scale)
+    trace_max = max(tr);
+    trace_min = min(tr);
+    thresh = scale * (trace_max - trace_min) + trace_min;
 end
 
 function filter_out = rescale_filter_to_clim(filter, clim)
