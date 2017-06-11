@@ -30,7 +30,6 @@ for i = 1:length(varargin)
 end
 
 % Initial processing of movie
-max_proj = max(M,[],3);
 state.movie_clim = compute_movie_scale(M);
 fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
     datestr(now), state.movie_clim(1), state.movie_clim(2));
@@ -169,11 +168,16 @@ end
         ds.plot_trace(cell_idx);
         title(sprintf('Candidate %d of %d', cell_idx, num_candidates));
         
-        % Plot cell filter on top of max projection image
+        % Plot cell filter on top of correlation image. The correlations
+        % are initially compute against the COM of the filter under review
+        COM = ds.cells(cell_idx).com;
+        C = compute_corr_image(M,COM);
         subplot(3,1,[2 3]);
-        imagesc(max_proj);
+        h_corr = imagesc(C,[0 1]);
+        set(h_corr, 'ButtonDownFcn', @redraw_corr_image);
         axis image;
         colormap gray;
+        colorbar;
         hold on;
         
         filter_threshold = 0.3;
@@ -181,11 +185,9 @@ end
         boundaries = compute_ic_boundary(filter, filter_threshold);
         for j = 1:length(boundaries)
             boundary = boundaries{j};
-            plot(boundary(:,1), boundary(:,2), 'c', 'LineWidth', 2);
+            plot(boundary(:,1), boundary(:,2), 'c', 'LineWidth', 2, 'HitTest', 'off');
         end
-        
-        COM = ds.cells(cell_idx).com;
-        plot(COM(1), COM(2), 'b.');
+        plot(COM(1), COM(2), 'b.', 'HitTest', 'off');
         
         % Draw nearest neighbors
         num_neighbors_to_draw = min(20, ds.num_cells-1);
@@ -201,8 +203,9 @@ end
                     color = 'r';
                 end
             end
-            plot(oc.boundary(:,1), oc.boundary(:,2), color);
+            plot(oc.boundary(:,1), oc.boundary(:,2), color, 'HitTest', 'off');
             text(oc.com(1), oc.com(2), num2str(oc_idx),...
+                 'HitTest', 'off',...
                  'Clipping', 'on',...
                  'HorizontalAlignment', 'center',...
                  'Color', 'w',...
@@ -216,6 +219,11 @@ end
         y_range = COM(2)+zoom_half_width*[-1 1];
         xlim(x_range);
         ylim(y_range);
+        
+        function redraw_corr_image(~,e)
+            coord = round(e.IntersectionPoint([1 2]));
+            set(h_corr, 'CData', compute_corr_image(M, coord));
+        end
     end
 
     function display_map()
