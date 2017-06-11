@@ -36,7 +36,8 @@ hold on;
 boundaries = compute_ic_boundary(filter, filter_threshold);
 for i = 1:length(boundaries)
     boundary = boundaries{i};
-    plot(boundary(:,1), boundary(:,2), 'c', 'LineWidth', 2);
+    plot(boundary(:,1), boundary(:,2), 'c', 'LineWidth', 2,...
+         'HitTest', 'off');
 end
 
 % Plot boundaries of other cells, and retrieve their handles so that
@@ -64,7 +65,8 @@ for n = 1:num_other_cells
             color = 'r';
         end
     end
-    other_cell_handles(n) = plot(boundary(:,1), boundary(:,2), color);
+    other_cell_handles(n) = plot(boundary(:,1), boundary(:,2), color,...
+                                 'HitTest', 'off');
 end
 show_map(state.show_map);
 
@@ -80,8 +82,10 @@ for n = 1:num_neighbors_to_show
     com = ds.cells(neighbor_idx).com;
     
     color = colors(mod(n,length(colors))+1);
-    neighbor_handles(n,1) = plot(boundary(:,1), boundary(:,2), color);
+    neighbor_handles(n,1) = plot(boundary(:,1), boundary(:,2), color,...
+                                 'HitTest', 'off');
     neighbor_handles(n,2) = text(com(1), com(2), num2str(neighbor_idx),...
+                                 'HitTest', 'off',...
                                  'Clipping', 'on',...
                                  'HorizontalAlignment', 'center',...
                                  'Color', 'w',...
@@ -295,12 +299,25 @@ end
         set(running_trace, 'ButtonDownFcn', @go_to_selected_frame);
     end % setup_traces
     
-    function display_active_period(selected_indices)        
+    function display_active_period(selected_indices)
+        global t_g t_r dot break_active_period;
+        
+        % The following flag allows for premature termination of active
+        % period display. Flag is set by 'render_frame'
+        break_active_period = false;
         for selected_idx = selected_indices
             frames = active_periods(selected_idx,1):...
                      active_periods(selected_idx,2);
             for k = frames
-                render_frame(k);
+                if break_active_period
+                    break; %#ok<UNRCH>
+                end
+                A = movie(:,:,frames_to_movie(k));
+                set(h, 'CData', A);
+                set(t_g, 'XData', time(k)*[1 1]);
+                set(t_r, 'XData', time(k)*[1 1]);
+                set(dot, 'XData', time(k), 'YData', trace(k));
+                set(running_trace, 'XLim', time(k) + time_window/2*[-1 1]);  
                 drawnow;
             end
         end
@@ -344,19 +361,18 @@ end
     function go_to_selected_frame(~, e)
         t = e.IntersectionPoint(1);
         k = round(fps*t+1);
-%         k = max(1,k); k = min(length(frames_to_movie), k); % Clamp values
         render_frame(k);
     end
 
     function start_drag(~,~)
-        set(state.fig_handle, 'WindowButtonMotionFcn', @update_frame);
+        set(state.fig_handle, 'WindowButtonMotionFcn', @drag_frame);
     end
 
     function end_drag(~,~)
         set(state.fig_handle, 'WindowButtonMotionFcn', '');
     end
 
-    function update_frame(~,~)
+    function drag_frame(~,~)
         cp = get(global_trace, 'CurrentPoint');
         t = cp(1);
         k = round(fps*t+1);
@@ -364,7 +380,8 @@ end
     end
 
     function render_frame(k)
-        global t_g t_r dot;
+        global t_g t_r dot break_active_period;
+        break_active_period = true;
         k = max(1,k); k = min(length(frames_to_movie),k); % Clamp
         A = movie(:,:,frames_to_movie(k));
         set(h, 'CData', A);
