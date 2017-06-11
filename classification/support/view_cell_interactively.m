@@ -220,6 +220,9 @@ while (1)
                 end
                 set(gca, 'CLim', movie_clim);
                 state.movie_clim = movie_clim;
+            
+            case 'f' % Show "filter"
+                set(h, 'CData', rescale_filter_to_clim(filter, state.movie_clim));
                 
             case 'm' % Show "map" (i.e. all other cells)
                 state.show_map = ~state.show_map;

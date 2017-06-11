@@ -173,10 +173,10 @@ end
         COM = ds.cells(cell_idx).com;
         C = compute_corr_image(M,COM);
         subplot(3,1,[2 3]);
-        h_corr = imagesc(C,[0 1]);
+        h_corr = imagesc(C,[0 0.7]);
         set(h_corr, 'ButtonDownFcn', @redraw_corr_image);
         axis image;
-        colormap gray;
+        colormap parula;
         colorbar;
         hold on;
         
