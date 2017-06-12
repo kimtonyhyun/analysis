@@ -5,7 +5,7 @@ function view_movie(M, varargin)
 movie_clim = [];
 use_mask = 0;
 use_outline = 0;
-num_repeats = 1;
+num_repeats = inf;
 rescale_each_frame = false;
 for k = 1:length(varargin)
     vararg = varargin{k};
