@@ -30,6 +30,7 @@ for i = 1:length(varargin)
 end
 
 % Initial processing of movie
+max_proj = max(M,[],3);
 state.movie_clim = compute_movie_scale(M);
 fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
     datestr(now), state.movie_clim(1), state.movie_clim(2));
@@ -171,13 +172,16 @@ end
         % Plot cell filter on top of correlation image. The correlations
         % are initially compute against the COM of the filter under review
         COM = ds.cells(cell_idx).com;
-        C = compute_corr_image(M,COM);
+
         subplot(3,1,[2 3]);
-        h_corr = imagesc(C,[0 0.7]);
-        set(h_corr, 'ButtonDownFcn', @redraw_corr_image);
+%         %         C = compute_corr_image(M,COM);
+%         h_corr = imagesc(C,[0 0.7]);
+%         set(h_corr, 'ButtonDownFcn', @redraw_corr_image);
+%         colormap parula;
+%         colorbar;
+        imagesc(max_proj);
+        colormap gray;
         axis image;
-        colormap parula;
-        colorbar;
         hold on;
         
         filter_threshold = 0.3;
