@@ -1,6 +1,7 @@
 function M = load_scanimage_tif(source)
 
 M = ScanImageTiffReader(source).data();
+M = permute(M,[2 1 3]); % Plot fast axis on X
 
 % DEPRECATED IN FAVOR OF OFFICIAL SCANIMAGE TIFF LOADER
 % % Read in ScanImage TIF files in a way that does not generate verbose
