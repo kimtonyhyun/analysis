@@ -1,31 +1,36 @@
-function resolution_list = resolve_recs(md)
+function res_list = resolve_recs(md)
 
 h = figure;
 
-% For matched cell index k:
-%   resolution_list(k,1): Selected rec index
-%   resolution_list(k,2): Cell index within that rec
-resolution_list = zeros(md.num_cells, 2);
+% For matched cell index k, "resolution_list" indicates:
+%   res_list(k,1): Selected rec index
+%   res_list(k,2): Cell index within that rec
+res_list = zeros(md.num_cells, 2);
 
-common_cell_idx = 1;
+cell_idx = 1;
 while (1)
-    draw_cell(common_cell_idx);
+    draw_cell(cell_idx);
     
     % Ask user for command
-    prompt = sprintf('Resolve recs (ID %d of %d) >> ',...
-        common_cell_idx, md.num_cells);
+    if (res_list(cell_idx) ~= 0)
+        assign_str = sprintf('Rec %d', res_list(cell_idx,1));
+    else
+        assign_str = 'unassigned';
+    end
+    prompt = sprintf('Resolve recs (ID %d of %d: %s) >> ',...
+        cell_idx, md.num_cells, assign_str);
     resp = strtrim(input(prompt, 's'));
     
     val = str2double(resp);
     if (~isnan(val)) % Is a number
         if ((1 <= val) && (val <= md.num_days)) % Check valid rec index
-            if (md.matched_indices(common_cell_idx, val) ~= 0)
-                resolution_list(common_cell_idx,1) = val;
-                resolution_list(common_cell_idx,2) = ...
-                    md.matched_indices(common_cell_idx, val);
+            if (md.matched_indices(cell_idx, val) ~= 0)
+                res_list(cell_idx,1) = val;
+                res_list(cell_idx,2) = ...
+                    md.matched_indices(cell_idx, val);
 
-                if (common_cell_idx < md.num_cells)
-                    common_cell_idx = common_cell_idx + 1;
+                if (cell_idx < md.num_cells)
+                    cell_idx = cell_idx + 1;
                 else
                     fprintf('  Already at final md cell!\n');
                 end
@@ -43,18 +48,28 @@ while (1)
         
         switch resp(1)
             case 'f'
-                common_cell_idx = 1;
+                cell_idx = 1;
 
+            case 'c' % Jump to a cell
+                val = str2double(resp(2:end));
+                if ~isnan(val)
+                    if ((1 <= val) && (val <= md.num_cells))
+                        cell_idx = val;
+                    else
+                        fprintf('  Sorry, %d is not a valid cell on Day %d\n', val, md.sort_day);
+                    end
+                end
+                
             case 'n'
-                if (common_cell_idx < md.num_cells)
-                    common_cell_idx = common_cell_idx + 1;
+                if (cell_idx < md.num_cells)
+                    cell_idx = cell_idx + 1;
                 else
                     fprintf('  Already at final md cell!\n');
                 end
                 
             case 'p' % Previous cell
-                if (common_cell_idx > 1)
-                    common_cell_idx = common_cell_idx - 1;
+                if (cell_idx > 1)
+                    cell_idx = cell_idx - 1;
                 else
                     fprintf('  Already at first md cell!\n');
                 end
