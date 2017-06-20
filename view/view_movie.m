@@ -5,7 +5,8 @@ function view_movie(M, varargin)
 movie_clim = [];
 use_mask = 0;
 use_outline = 0;
-num_repeats = 1;
+poi = [];
+num_repeats = inf;
 rescale_each_frame = false;
 for k = 1:length(varargin)
     vararg = varargin{k};
@@ -18,7 +19,10 @@ for k = 1:length(varargin)
             case 'mask'
                 % Pixels with logical 1 in the provided mask will be displayed
                 use_mask = true;
-                mask = ~varargin{k+1};
+                ds = varargin{k+1};
+                mask = ds.get_mask;
+            case 'poi'
+                poi = varargin{k+1};
             case 'clim'
                 movie_clim = varargin{k+1};
             case 'boundary'
@@ -57,6 +61,12 @@ if use_outline
         boundary = ds.cells(cell_idx).boundary;
         plot(boundary(:,1), boundary(:,2), 'g');
     end
+    hold off;
+end
+
+if ~isempty(poi)
+    hold on;
+    plot(poi(:,1), poi(:,2), 'm*');
     hold off;
 end
 

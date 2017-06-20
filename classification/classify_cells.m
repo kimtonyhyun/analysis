@@ -1,8 +1,19 @@
-function classify_cells(ds, M, varargin)
+function poi = classify_cells(ds, M, varargin)
 % Perform manual classification of candidate filter/trace pairs
 
-show_raster = true;
+show_raster = (ds.num_trials > 1);
 fps = 10;
+
+% Default parameters for "view_cell_interactively"
+state.show_map = true;
+state.show_neighbors = false;
+state.baseline_removed = true;
+state.threshold_scale = 0.25;
+state.points_of_interest = [];
+
+% Will be set below
+state.movie_clim = [];
+state.fig_handle = [];
 
 for i = 1:length(varargin)
     vararg = varargin{i};
@@ -12,15 +23,16 @@ for i = 1:length(varargin)
                 fps = varargin{i+1};
             case 'noraster' % Use with non-PlusMaze datasets
                 show_raster = false;
+            case 'poi' % Existing points of interest
+                state.points_of_interest = varargin{i+1};
         end
     end
 end
 
 % Initial processing of movie
-max_proj = max(M,[],3);
-movie_clim = compute_movie_scale(M);
+state.movie_clim = compute_movie_scale(M);
 fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
-    datestr(now), movie_clim(1), movie_clim(2));
+    datestr(now), state.movie_clim(1), state.movie_clim(2));
 fprintf('  %s: FPS is %.1f...\n', datestr(now), fps);
 
 % Load filter/trace pairs to be classified
@@ -31,9 +43,10 @@ assert(size(M,3) == ds.full_num_frames,...
 
 % Begin classification
 %------------------------------------------------------------
-output_name = sprintf('class_%s.txt', datestr(now, 'yymmdd-HHMMSS'));
+timestamp = datestr(now, 'yymmdd-HHMMSS');
+output_name = sprintf('class_%s.txt', timestamp);
 
-hfig = figure;
+state.fig_handle = figure;
 
 cell_idx = 1;
 prev_cell_idx = 1;
@@ -73,8 +86,7 @@ while (cell_idx <= num_candidates)
             % Classication options
             %------------------------------------------------------------
             case 'c' % Cell
-                [~, movie_clim] = view_cell_interactively(ds, cell_idx,...
-                                    M, fps, movie_clim);
+                [~, state] = view_cell_interactively(ds, cell_idx, M, fps, state);
                 resp2 = input(sprintf('  Confirm classification ("%s") >> ', resp), 's');
                 resp2 = lower(strtrim(resp2));
                 if (strcmp(resp, resp2)) % Confirmed
@@ -97,7 +109,8 @@ while (cell_idx <= num_candidates)
             case 'm' % View cell map
                 display_map();
             case 'q' % Exit
-                close(hfig);
+                close(state.fig_handle);
+                
                 break;
             case 's' % Save classification
                 ds.save_class(output_name);
@@ -120,6 +133,19 @@ end
 
 % Save at end!
 ds.save_class(output_name);
+poi = state.points_of_interest;
+if ~isempty(poi)
+    num_points = size(poi,1);
+    poi_savename = sprintf('poi_%s.mat', timestamp);
+    save(poi_savename, 'poi');
+    if (num_points == 1)
+        pt_str = 'point';
+    else
+        pt_str = 'points';
+    end
+    fprintf('  Saved %d %s of interest to "%s"\n',...
+        num_points, pt_str, poi_savename);
+end
 
     % Auxiliary functions
     %------------------------------------------------------------
@@ -142,11 +168,16 @@ ds.save_class(output_name);
         ds.plot_trace(cell_idx);
         title(sprintf('Candidate %d of %d', cell_idx, num_candidates));
         
-        % Plot cell filter on top of max projection image
+        % Plot cell filter on top of correlation image. The correlations
+        % are initially compute against the COM of the filter under review
+        COM = ds.cells(cell_idx).com;
+        C = compute_corr_image(M,COM);
         subplot(3,1,[2 3]);
-        imagesc(max_proj);
+        h_corr = imagesc(C,[0 0.7]);
+        set(h_corr, 'ButtonDownFcn', @redraw_corr_image);
         axis image;
-        colormap gray;
+        colormap parula;
+        colorbar;
         hold on;
         
         filter_threshold = 0.3;
@@ -154,11 +185,9 @@ ds.save_class(output_name);
         boundaries = compute_ic_boundary(filter, filter_threshold);
         for j = 1:length(boundaries)
             boundary = boundaries{j};
-            plot(boundary(:,1), boundary(:,2), 'c', 'LineWidth', 2);
+            plot(boundary(:,1), boundary(:,2), 'c', 'LineWidth', 2, 'HitTest', 'off');
         end
-        
-        COM = ds.cells(cell_idx).com;
-        plot(COM(1), COM(2), 'b.');
+        plot(COM(1), COM(2), 'b.', 'HitTest', 'off');
         
         % Draw nearest neighbors
         num_neighbors_to_draw = min(20, ds.num_cells-1);
@@ -174,7 +203,13 @@ ds.save_class(output_name);
                     color = 'r';
                 end
             end
-            plot(oc.boundary(:,1), oc.boundary(:,2), color);
+            plot(oc.boundary(:,1), oc.boundary(:,2), color, 'HitTest', 'off');
+            text(oc.com(1), oc.com(2), num2str(oc_idx),...
+                 'HitTest', 'off',...
+                 'Clipping', 'on',...
+                 'HorizontalAlignment', 'center',...
+                 'Color', 'w',...
+                 'FontWeight', 'bold');
         end
         hold off;
         
@@ -184,6 +219,11 @@ ds.save_class(output_name);
         y_range = COM(2)+zoom_half_width*[-1 1];
         xlim(x_range);
         ylim(y_range);
+        
+        function redraw_corr_image(~,e)
+            coord = round(e.IntersectionPoint([1 2]));
+            set(h_corr, 'CData', compute_corr_image(M, coord));
+        end
     end
 
     function display_map()
