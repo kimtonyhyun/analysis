@@ -1,4 +1,19 @@
-function backapply_filters(ds, movie_src)
+function backapply_filters(ds, movie_src, varargin)
+
+% Default options
+method = 'least_squares';
+
+if ~isempty(varargin)
+    for k = 1:length(varargin)
+        if ischar(varargin{k})
+            vararg = lower(varargin{k});
+            switch vararg
+                case 'method'
+                    method = varargin{k+1};
+            end
+        end
+    end
+end
 
 movie_dataset = '/Data/Images';
 movie_size = get_dataset_info(movie_src, movie_dataset);
@@ -33,14 +48,27 @@ for i = 1:num_chunks
                          [height width chunk_count]);
                      
     movie_chunk = reshape(movie_chunk, height*width, chunk_count);
-    traces(:,frame_chunks(i,1):frame_chunks(i,2)) = ...
-        filters * movie_chunk;
+    
+    % Simple back-apply
+    switch (method)
+        case 'least_squares'
+            traces(:,frame_chunks(i,1):frame_chunks(i,2)) = ...
+                filters' \ movie_chunk;
+            
+        case 'dot_product'
+            traces(:,frame_chunks(i,1):frame_chunks(i,2)) = ...
+                filters * movie_chunk;
+            
+        otherwise
+            error('Method "%s" is not recognized!', method);
+    end
 end
 
 % Save results into standard Rec format
 info.type = 'backapplied_filters';
 info.num_pairs = num_cells;
 info.backapplied.movie_src = movie_src;
+info.backapplied.method = method;
 
 filters = reshape(filters, num_cells, height, width);
 filters = permute(filters, [2 3 1]); % [height x width x num_cells]
