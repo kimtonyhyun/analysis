@@ -11,7 +11,7 @@ function plot_boundaries_with_transform(ds, linespec, linewidth, filled_cells, t
                  'LineWidth', linewidth,...
                  'FaceAlpha', 0.4);
         elseif ds.is_cell(k)
-            plot(boundary(:,1), boundary(:,2), linespec, 'LineWidth', linewidth);
+            plot(boundary(:,1), boundary(:,2), linespec, 'LineWidth', linewidth, 'HitTest', 'off');
         end
         hold on;
     end

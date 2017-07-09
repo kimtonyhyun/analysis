@@ -31,6 +31,7 @@ function [match_1to2, match_2to1, affine_info] = run_alignment(ds1, ds2, varargi
 
 % Default alignment options
 %------------------------------------------------------------
+wait_for_prompt = 1;
 use_transform = 1;
 bijective_matching = 1;
 
@@ -45,7 +46,9 @@ for k = 1:length(varargin)
                     'notrans option requires cell image dimensions to be identical!');
                 use_transform = 0;
             case 'keepall' % Keep all matches
-                bijective_matching = 0;                
+                bijective_matching = 0;
+            case 'noprompt' % For programmatic use
+                wait_for_prompt = 0;
         end
     end
 end
@@ -65,7 +68,10 @@ else
     plot_boundaries_with_transform(ds2, 'r', 1, [], []);
     title('Dataset1 (blue) vs. Dataset2 (red)');
 end
-input('run_alignment: Press any key to continue with mask matching >> ');
+
+if wait_for_prompt
+    input('run_alignment: Press enter to continue with mask matching >> ');
+end
 
 [match_1to2, match_2to1] = match_masks(masks1, masks2, ds1, ds2, varargin{:});
 
