@@ -174,6 +174,8 @@ while (1)
                     state.threshold_scale = thresh_scale;
                 end
                 
+                temp_state.last_val = []; % Last displayed segment no longer valid
+                
             case 'b' % Fix "baseline"
                 state.baseline_removed = ~state.baseline_removed; % Toggle
                 if (state.baseline_removed)
@@ -188,6 +190,8 @@ while (1)
                 [active_periods, num_active_periods] = ...
                     parse_active_frames(trace > thresh, active_frame_padding);
                 setup_traces();
+                
+                temp_state.last_val = []; % Last displayed segment no longer valid
                 
             case 'r' % "replay"
                 if ~isempty(temp_state.last_val)

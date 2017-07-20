@@ -16,7 +16,19 @@ classdef MultiDay < handle
     end
     
     methods
-        function obj = MultiDay(ds_list, match_list)
+        function obj = MultiDay(ds_list, match_list, varargin)
+            % By default, MultiDay keeps only the cells that show up on
+            % ALL days (DaySummary)
+            keepall = false;
+            for k = 1:length(varargin)
+                if ischar(varargin{k})
+                    switch varargin{k}
+                        case 'keepall' % Keep cells if it shows up on at least one DaySummary
+                            keepall = true;
+                    end
+                end
+            end
+            
             % Unpack the provided list of DaySummary's into a full cell
             % TODO: Consider using sparse internal storage.
             %------------------------------------------------------------
@@ -69,7 +81,7 @@ classdef MultiDay < handle
             
             % Filter out rows of M with unmatched indices (i.e. zeros) and
             % store result
-            obj.matched_indices = obj.filter_matches(M);
+            obj.matched_indices = obj.filter_matches(M, keepall);
             obj.sort_matches_by_day(obj.valid_days(1));
             obj.num_cells = size(obj.matched_indices, 1);
             fprintf('%s: Found %d matching classified cells across all days\n',...
@@ -377,10 +389,15 @@ classdef MultiDay < handle
 
         end % compute_all_matches
         
-        function Mf = filter_matches(~, M)
+        function Mf = filter_matches(~, M, keepall)
             % Filter out rows of the match matrix M that has zeros
             % (indicating non-matched cells)
-            unmatched = any(M==0, 2);
+            if keepall
+                unmatched = all(M==0, 2);
+            else
+                unmatched = any(M==0, 2);
+            end
+
             Mf = M(~unmatched,:);
         end % filter_matches
         
