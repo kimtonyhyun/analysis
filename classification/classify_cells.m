@@ -7,8 +7,8 @@ fps = 10;
 % Default parameters for "view_cell_interactively"
 state.show_map = true;
 state.show_neighbors = false;
-state.baseline_removed = true;
-state.threshold_scale = 0.25;
+state.baseline_removed = false;
+state.threshold_scale = 0.5;
 state.points_of_interest = [];
 
 % Will be set below
