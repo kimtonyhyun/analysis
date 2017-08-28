@@ -139,7 +139,7 @@ end
 
         function color = get_color(day_idx)
             colors = {'b', 'r', [0 0.5 0]};
-            color = colors{mod(day_idx-1, md.num_days)+1};
+            color = colors{mod(day_idx-1, length(colors))+1};
         end 
         
     end % draw_cell
