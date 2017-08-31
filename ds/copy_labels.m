@@ -1,7 +1,8 @@
 function copy_labels(ds_source, ds_target, match)
-% Copy labels from source DaySummary to target DaySummary
+% Copy labels from source DaySummary to target DaySummary. If no external 
+% 'match' provided, copy_labels will compute the matching internally but
+% assuming no translation needed
 
-% If no external 'match' provided, compute the alignment ourselves
 if (nargin == 2)
     match = run_alignment(ds_source, ds_target, 'notrans', 'noprompt');
 end
