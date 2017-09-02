@@ -53,6 +53,17 @@ for k = 1:length(varargin)
     end
 end
 
+% If the DaySummary has no explicitly classified cells, assume the user 
+% wants to match all cells
+ds1_set_labels = all(cellfun(@isempty, {ds1.cells.label}));
+ds2_set_labels = all(cellfun(@isempty, {ds2.cells.label}));
+if ds1_set_labels
+    ds1.set_labels;
+end
+if ds2_set_labels
+    ds2.set_labels;
+end
+
 % Control point-based registration of two sets of ICs
 %------------------------------------------------------------
 if use_transform
@@ -84,3 +95,12 @@ end
 
 num_matches = sum(~cellfun(@isempty, match_1to2));
 fprintf('run_alignment: Found %d matches!\n', num_matches);
+
+% If 'run_alignment' internally set the DaySummary labels for matching,
+% then undo before exiting.
+if ds1_set_labels
+    ds1.reset_labels;
+end
+if ds2_set_labels
+    ds2.reset_labels;
+end
