@@ -10,7 +10,7 @@ time = 1/fps*((1:length(trace_orig))-1);
 
 % Some parameters
 filter_threshold = 0.3; % For generating the filter outline
-num_neighbors_to_show = 10;
+num_neighbors_to_show = min(10, ds.num_cells);
 
 % Display parameters
 active_frame_padding = round(5*fps); % Used by 'parse_active_frames'
