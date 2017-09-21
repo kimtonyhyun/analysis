@@ -501,6 +501,13 @@ classdef DaySummary < handle
             obj.apply_labels_to('not a cell', unlabeled_cells);
         end
         
+        function invert_labels(obj)
+            orig_cells = find(obj.is_cell);
+            orig_not_cells = setdiff(1:obj.num_cells, orig_cells);
+            obj.apply_labels_to('not a cell', orig_cells);
+            obj.apply_labels_to('cell', orig_not_cells);
+        end
+        
         % Load behavior movie
         %------------------------------------------------------------
         function loaded = is_behavior_loaded(obj)
