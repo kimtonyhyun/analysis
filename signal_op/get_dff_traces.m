@@ -4,15 +4,21 @@ function traces = get_dff_traces(ds, M_dff, varargin)
 %
 % Note that the length of traces is derived from the length of the movie.
 % The DaySummary only provides the spatial filters.
+%
+% TODO:
+%   - Load chunks of the movie at a time to reduce memory footprint
 
 truncate_filter = false;
 remove_baseline = false;
 use_ls = false;
+use_all_filters = false;
 
 for k = 1:length(varargin)
     vararg = varargin{k};
     if ischar(vararg)
         switch lower(vararg)
+            case 'keepall'
+                use_all_filters = true;
             case {'ls', 'leastsquares'}
                 use_ls = true;
             case 'fix_baseline'
@@ -28,13 +34,19 @@ end
 num_pixels = height*width;
 M_dff = reshape(M_dff, num_pixels, num_frames); % Reshape movie as a matrix
 
-cell_indices = find(ds.is_cell);
-num_cells = length(cell_indices);
-filters = zeros(num_pixels, num_cells); % Filter of actual cells only
+if use_all_filters
+    % Use all filters regardless of cell classification
+    cell_indices = 1:ds.num_cells;
+else 
+    % Use only filters that have been classified to be a cell
+    cell_indices = find(ds.is_cell);
+end
+num_filters = length(cell_indices);
+filters = zeros(num_pixels, num_filters); % Filter of actual cells only
 
-fprintf('%s: Building filter matrix of %d classified cells...\n',...
-    datestr(now), num_cells);
-for k = 1:num_cells
+fprintf('%s: Building filter matrix of %d filters...\n',...
+    datestr(now), num_filters);
+for k = 1:num_filters
     cell_idx = cell_indices(k);
     filter = ds.cells(cell_idx).im;
     if truncate_filter
@@ -56,12 +68,12 @@ t = toc;
 fprintf('Done! (%.1f s)\n', t);
 
 % Reshape to standard form
-filters = reshape(filters, height, width, num_cells);
+filters = reshape(filters, height, width, num_filters);
 traces = traces'; % [num_frames x num_cells]
 
 if remove_baseline
     fprintf('%s: Applying baseline correction to DFF traces...\n', datestr(now));
-    for k = 1:num_cells
+    for k = 1:num_filters
         trace = traces(:,k);
         traces(:,k) = fix_baseline(trace);
     end
@@ -70,11 +82,13 @@ end
 % Save as Rec file
 %------------------------------------------------------------
 info.type = 'get_dff_traces';
-info.num_pairs = num_cells;
+info.num_pairs = num_filters;
 
 % Note the parameters used in DFF recomputation
 info.options.remove_baseline = remove_baseline;
 info.options.truncate_filter = truncate_filter;
+info.options.use_ls = use_ls;
+info.options.use_all_filters = use_all_filters;
 
 timestamp = datestr(now, 'yymmdd-HHMMSS');
 rec_savename = sprintf('rec_%s.mat', timestamp);
