@@ -9,7 +9,7 @@ function traces = get_dff_traces(ds, M_dff, varargin)
 %   - Load chunks of the movie at a time to reduce memory footprint
 
 truncate_filter = false;
-fix_baseline = false;
+remove_baseline = false;
 use_ls = false;
 use_all_filters = false;
 
@@ -21,8 +21,8 @@ for k = 1:length(varargin)
                 use_all_filters = true;
             case {'ls', 'leastsquares'}
                 use_ls = true;
-            case 'fix_baseline'
-                fix_baseline = true;
+            case {'fix_baseline', 'remove_baseline'}
+                remove_baseline = true;
             case 'truncate'
                 fprintf('%s: Filter will be truncated...\n', datestr(now));
                 truncate_filter = true;
@@ -61,6 +61,7 @@ fprintf('%s: Computing traces... ', datestr(now));
 tic;
 if use_ls
     traces = filters \ M_dff;
+    traces = double(traces); % 'traces' takes the type of 'M_dff', which is typically single
 else % Simple projection
     traces = filters' * M_dff;
 end
@@ -71,7 +72,7 @@ fprintf('Done! (%.1f s)\n', t);
 filters = reshape(filters, height, width, num_filters);
 traces = traces'; % [num_frames x num_cells]
 
-if fix_baseline
+if remove_baseline
     fprintf('%s: Applying baseline correction to DFF traces...\n', datestr(now));
     for k = 1:num_filters
         trace = traces(:,k);
@@ -85,7 +86,7 @@ info.type = 'get_dff_traces';
 info.num_pairs = num_filters;
 
 % Note the parameters used in DFF recomputation
-info.options.fix_baseline = fix_baseline;
+info.options.remove_baseline = remove_baseline;
 info.options.truncate_filter = truncate_filter;
 info.options.use_ls = use_ls;
 info.options.use_all_filters = use_all_filters;
