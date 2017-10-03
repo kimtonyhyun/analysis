@@ -5,16 +5,16 @@ function traces = get_dff_traces(ds, M_dff, varargin)
 % Note that the length of traces is derived from the length of the movie.
 % The DaySummary only provides the spatial filters.
 
-% TODOs:
-%   - Run least squares, rather than projection through movie
-
 truncate_filter = false;
 remove_baseline = false;
+use_ls = false;
 
 for k = 1:length(varargin)
     vararg = varargin{k};
     if ischar(vararg)
         switch lower(vararg)
+            case {'ls', 'leastsquares'}
+                use_ls = true;
             case 'fix_baseline'
                 remove_baseline = true;
             case 'truncate'
@@ -45,8 +45,15 @@ for k = 1:num_cells
     filters(:,k) = reshape(filter, num_pixels, 1);
 end
 
-fprintf('%s: Computing traces...\n', datestr(now));
-traces = filters' * M_dff;
+fprintf('%s: Computing traces... ', datestr(now));
+tic;
+if use_ls
+    traces = filters \ M_dff;
+else % Simple projection
+    traces = filters' * M_dff;
+end
+t = toc;
+fprintf('Done! (%.1f s)\n', t);
 
 % Reshape to standard form
 filters = reshape(filters, height, width, num_cells);
