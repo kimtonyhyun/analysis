@@ -7,6 +7,7 @@ function export_rec(ds, varargin)
 % 'excludeprobe' as this can lead to synchronization problems with the
 % original trial metadata!
 
+truncate_filter = false;
 remove_baseline = false;
 
 for k = 1:length(varargin)
@@ -16,6 +17,10 @@ for k = 1:length(varargin)
             case {'fix', 'fix_baseline', 'remove_baseline'}
                 fprintf('  Exported traces will have baseline removed!\n');
                 remove_baseline = true;
+                
+            case 'truncate'
+                fprintf('  Filters will be truncated...\n');
+                truncate_filter = true;
         end
     end
 end
@@ -38,6 +43,9 @@ filters = zeros(height, width, num_cells);
 for k = 1:num_cells
     cell_idx = cell_indices(k);
     filters(:,:,k) = ds.cells(cell_idx).im;
+    if truncate_filter
+        filters(:,:,k) = ds.cells(cell_idx).mask .* filters(:,:,k);
+    end
     
     trace = ds.get_trace(cell_idx);
     if remove_baseline
@@ -53,6 +61,7 @@ info.num_pairs = num_cells;
 
 % Note the parameters used in DFF recomputation
 info.options.remove_baseline = remove_baseline;
+info.options.truncate_filter = truncate_filter;
 
 timestamp = datestr(now, 'yymmdd-HHMMSS');
 rec_savename = sprintf('rec_%s.mat', timestamp);
