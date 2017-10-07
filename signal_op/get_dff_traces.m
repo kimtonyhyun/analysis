@@ -8,10 +8,14 @@ function traces = get_dff_traces(ds, M_dff, varargin)
 % TODO:
 %   - Load chunks of the movie at a time to reduce memory footprint
 
-truncate_filter = false;
-remove_baseline = false;
 use_ls = false;
+
+% Filter parameters relevant for trace extraction
 use_all_filters = false;
+truncate_filter = false;
+
+% Trace post-extraction processing
+remove_baseline = false;
 
 for k = 1:length(varargin)
     vararg = varargin{k};
@@ -44,7 +48,7 @@ end
 num_filters = length(cell_indices);
 filters = zeros(num_pixels, num_filters); % Filter of actual cells only
 
-fprintf('%s: Building filter matrix of %d filters...\n',...
+fprintf('%s: Building matrix of %d filters...\n',...
     datestr(now), num_filters);
 for k = 1:num_filters
     cell_idx = cell_indices(k);
@@ -57,12 +61,14 @@ for k = 1:num_filters
     filters(:,k) = reshape(filter, num_pixels, 1);
 end
 
-fprintf('%s: Computing traces... ', datestr(now));
+fprintf('%s: Computing traces ', datestr(now));
 tic;
 if use_ls
+    fprintf('by least squares... ');
     traces = filters \ M_dff;
     traces = double(traces); % 'traces' takes the type of 'M_dff', which is typically single
 else % Simple projection
+    fprintf('by simple projection... ');
     traces = filters' * M_dff;
 end
 t = toc;

@@ -7,20 +7,30 @@ function export_rec(ds, varargin)
 % 'excludeprobe' as this can lead to synchronization problems with the
 % original trial metadata!
 
+% Filter options
 truncate_filter = false;
+
+% Trace options
 remove_baseline = false;
+normalize_trace = false;
 
 for k = 1:length(varargin)
     vararg = varargin{k};
     if ischar(vararg)
         switch lower(vararg)
             case {'fix', 'fix_baseline', 'remove_baseline'}
-                fprintf('  Exported traces will have baseline removed!\n');
+                fprintf('  Traces will be baseline corrected...\n');
                 remove_baseline = true;
+                
+            case 'norm'
+                fprintf('  Traces will be normalized...\n');
+                normalize_trace = true;
                 
             case 'truncate'
                 fprintf('  Filters will be truncated...\n');
                 truncate_filter = true;
+                
+
         end
     end
 end
@@ -51,6 +61,10 @@ for k = 1:num_cells
     if remove_baseline
         trace = fix_baseline(trace);
     end
+    if normalize_trace
+        tscale = [min(trace) max(trace)];
+        trace = (trace - tscale(1))/diff(tscale);
+    end
     traces(:,k) = trace;
 end
 
@@ -59,9 +73,10 @@ end
 info.type = 'export_rec';
 info.num_pairs = num_cells;
 
-% Note the parameters used in DFF recomputation
-info.options.remove_baseline = remove_baseline;
+% Note the parameters used in export
 info.options.truncate_filter = truncate_filter;
+info.options.remove_baseline = remove_baseline;
+info.options.normalize_trace = normalize_trace;
 
 timestamp = datestr(now, 'yymmdd-HHMMSS');
 rec_savename = sprintf('rec_%s.mat', timestamp);
