@@ -68,7 +68,7 @@ function raster = plot_cell_raster(obj, cell_idx, varargin)
         end
     end
 
-    imagesc(pre_offset:post_offset, 1:num_filtered_trials, raster);
+    imagesc(pre_offset:post_offset, 1:num_filtered_trials, raster, 'HitTest', 'off');
     colormap jet;
     xlabel(align_str);
     ylabel('Trial index');

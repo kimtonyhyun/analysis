@@ -304,6 +304,8 @@ end
         % Event handlers for trace windows
         set(global_trace, 'ButtonDownFcn', @go_to_selected_frame);
         set(running_trace, 'ButtonDownFcn', @go_to_selected_frame);
+        
+        render_frame(1);
     end % setup_traces
     
     function display_active_period(selected_indices)
@@ -363,6 +365,10 @@ end
         hold off;
         
         state.points_of_interest = [state.points_of_interest; coord];
+    end
+
+    function go_to_prev_frame(~, e)
+        fprintf('go_to_prev_frame\n');
     end
 
     function go_to_selected_frame(~, e)

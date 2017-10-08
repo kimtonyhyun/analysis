@@ -90,11 +90,13 @@ end
         
         cells_on_page = get_cells_on_page(page_idx);
         for i = 1:length(cells_on_page)
-            subplot(cells_per_page(1), cells_per_page(2), i);
+            h_sp = subplot(cells_per_page(1), cells_per_page(2), i);
         
             cell_idx = cells_on_page(i);
             ds.plot_cell_raster(cell_idx);
             title(sprintf('Cell %d', cell_idx));
+            
+            set(h_sp, 'ButtonDownFcn', {@clicked_on_cell, cell_idx, page_idx});
         end
         
         function cells_on_page = get_cells_on_page(page_idx)
@@ -104,5 +106,23 @@ end
         end % get_cells_on_page
         
     end % draw_page
+
+    % 
+    function clicked_on_cell(~, e, cell_idx, page_idx)
+        switch e.Button
+            case 1 % Left click
+                % The following is a hack to get around the fact that the
+                % main thread is "hung" while waiting for keyboard input.
+                
+                fprintf('%d\n', cell_idx);
+                view_detailed_raster(ds, cell_idx);
+                
+                draw_page(page_idx);
+                fprintf(prompt);
+
+            case 3 % Right click
+                
+        end
+    end
 
 end % browse_rasters
