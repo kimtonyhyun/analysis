@@ -38,34 +38,51 @@ colormap jet; freezeColors;
 set(h_full_raster, 'ButtonDownFcn', @select_trial);
 
 % Divide rasters by correctness
-subplot(3,4,3);
-ds.plot_cell_raster(cell_idx, 'correct');
-set(gca, 'CLim', raster_scale);
-title('Correct');
-subplot(3,4,4);
-ds.plot_cell_raster(cell_idx, 'incorrect');
-set(gca, 'CLim', raster_scale);
-title('Incorrect');
+% subplot(3,4,3);
+% ds.plot_cell_raster(cell_idx, 'correct');
+% set(gca, 'CLim', raster_scale);
+% title('Correct');
+% subplot(3,4,4);
+% ds.plot_cell_raster(cell_idx, 'incorrect');
+% set(gca, 'CLim', raster_scale);
+% title('Incorrect');
 
 % Divide rasters by start location
-subplot(3,4,7);
-ds.plot_cell_raster(cell_idx, 'start', 'west', 'draw_correct');
-set(gca, 'CLim', raster_scale);
-title('West start'); 
-subplot(3,4,8);
-ds.plot_cell_raster(cell_idx, 'start', 'east', 'draw_correct');
-set(gca, 'CLim', raster_scale);
-title('East start');
+% subplot(3,4,7);
+% ds.plot_cell_raster(cell_idx, 'start', 'west', 'draw_correct');
+% set(gca, 'CLim', raster_scale);
+% title('West start'); 
+% subplot(3,4,8);
+% ds.plot_cell_raster(cell_idx, 'start', 'east', 'draw_correct');
+% set(gca, 'CLim', raster_scale);
+% title('East start');
+% 
+% % Divide rasters by end location
+% subplot(3,4,11);
+% ds.plot_cell_raster(cell_idx, 'end', 'south', 'draw_correct');
+% set(gca, 'CLim', raster_scale);
+% title('South end');
+% subplot(3,4,12);
+% ds.plot_cell_raster(cell_idx, 'end', 'north', 'draw_correct');
+% set(gca, 'CLim', raster_scale);
+% title('North end');
 
-% Divide rasters by end location
-subplot(3,4,11);
-ds.plot_cell_raster(cell_idx, 'end', 'south', 'draw_correct');
+% Show constant path rasters
+subplot(1,4,3);
+ds.plot_cell_raster(cell_idx, 'start', 'east', 'end', 'north', 'draw_correct');
 set(gca, 'CLim', raster_scale);
-title('South end');
-subplot(3,4,12);
-ds.plot_cell_raster(cell_idx, 'end', 'north', 'draw_correct');
+title('Constant path: East-North');
+
+% Show changing path rasters
+subplot(2,4,4);
+ds.plot_cell_raster(cell_idx, 'start', 'west', 'end', 'south', 'draw_correct');
 set(gca, 'CLim', raster_scale);
-title('North end'); 
+title('Changing path - PRE: West-South');
+
+subplot(2,4,8);
+ds.plot_cell_raster(cell_idx, 'start', 'west', 'end', 'north', 'draw_correct');
+set(gca, 'CLim', raster_scale);
+title('Changing path - POST: West-North');
 
 % Navigation controls
 %------------------------------------------------------------
