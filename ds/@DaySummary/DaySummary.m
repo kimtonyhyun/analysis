@@ -110,8 +110,7 @@ classdef DaySummary < handle
             turns = cell(num_trials, 1);
             traces = cell(num_trials, 1);
             centroids = cell(num_trials, 1);
-            movement_onset_frames = cell(num_trials, 1);
-            turn_onset_frames = cell(num_trials, 1);
+
             for k = 1:num_trials
                 trial_frames = trial_indices(k,1):...
                                trial_indices(k,end);
@@ -120,8 +119,6 @@ classdef DaySummary < handle
                 traces{k} = data.traces(trial_frames, :)';
                 turns{k} = obj.compute_turn(loc_info{k,1}, loc_info{k,3});
                 centroids{k} = zeros(num_frames_in_trial, 2);
-                movement_onset_frames{k} = 0;
-                turn_onset_frames{k} = 0;
             end
             
             obj.num_trials = num_trials;
@@ -134,9 +131,7 @@ classdef DaySummary < handle
                 'turn',  turns,...
                 'time',  num2cell(trial_durations),...
                 'traces', traces,...
-                'centroids', centroids,...
-                'movement_onset_frame',movement_onset_frames,...
-                'turn_onset_frame',turn_onset_frames);
+                'centroids', centroids);
             
             % Parse by CELL
             %------------------------------------------------------------
@@ -331,37 +326,7 @@ classdef DaySummary < handle
                     {'phase-sensitive cell', 'cell'}));
             end
         end
-
-        function x = est_turn_probabilities(obj, span)
-        % returns estimtated probability of a right turn on each trial
-        % (conditioned on starting location). Uses a moving average with
-        % a window size defined by span (default = 5).
-
-            % default span
-            if nargin == 1
-                span = 5;
-            end
-
-            % moving average window
-            b = (1/span)*ones(1,span);
-            a = 1;
-
-            % separate estimates for east vs west starts
-            east_idx = filter_trials(obj, 'start', 'east');
-            west_idx = filter_trials(obj, 'start', 'west');
-
-            % 1 = right turn, 0 = left turn
-            east_right = double(strcmp({obj.trials(east_idx).turn},'right'));
-            west_right = double(strcmp({obj.trials(west_idx).turn},'right'));
-
-            % fill probe trials with NaN
-            x = nan(length(east_idx),1);
-            x(east_idx) = filter(b, a, east_right);
-            x(west_idx) = filter(b, a, west_right);
-            x(east_idx(1:span)) = NaN;
-            x(west_idx(1:span)) = NaN;
-        end
-        
+       
         function is_correct = get_trial_correctness(obj)
             is_correct = [obj.trials.correct];
         end
@@ -415,58 +380,6 @@ classdef DaySummary < handle
             [~, neighbor_inds] = sort(d); % Ascending order
             neighbor_inds = neighbor_inds(1:num_neighbors);
         end
-
-        function strategy = get_strategy(obj)
-            % Computes the navigation strategy (one of 'allo-north',
-            % 'allo-south', 'ego-left', 'ego-right') that best describes
-            % the apparent behavior of the mouse, for the first and latter
-            % halves of the session.
-            
-            strategy = {'', ''};
-            nk = obj.num_trials;
-            idx = [1:floor(nk/2); ceil(1+nk/2):nk];
-            stratnm = {'allo-north','allo-south','ego-left','ego-right'};
-
-            for half = 1:2
-                an = 0; % allo-north
-                as = 0; % allo-south
-                el = 0; % ego-left
-                er = 0; % ego-right
-
-                for a = idx(half,:)
-                    trial = obj.trials(a);
-
-                    if any(strcmp(trial.start, {'north','south'}))
-                        continue % skip probe trials
-                    end
-                    if strcmp(trial.start, 'east')
-                        if strcmp(trial.goal, 'north')
-                            % allo-north or ego-right
-                            an = an+1;
-                            er = er+1;
-                        else
-                            % allo-south or ego-left
-                            as = as+1;
-                            el = el+1;
-                        end
-                    else % west start
-                        if strcmp(trial.goal, 'north')
-                            % allo-north or ego-left
-                            an = an+1;
-                            el = el+1;
-                        else
-                            % allo-south or ego-right
-                            as = as+1;
-                            er = er+1;
-                        end
-                    end
-                end
-
-                [~,mi] = max([an; as; el; er]);
-                strategy{half} = stratnm{mi};
-            end
-
-        end % get_strategy
         
         % Classification
         %------------------------------------------------------------
@@ -555,46 +468,7 @@ classdef DaySummary < handle
                 datestr(now), tracking_source);
             obj.is_tracking_loaded = true;
         end
-        
-        % Display/summarize functions
-        %------------------------------------------------------------
-        function summary(obj, num)
-            % summary stats
-            if nargin == 1
-                disp('<strong>Day Summary</strong>')
-                disp('-----------')
-            else
-                fprintf('<strong>Day #%i Summary</strong>\n', num)
-                disp('---------------')
-            end
-            disp([num2str(obj.num_classified_cells), ' classified cells, ',...
-                  num2str(obj.num_trials), ' trials'])
             
-            % strategy
-            strat = get_strategy(obj);
-            fprintf('<strong>Strategy:</strong> ')
-            if strcmp(strat{1},strat{2})
-                disp(strat{1})
-            else
-                disp([strat{1},' ---> ',strat{2}])
-            end
-
-            % errors
-            fprintf('<strong>Errors:</strong> ')
-            for k = 1:obj.num_trials
-                if obj.trials(k).correct
-                    fprintf('<strong>*</strong> ')
-                else
-                    fprintf(2,'<strong>*</strong> ')
-                end
-                if mod(k,20) == 0
-                    fprintf('\n        ')
-                end
-            end
-            fprintf('\n')
-
-        end % summary
-    
     end % public methods
 
 end
