@@ -40,6 +40,7 @@ if ds.is_switchdata_loaded
     hold on;
     plot(x_ends, (ds.switchdata.pre_switch_trials(end)+0.5)*[1 1], 'w--', 'LineWidth', 1);
     plot(x_ends, (ds.switchdata.post_switch_trials(1)-0.5)*[1 1], 'w--', 'LineWidth', 1);
+    hold off;
 end
 set(h_full_raster, 'ButtonDownFcn', @select_trial);
 
