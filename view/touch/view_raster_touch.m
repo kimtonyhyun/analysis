@@ -35,8 +35,15 @@ ds.plot_cell_raster(cell_idx, 'draw_correct');
 raster_scale = get(gca, 'CLim'); % Scale that applies to all trials
 title('All trials');
 colormap jet; freezeColors;
+if ds.is_switchdata_loaded
+    x_ends = get(gca, 'XLim');
+    hold on;
+    plot(x_ends, (ds.switchdata.pre_switch_trials(end)+0.5)*[1 1], 'w--', 'LineWidth', 1);
+    plot(x_ends, (ds.switchdata.post_switch_trials(1)-0.5)*[1 1], 'w--', 'LineWidth', 1);
+end
 set(h_full_raster, 'ButtonDownFcn', @select_trial);
 
+% Different options for displaying subrasters
 if ds.is_switchdata_loaded
     draw_path_subrasters(raster_scale);
 else
