@@ -25,6 +25,7 @@ classdef DaySummary < handle
     properties
         cells
         trials
+        switchdata
         
         num_cells
         num_trials
@@ -168,7 +169,6 @@ classdef DaySummary < handle
                 'label', class);
             
             % Compute distances among all sources
-            %------------------------------------------------------------
             fprintf('  Computing distances between all sources...');
             tic;
             D = Inf*ones(obj.num_cells);
@@ -183,7 +183,6 @@ classdef DaySummary < handle
             fprintf(' Done (%.1f sec)\n', t);
             
             % Precompute cell map image, to avoid doing it each time
-            %------------------------------------------------------------
             [height, width] = size(obj.cells(1).im);
             ref_image = zeros(height, width);
             for k = 1:obj.num_cells
@@ -213,6 +212,14 @@ classdef DaySummary < handle
                     obj.load_tracking(ds_source.tracking);
                 end
             end
+            
+            % Fill in switch data
+            obj.switchdata = struct(...
+                'pre_switch_trials', [],...
+                'post_switch_trials', [],...
+                'changing_path_start', '',...
+                'constant_path_start', '',...
+                'changing_path_cutoff', []);
         end
         
         % Helper functions
@@ -467,6 +474,16 @@ classdef DaySummary < handle
             fprintf('%s: Loaded tracking data from "%s"\n',...
                 datestr(now), tracking_source);
             obj.is_tracking_loaded = true;
+        end
+        
+        % Inspect switch data
+        %------------------------------------------------------------
+        function loaded = is_switchdata_loaded(obj)
+            valid_starts = {'east', 'west'};
+            loaded = ~isempty(obj.switchdata.pre_switch_trials) &&...
+                     ~isempty(obj.switchdata.post_switch_trials) &&...
+                     any(strcmp(obj.switchdata.changing_path_start, valid_starts)) &&...
+                     any(strcmp(obj.switchdata.constant_path_start, valid_starts));
         end
             
     end % public methods
