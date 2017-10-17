@@ -485,6 +485,14 @@ classdef DaySummary < handle
                      any(strcmp(obj.switchdata.changing_path_start, valid_starts)) &&...
                      any(strcmp(obj.switchdata.constant_path_start, valid_starts));
         end
+        
+        function reset_switchdata(obj)
+            obj.switchdata.pre_switch_trials = [];
+            obj.switchdata.post_switch_trials = [];
+            obj.switchdata.changing_path_start = '';
+            obj.switchdata.constant_path_start = '';
+            obj.switchdata.changing_path_cutoff = [];
+        end
             
     end % public methods
 
