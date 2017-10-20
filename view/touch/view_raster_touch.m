@@ -61,8 +61,9 @@ end
             'correct', 'draw_correct');
         set(gca, 'CLim', raster_scale);
         title(sprintf('Constant path (%s-start)', sd.constant_path_start));
-        ylabel('PRE-switch');
-        yticks(1:length(trial_inds));
+        n_trials = length(trial_inds);
+        ylabel(sprintf('PRE-switch (%d)', n_trials));
+        yticks(1:n_trials);
         yticklabels(num2cell(trial_inds));
         
         subplot(2,4,7);
@@ -72,8 +73,9 @@ end
             'correct', 'draw_correct');
         set(gca, 'CLim', raster_scale);
         title(sprintf('Constant path (%s-start)', sd.constant_path_start));
-        ylabel('POST-switch');
-        yticks(1:length(trial_inds));
+        n_trials = length(trial_inds);
+        ylabel(sprintf('POST-switch (%d)', n_trials));
+        yticks(1:n_trials);
         yticklabels(num2cell(trial_inds));
         
         % Second column is for CHANGING path
@@ -84,9 +86,9 @@ end
             'correct', 'draw_correct');
         set(gca, 'CLim', raster_scale);
         title(sprintf('Changing path (%s-start)', sd.changing_path_start));
-%         ylabel('PRE-switch');
-        ylabel('');
-        yticks(1:length(trial_inds));
+        n_trials = length(trial_inds);
+        ylabel(sprintf('PRE-switch (%d)', n_trials));
+        yticks(1:n_trials);
         yticklabels(num2cell(trial_inds));
         
         subplot(2,4,8);
@@ -96,9 +98,9 @@ end
             'correct', 'draw_correct');
         set(gca, 'CLim', raster_scale);
         title(sprintf('Changing path (%s-start)', sd.changing_path_start));
-%         ylabel('POST-switch');
-        ylabel('');
-        yticks(1:length(trial_inds));
+        n_trials = length(trial_inds);
+        ylabel(sprintf('POST-switch (%d)', n_trials));
+        yticks(1:n_trials);
         yticklabels(num2cell(trial_inds));
         
     end % draw_path_subrasters
