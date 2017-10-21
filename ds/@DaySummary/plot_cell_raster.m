@@ -1,4 +1,4 @@
-function raster = plot_cell_raster(obj, cell_idx, varargin)
+function [raster, trial_inds] = plot_cell_raster(obj, cell_idx, varargin)
 % Plots a raster of cell activity, where trials are aligned to the closing
 % gate frame.
 %
@@ -87,4 +87,6 @@ function raster = plot_cell_raster(obj, cell_idx, varargin)
         end
         xlim([pre_offset post_offset+corr_width]);
     end
+    
+    trial_inds = find(display_trial);
 end
