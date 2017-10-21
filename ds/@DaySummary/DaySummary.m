@@ -140,7 +140,7 @@ classdef DaySummary < handle
             % the omitted probe trials.
             %
             obj.trial_indices = compress_frame_indices(trial_indices, [0 0]);
-            obj.orig_trial_indices = trial_indices;
+            obj.orig_trial_indices = double(trial_indices);
             obj.trials = struct(...
                 'start', loc_info(:,1),...
                 'goal',  loc_info(:,2),...
@@ -240,19 +240,7 @@ classdef DaySummary < handle
         end
         
         % Helper functions
-        %------------------------------------------------------------
-        function lv = kept_frames(obj)
-            % Return a logical vector that indicates whether a particular
-            % acqusition frame is "kept" by the DaySummary instance. Frames
-            % may be omitted by DaySummary when using probe trials are
-            % excluded.
-            lv = false(obj.full_num_frames,1);
-            for k = 1:obj.num_trials
-                trial_frames = obj.orig_trial_indices(k,:);
-                lv(trial_frames(1):trial_frames(end)) = true;
-            end
-        end
-        
+        %------------------------------------------------------------        
         function turn = compute_turn(~, start, final)
             % TODO: Turn into Static
             path = {start, final};
