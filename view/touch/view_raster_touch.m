@@ -46,97 +46,10 @@ set(h_full_raster, 'ButtonDownFcn', @select_trial);
 
 % Different options for displaying subrasters
 if ds.is_switchdata_loaded
-    draw_path_subrasters(raster_scale);
+    draw_path_subrasters(ds, cell_idx, raster_scale);
 else
-    draw_standard_subrasters(raster_scale);
+    draw_standard_subrasters(ds, cell_idx, raster_scale);
 end
-
-    function draw_path_subrasters(raster_scale)
-        sd = ds.switchdata;
-        
-        % First column is for CONSTANT path
-        subplot(2,4,3);
-        [~, trial_inds] = ds.plot_cell_raster(cell_idx,...
-            'range', sd.pre_switch_trials,...
-            'start', sd.constant_path_start,...
-            'correct', 'draw_correct');
-        set(gca, 'CLim', raster_scale);
-        title(sprintf('Constant path (%s-start)', sd.constant_path_start));
-        n_trials = length(trial_inds);
-        ylabel(sprintf('PRE-switch (%d)', n_trials));
-        yticks(1:n_trials);
-        yticklabels(num2cell(trial_inds));
-        
-        subplot(2,4,7);
-        [~, trial_inds] = ds.plot_cell_raster(cell_idx,...
-            'range', sd.post_switch_trials,...
-            'start', sd.constant_path_start,...
-            'correct', 'draw_correct');
-        set(gca, 'CLim', raster_scale);
-        title(sprintf('Constant path (%s-start)', sd.constant_path_start));
-        n_trials = length(trial_inds);
-        ylabel(sprintf('POST-switch (%d)', n_trials));
-        yticks(1:n_trials);
-        yticklabels(num2cell(trial_inds));
-        
-        % Second column is for CHANGING path
-        subplot(2,4,4);
-        [~, trial_inds] = ds.plot_cell_raster(cell_idx,...
-            'range', sd.pre_switch_trials,...
-            'start', sd.changing_path_start,...
-            'correct', 'draw_correct');
-        set(gca, 'CLim', raster_scale);
-        title(sprintf('Changing path (%s-start)', sd.changing_path_start));
-        n_trials = length(trial_inds);
-        ylabel(sprintf('PRE-switch (%d)', n_trials));
-        yticks(1:n_trials);
-        yticklabels(num2cell(trial_inds));
-        
-        subplot(2,4,8);
-        [~, trial_inds] = ds.plot_cell_raster(cell_idx,...
-            'range', sd.post_switch_trials,...
-            'start', sd.changing_path_start,...
-            'correct', 'draw_correct');
-        set(gca, 'CLim', raster_scale);
-        title(sprintf('Changing path (%s-start)', sd.changing_path_start));
-        n_trials = length(trial_inds);
-        ylabel(sprintf('POST-switch (%d)', n_trials));
-        yticks(1:n_trials);
-        yticklabels(num2cell(trial_inds));
-        
-    end % draw_path_subrasters
-
-    function draw_standard_subrasters(raster_scale)
-        % Divide rasters by correctness
-        subplot(3,4,3);
-        ds.plot_cell_raster(cell_idx, 'correct');
-        set(gca, 'CLim', raster_scale);
-        title('Correct');
-        subplot(3,4,4);
-        ds.plot_cell_raster(cell_idx, 'incorrect');
-        set(gca, 'CLim', raster_scale);
-        title('Incorrect');
-
-        % Divide rasters by start location
-        subplot(3,4,7);
-        ds.plot_cell_raster(cell_idx, 'start', 'west', 'draw_correct');
-        set(gca, 'CLim', raster_scale);
-        title('West start'); 
-        subplot(3,4,8);
-        ds.plot_cell_raster(cell_idx, 'start', 'east', 'draw_correct');
-        set(gca, 'CLim', raster_scale);
-        title('East start');
-
-        % Divide rasters by end location
-        subplot(3,4,11);
-        ds.plot_cell_raster(cell_idx, 'end', 'south', 'draw_correct');
-        set(gca, 'CLim', raster_scale);
-        title('South end');
-        subplot(3,4,12);
-        ds.plot_cell_raster(cell_idx, 'end', 'north', 'draw_correct');
-        set(gca, 'CLim', raster_scale);
-        title('North end'); 
-    end % draw_standard_subrasters
 
 % Navigation controls
 %------------------------------------------------------------
