@@ -123,7 +123,9 @@ classdef DaySummary < handle
             end
             
             obj.num_trials = num_trials;
-            obj.trial_indices = trial_indices;
+            % Note that the frame index compression must occur AFTER the
+            % relevant data has been pulled out from the raw data sources.
+            obj.trial_indices = compress_frame_indices(trial_indices, [0 0]);
             obj.trials = struct(...
                 'start', loc_info(:,1),...
                 'goal',  loc_info(:,2),...
