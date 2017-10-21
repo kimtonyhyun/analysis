@@ -40,6 +40,7 @@ classdef DaySummary < handle
         behavior_vid
         behavior_ref_img
         is_tracking_loaded
+        orig_trial_indices
     end
         
     methods
@@ -123,9 +124,23 @@ classdef DaySummary < handle
             end
             
             obj.num_trials = num_trials;
-            % Note that the frame index compression must occur AFTER the
-            % relevant data has been pulled out from the raw data sources.
+            
+            % NOTE: We have to be quite careful about how we handle trial
+            % indices if we apply probe trial elimination.
+            %
+            % Basically, when we need to refer to the raw data, we need the
+            % _original_ frame indices, since the raw data sources do not
+            % omit probe trials.
+            %
+            % On the other hand, when we later access content from the
+            % probe-trial removed DaySummary (e.g. get_trace), the
+            % resulting content does not know about the omitted trials.
+            % Hence, for self-consistency of the DaySummary instance, we
+            % need to "compress" the trial indices to remove gaps due to 
+            % the omitted probe trials.
+            %
             obj.trial_indices = compress_frame_indices(trial_indices, [0 0]);
+            obj.orig_trial_indices = trial_indices;
             obj.trials = struct(...
                 'start', loc_info(:,1),...
                 'goal',  loc_info(:,2),...
@@ -226,6 +241,18 @@ classdef DaySummary < handle
         
         % Helper functions
         %------------------------------------------------------------
+        function lv = kept_frames(obj)
+            % Return a logical vector that indicates whether a particular
+            % acqusition frame is "kept" by the DaySummary instance. Frames
+            % may be omitted by DaySummary when using probe trials are
+            % excluded.
+            lv = false(obj.full_num_frames,1);
+            for k = 1:obj.num_trials
+                trial_frames = obj.orig_trial_indices(k,:);
+                lv(trial_frames(1):trial_frames(end)) = true;
+            end
+        end
+        
         function turn = compute_turn(~, start, final)
             % TODO: Turn into Static
             path = {start, final};
@@ -324,22 +351,7 @@ classdef DaySummary < handle
                 mask = mask | obj.cells(cell_idx).mask;
             end
         end
-        
-        function is_cell = is_cell(obj, cell_indices)
-            % When 'cell_indices' is omitted, then return the label of all
-            % cells
-            if ~exist('cell_indices', 'var')
-                cell_indices = 1:obj.num_cells;
-            end
-            
-            is_cell = zeros(size(cell_indices));
-            for k = 1:length(cell_indices)
-                cell_idx = cell_indices(k);
-                is_cell(k) = any(strcmp(obj.cells(cell_idx).label,...
-                    {'phase-sensitive cell', 'cell'}));
-            end
-        end
-       
+              
         function is_correct = get_trial_correctness(obj)
             is_correct = [obj.trials.correct];
         end
@@ -434,6 +446,21 @@ classdef DaySummary < handle
             obj.apply_labels_to('cell', orig_not_cells);
         end
         
+        function is_cell = is_cell(obj, cell_indices)
+            % When 'cell_indices' is omitted, then return the label of all
+            % cells
+            if ~exist('cell_indices', 'var')
+                cell_indices = 1:obj.num_cells;
+            end
+            
+            is_cell = zeros(size(cell_indices));
+            for k = 1:length(cell_indices)
+                cell_idx = cell_indices(k);
+                is_cell(k) = any(strcmp(obj.cells(cell_idx).label,...
+                    {'phase-sensitive cell', 'cell'}));
+            end
+        end
+        
         % Load behavior movie
         %------------------------------------------------------------
         function loaded = is_behavior_loaded(obj)
@@ -450,12 +477,13 @@ classdef DaySummary < handle
             end
             
             % Load reference image
-            behavior_ref_img = obj.behavior_vid.read(1);
-            obj.behavior_ref_img = squeeze(behavior_ref_img(:,:,1,:));
+            img = obj.behavior_vid.read(1);
+            obj.behavior_ref_img = squeeze(img(:,:,1,:));
         end
         
         function Mb = get_behavior_trial(obj, trial_idx)
-            trial_frames = obj.trial_indices(trial_idx, [1 end]); % [Start end]
+            % Must use original frame indices to access raw data
+            trial_frames = obj.orig_trial_indices(trial_idx, [1 end]); % [Start end]
             Mb = obj.behavior_vid.read(trial_frames);
             Mb = squeeze(Mb(:,:,1,:)); % Movie is actually grayscale!
         end
@@ -465,16 +493,10 @@ classdef DaySummary < handle
         function load_tracking(obj, tracking_source)
             centroids = load(tracking_source);
 
-            extrema_x = [min(centroids(:,1)),max(centroids(:,1))];
-            extrema_y = [min(centroids(:,2)),max(centroids(:,2))];
-            
+            % Must use original frame indices to access raw data
             for k = 1:obj.num_trials
-                trial_indices = obj.trial_indices(k,1):obj.trial_indices(k,end);
-                obj.trials(k).centroids = centroids(trial_indices, :);
-                [idx_mv_onset,idx_turn_onset] = calc_behavioral_event_indices(...
-                    obj.trials(k).centroids,extrema_x,extrema_y,obj.trials(k).start,obj.trials(k).end);
-                obj.trials(k).movement_onset_frame = idx_mv_onset;
-                obj.trials(k).turn_onset_frame = idx_turn_onset;
+                inds = obj.orig_trial_indices(k,1):obj.orig_trial_indices(k,end);
+                obj.trials(k).centroids = centroids(inds, :);
             end
             
             fprintf('%s: Loaded tracking data from "%s"\n',...
