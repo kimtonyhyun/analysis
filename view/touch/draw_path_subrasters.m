@@ -63,7 +63,7 @@ title(changing_path_title);
         ylim(raster_scale);
         grid on;
         xlabel('Frames relative to gate close');
-        ylabel('Fluorescence');
+        ylabel('Mean \pm sem');
     end % draw_pre_post_averages
 
 end % draw_path_subrasters
