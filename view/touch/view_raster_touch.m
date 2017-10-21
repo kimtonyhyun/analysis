@@ -78,6 +78,21 @@ if (cell_idx == ds.num_cells)
     down_btn.Enable = 'off';
 end
 
+% Visualize alternate rasters
+std_raster_btn = uicontrol('Style', 'pushbutton',...
+    'String', 'S',...
+    'Units', 'normalized',...
+    'Position', [0.95 0.9 0.05 0.1],...
+    'Callback', {@redraw_raster, 'standard'});
+path_raster_btn = uicontrol('Style', 'pushbutton',...
+    'String', 'P',...
+    'Units', 'normalized',...
+    'Position', [0.95 0.8 0.05 0.1],...
+    'Callback', {@redraw_raster, 'path'});
+if ~ds.is_switchdata_loaded
+    path_raster_btn.Enable = 'off';
+end
+
     function back_to_browse(~, ~)
         browse_rasters_touch(ds, 'fig', h_fig, 'cell_idx', cell_idx);
     end
@@ -94,6 +109,15 @@ end
             view_detailed_trial_touch(ds, cell_idx, trial_idx, 'fig', h_fig);
         else
             fprintf('Error: Behavior video has not been loaded into this DaySummary!\n');
+        end
+    end
+
+    function redraw_raster(~, ~, raster_type)
+        switch raster_type
+            case 'standard'
+                draw_standard_subrasters(ds, cell_idx, raster_scale);
+            case 'path'
+                draw_path_subrasters(ds, cell_idx, raster_scale);
         end
     end
 
