@@ -1,4 +1,4 @@
-function [raster, trial_inds] = plot_cell_raster(obj, cell_idx, varargin)
+function [raster, aligned_time, trial_inds] = plot_cell_raster(obj, cell_idx, varargin)
 % Plots a raster of cell activity, where trials are aligned to the closing
 % gate frame.
 %
@@ -68,7 +68,8 @@ function [raster, trial_inds] = plot_cell_raster(obj, cell_idx, varargin)
         end
     end
 
-    imagesc(pre_offset:post_offset, 1:num_filtered_trials, raster, 'HitTest', 'off');
+    aligned_time = pre_offset:post_offset;
+    imagesc(aligned_time, 1:num_filtered_trials, raster, 'HitTest', 'off');
     colormap jet;
     xlabel(align_str);
     ylabel('Trial index');
