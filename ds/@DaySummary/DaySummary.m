@@ -25,6 +25,7 @@ classdef DaySummary < handle
     properties
         cells
         trials
+        switchdata
         
         num_cells
         num_trials
@@ -39,6 +40,7 @@ classdef DaySummary < handle
         behavior_vid
         behavior_ref_img
         is_tracking_loaded
+        orig_trial_indices
     end
         
     methods
@@ -110,8 +112,7 @@ classdef DaySummary < handle
             turns = cell(num_trials, 1);
             traces = cell(num_trials, 1);
             centroids = cell(num_trials, 1);
-            movement_onset_frames = cell(num_trials, 1);
-            turn_onset_frames = cell(num_trials, 1);
+
             for k = 1:num_trials
                 trial_frames = trial_indices(k,1):...
                                trial_indices(k,end);
@@ -120,12 +121,26 @@ classdef DaySummary < handle
                 traces{k} = data.traces(trial_frames, :)';
                 turns{k} = obj.compute_turn(loc_info{k,1}, loc_info{k,3});
                 centroids{k} = zeros(num_frames_in_trial, 2);
-                movement_onset_frames{k} = 0;
-                turn_onset_frames{k} = 0;
             end
             
             obj.num_trials = num_trials;
-            obj.trial_indices = trial_indices;
+            
+            % NOTE: We have to be quite careful about how we handle trial
+            % indices if we apply probe trial elimination.
+            %
+            % Basically, when we need to refer to the raw data, we need the
+            % _original_ frame indices, since the raw data sources do not
+            % omit probe trials.
+            %
+            % On the other hand, when we later access content from the
+            % probe-trial removed DaySummary (e.g. get_trace), the
+            % resulting content does not know about the omitted trials.
+            % Hence, for self-consistency of the DaySummary instance, we
+            % need to "compress" the trial indices to remove gaps due to 
+            % the omitted probe trials.
+            %
+            obj.trial_indices = compress_frame_indices(trial_indices, [0 0]);
+            obj.orig_trial_indices = double(trial_indices);
             obj.trials = struct(...
                 'start', loc_info(:,1),...
                 'goal',  loc_info(:,2),...
@@ -134,9 +149,7 @@ classdef DaySummary < handle
                 'turn',  turns,...
                 'time',  num2cell(trial_durations),...
                 'traces', traces,...
-                'centroids', centroids,...
-                'movement_onset_frame',movement_onset_frames,...
-                'turn_onset_frame',turn_onset_frames);
+                'centroids', centroids);
             
             % Parse by CELL
             %------------------------------------------------------------
@@ -173,7 +186,6 @@ classdef DaySummary < handle
                 'label', class);
             
             % Compute distances among all sources
-            %------------------------------------------------------------
             fprintf('  Computing distances between all sources...');
             tic;
             D = Inf*ones(obj.num_cells);
@@ -188,7 +200,6 @@ classdef DaySummary < handle
             fprintf(' Done (%.1f sec)\n', t);
             
             % Precompute cell map image, to avoid doing it each time
-            %------------------------------------------------------------
             [height, width] = size(obj.cells(1).im);
             ref_image = zeros(height, width);
             for k = 1:obj.num_cells
@@ -218,10 +229,18 @@ classdef DaySummary < handle
                     obj.load_tracking(ds_source.tracking);
                 end
             end
+            
+            % Fill in switch data
+            obj.switchdata = struct(...
+                'pre_switch_trials', [],...
+                'post_switch_trials', [],...
+                'changing_path_start', '',...
+                'constant_path_start', '',...
+                'changing_path_cutoff', []);
         end
         
         % Helper functions
-        %------------------------------------------------------------
+        %------------------------------------------------------------        
         function turn = compute_turn(~, start, final)
             % TODO: Turn into Static
             path = {start, final};
@@ -241,6 +260,10 @@ classdef DaySummary < handle
                 vararg = varargin{k};
                 if ischar(vararg)
                     switch lower(vararg)
+                        case {'range', 'inds'}
+                            % Convert list of trial indices to logical vector
+                            lv = ismember(1:obj.num_trials, varargin{k+1});
+                            filtered_trials = filtered_trials & lv;
                         case 'incorrect'
                             filtered_trials = filtered_trials &...
                                 (~strcmp({obj.trials.goal}, {obj.trials.end}));
@@ -316,52 +339,7 @@ classdef DaySummary < handle
                 mask = mask | obj.cells(cell_idx).mask;
             end
         end
-        
-        function is_cell = is_cell(obj, cell_indices)
-            % When 'cell_indices' is omitted, then return the label of all
-            % cells
-            if ~exist('cell_indices', 'var')
-                cell_indices = 1:obj.num_cells;
-            end
-            
-            is_cell = zeros(size(cell_indices));
-            for k = 1:length(cell_indices)
-                cell_idx = cell_indices(k);
-                is_cell(k) = any(strcmp(obj.cells(cell_idx).label,...
-                    {'phase-sensitive cell', 'cell'}));
-            end
-        end
-
-        function x = est_turn_probabilities(obj, span)
-        % returns estimtated probability of a right turn on each trial
-        % (conditioned on starting location). Uses a moving average with
-        % a window size defined by span (default = 5).
-
-            % default span
-            if nargin == 1
-                span = 5;
-            end
-
-            % moving average window
-            b = (1/span)*ones(1,span);
-            a = 1;
-
-            % separate estimates for east vs west starts
-            east_idx = filter_trials(obj, 'start', 'east');
-            west_idx = filter_trials(obj, 'start', 'west');
-
-            % 1 = right turn, 0 = left turn
-            east_right = double(strcmp({obj.trials(east_idx).turn},'right'));
-            west_right = double(strcmp({obj.trials(west_idx).turn},'right'));
-
-            % fill probe trials with NaN
-            x = nan(length(east_idx),1);
-            x(east_idx) = filter(b, a, east_right);
-            x(west_idx) = filter(b, a, west_right);
-            x(east_idx(1:span)) = NaN;
-            x(west_idx(1:span)) = NaN;
-        end
-        
+              
         function is_correct = get_trial_correctness(obj)
             is_correct = [obj.trials.correct];
         end
@@ -415,58 +393,6 @@ classdef DaySummary < handle
             [~, neighbor_inds] = sort(d); % Ascending order
             neighbor_inds = neighbor_inds(1:num_neighbors);
         end
-
-        function strategy = get_strategy(obj)
-            % Computes the navigation strategy (one of 'allo-north',
-            % 'allo-south', 'ego-left', 'ego-right') that best describes
-            % the apparent behavior of the mouse, for the first and latter
-            % halves of the session.
-            
-            strategy = {'', ''};
-            nk = obj.num_trials;
-            idx = [1:floor(nk/2); ceil(1+nk/2):nk];
-            stratnm = {'allo-north','allo-south','ego-left','ego-right'};
-
-            for half = 1:2
-                an = 0; % allo-north
-                as = 0; % allo-south
-                el = 0; % ego-left
-                er = 0; % ego-right
-
-                for a = idx(half,:)
-                    trial = obj.trials(a);
-
-                    if any(strcmp(trial.start, {'north','south'}))
-                        continue % skip probe trials
-                    end
-                    if strcmp(trial.start, 'east')
-                        if strcmp(trial.goal, 'north')
-                            % allo-north or ego-right
-                            an = an+1;
-                            er = er+1;
-                        else
-                            % allo-south or ego-left
-                            as = as+1;
-                            el = el+1;
-                        end
-                    else % west start
-                        if strcmp(trial.goal, 'north')
-                            % allo-north or ego-left
-                            an = an+1;
-                            el = el+1;
-                        else
-                            % allo-south or ego-right
-                            as = as+1;
-                            er = er+1;
-                        end
-                    end
-                end
-
-                [~,mi] = max([an; as; el; er]);
-                strategy{half} = stratnm{mi};
-            end
-
-        end % get_strategy
         
         % Classification
         %------------------------------------------------------------
@@ -508,6 +434,21 @@ classdef DaySummary < handle
             obj.apply_labels_to('cell', orig_not_cells);
         end
         
+        function is_cell = is_cell(obj, cell_indices)
+            % When 'cell_indices' is omitted, then return the label of all
+            % cells
+            if ~exist('cell_indices', 'var')
+                cell_indices = 1:obj.num_cells;
+            end
+            
+            is_cell = zeros(size(cell_indices));
+            for k = 1:length(cell_indices)
+                cell_idx = cell_indices(k);
+                is_cell(k) = any(strcmp(obj.cells(cell_idx).label,...
+                    {'phase-sensitive cell', 'cell'}));
+            end
+        end
+        
         % Load behavior movie
         %------------------------------------------------------------
         function loaded = is_behavior_loaded(obj)
@@ -524,12 +465,13 @@ classdef DaySummary < handle
             end
             
             % Load reference image
-            behavior_ref_img = obj.behavior_vid.read(1);
-            obj.behavior_ref_img = squeeze(behavior_ref_img(:,:,1,:));
+            img = obj.behavior_vid.read(1);
+            obj.behavior_ref_img = squeeze(img(:,:,1,:));
         end
         
         function Mb = get_behavior_trial(obj, trial_idx)
-            trial_frames = obj.trial_indices(trial_idx, [1 end]); % [Start end]
+            % Must use original frame indices to access raw data
+            trial_frames = obj.orig_trial_indices(trial_idx, [1 end]); % [Start end]
             Mb = obj.behavior_vid.read(trial_frames);
             Mb = squeeze(Mb(:,:,1,:)); % Movie is actually grayscale!
         end
@@ -539,16 +481,10 @@ classdef DaySummary < handle
         function load_tracking(obj, tracking_source)
             centroids = load(tracking_source);
 
-            extrema_x = [min(centroids(:,1)),max(centroids(:,1))];
-            extrema_y = [min(centroids(:,2)),max(centroids(:,2))];
-            
+            % Must use original frame indices to access raw data
             for k = 1:obj.num_trials
-                trial_indices = obj.trial_indices(k,1):obj.trial_indices(k,end);
-                obj.trials(k).centroids = centroids(trial_indices, :);
-                [idx_mv_onset,idx_turn_onset] = calc_behavioral_event_indices(...
-                    obj.trials(k).centroids,extrema_x,extrema_y,obj.trials(k).start,obj.trials(k).end);
-                obj.trials(k).movement_onset_frame = idx_mv_onset;
-                obj.trials(k).turn_onset_frame = idx_turn_onset;
+                inds = obj.orig_trial_indices(k,1):obj.orig_trial_indices(k,end);
+                obj.trials(k).centroids = centroids(inds, :);
             end
             
             fprintf('%s: Loaded tracking data from "%s"\n',...
@@ -556,45 +492,55 @@ classdef DaySummary < handle
             obj.is_tracking_loaded = true;
         end
         
-        % Display/summarize functions
+        % Inspect switch data
         %------------------------------------------------------------
-        function summary(obj, num)
-            % summary stats
-            if nargin == 1
-                disp('<strong>Day Summary</strong>')
-                disp('-----------')
-            else
-                fprintf('<strong>Day #%i Summary</strong>\n', num)
-                disp('---------------')
+        function loaded = is_switchdata_loaded(obj)
+            valid_starts = {'east', 'west'};
+            loaded = ~isempty(obj.switchdata.pre_switch_trials) &&...
+                     ~isempty(obj.switchdata.post_switch_trials) &&...
+                     any(strcmp(obj.switchdata.changing_path_start, valid_starts)) &&...
+                     any(strcmp(obj.switchdata.constant_path_start, valid_starts));
+        end
+        
+        function st = get_switch_trials(obj)
+            % Provide trial indices for switch analysis. Note that we only
+            % examine correct trials.
+            %
+            % NOTE: Consider setting once when switchdata is loaded
+            st = struct('constant_pre', [],...
+                        'constant_post', [],...
+                        'changing_pre', [],...
+                        'changing_post', []);
+                    
+            if obj.is_switchdata_loaded
+                sd = obj.switchdata;
+                st.constant_pre = find(obj.filter_trials(...
+                    'range', sd.pre_switch_trials,...
+                    'start', sd.constant_path_start,...
+                    'correct'));
+                st.constant_post = find(obj.filter_trials(...
+                    'range', sd.post_switch_trials,...
+                    'start', sd.constant_path_start,...
+                    'correct'));
+                st.changing_pre = find(obj.filter_trials(...
+                    'range', sd.pre_switch_trials,...
+                    'start', sd.changing_path_start,...
+                    'correct'));
+                st.changing_post = find(obj.filter_trials(...
+                    'range', sd.post_switch_trials,...
+                    'start', sd.changing_path_start,...
+                    'correct'));
             end
-            disp([num2str(obj.num_classified_cells), ' classified cells, ',...
-                  num2str(obj.num_trials), ' trials'])
+        end
+        
+        function reset_switchdata(obj)
+            obj.switchdata.pre_switch_trials = [];
+            obj.switchdata.post_switch_trials = [];
+            obj.switchdata.changing_path_start = '';
+            obj.switchdata.constant_path_start = '';
+            obj.switchdata.changing_path_cutoff = [];
+        end
             
-            % strategy
-            strat = get_strategy(obj);
-            fprintf('<strong>Strategy:</strong> ')
-            if strcmp(strat{1},strat{2})
-                disp(strat{1})
-            else
-                disp([strat{1},' ---> ',strat{2}])
-            end
-
-            % errors
-            fprintf('<strong>Errors:</strong> ')
-            for k = 1:obj.num_trials
-                if obj.trials(k).correct
-                    fprintf('<strong>*</strong> ')
-                else
-                    fprintf(2,'<strong>*</strong> ')
-                end
-                if mod(k,20) == 0
-                    fprintf('\n        ')
-                end
-            end
-            fprintf('\n')
-
-        end % summary
-    
     end % public methods
 
 end
