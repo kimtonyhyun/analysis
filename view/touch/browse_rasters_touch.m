@@ -72,11 +72,29 @@ end
 next_btn = uicontrol('Style', 'pushbutton',...
     'String', '>>',...
     'Units', 'normalized',...
-    'Position', [0.95 0 0.05 1],...
+    'Position', [0.95 0.1 0.05 0.9],...
     'Callback', {@page_button_clicked, page_idx+1});
 if page_idx == max_page
     next_btn.Enable = 'off';
 end
+
+jump_btn = uicontrol('Style', 'pushbutton',...
+    'String', 'J',...
+    'Units', 'normalized',...
+    'Position', [0.95 0 0.05 0.1],...
+    'Callback', @jump_to_cell);
+
+    function jump_to_cell(~, ~)
+        prompt = sprintf('Enter cell index [1-%d]', ds.num_cells);
+        jump_idx = inputdlg(prompt, 'Jump to cell');
+        jump_idx = str2double(jump_idx{1});
+        if ~isempty(jump_idx)
+            if (1 <= jump_idx) && (jump_idx <= ds.num_cells)
+%                 browse_rasters_touch(ds, 'fig', h_fig, 'cell_idx', jump_idx);
+                view_raster_touch(ds, jump_idx, 'fig', h_fig);
+            end
+        end
+    end
 
     function page_button_clicked(~, ~, page_idx)
         browse_rasters_touch(ds, 'fig', h_fig, 'page_idx', page_idx);
