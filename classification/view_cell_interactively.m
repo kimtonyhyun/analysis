@@ -302,9 +302,12 @@ end
         ylabel('Signal [a.u.]');
         hold off;
         
+        render_frame(1);
+        
         % Event handlers for trace windows
         set(global_trace, 'ButtonDownFcn', @go_to_selected_frame);
         set(running_trace, 'ButtonDownFcn', @go_to_selected_frame);
+        set(state.fig_handle, 'WindowScrollWheelFcn', @scroll_frame);
     end % setup_traces
     
     function display_active_period(selected_indices)
@@ -384,7 +387,7 @@ end
     end
 
     function render_frame(k)
-        global t_g t_r dot temp_state;
+        global t_g t_r dot;
         k = max(1,k); k = min(length(frames_to_movie),k); % Clamp
         A = movie(:,:,frames_to_movie(k));
         set(h, 'CData', A);
@@ -395,6 +398,15 @@ end
         drawnow;
         
         temp_state.last_rendered_frame = k;
+    end
+
+    function scroll_frame(~, e)
+        if (e.VerticalScrollCount < 0) % Scroll up
+            k = temp_state.last_rendered_frame - 1;
+        else
+            k = temp_state.last_rendered_frame + 1;
+        end
+        render_frame(k);
     end
 end % main function
 
