@@ -134,6 +134,7 @@ resp = lower(strtrim(input(prompt, 's')));
 val = str2double(resp);
 
 % State of interaction loop (will not carry over to other cells)
+temp_state.last_rendered_frame = [];
 temp_state.last_val = [];
 temp_state.zoomed = true;
 
@@ -307,10 +308,10 @@ end
     end % setup_traces
     
     function display_active_period(selected_indices)
-        global t_g t_r dot break_active_period;
+        global break_active_period;
         
         % The following flag allows for premature termination of active
-        % period display. Flag is set by 'render_frame'
+        % period display. Flag is set by 'go_to_selected_frame'
         break_active_period = false;
         for selected_idx = selected_indices
             frames = active_periods(selected_idx,1):...
@@ -319,13 +320,7 @@ end
                 if break_active_period
                     break; %#ok<UNRCH>
                 end
-                A = movie(:,:,frames_to_movie(k));
-                set(h, 'CData', A);
-                set(t_g, 'XData', time(k)*[1 1]);
-                set(t_r, 'XData', time(k)*[1 1]);
-                set(dot, 'XData', time(k), 'YData', trace(k));
-                set(running_trace, 'XLim', time(k) + time_window/2*[-1 1]);  
-                drawnow;
+                render_frame(k);
             end
         end
     end % display_active_period
@@ -366,6 +361,8 @@ end
     end
 
     function go_to_selected_frame(~, e)
+        global break_active_period;
+        break_active_period = true;
         t = e.IntersectionPoint(1);
         k = round(fps*t+1);
         render_frame(k);
@@ -387,15 +384,17 @@ end
     end
 
     function render_frame(k)
-        global t_g t_r dot break_active_period;
-        break_active_period = true;
+        global t_g t_r dot temp_state;
         k = max(1,k); k = min(length(frames_to_movie),k); % Clamp
         A = movie(:,:,frames_to_movie(k));
         set(h, 'CData', A);
         set(t_g, 'XData', time(k)*[1 1]);
         set(t_r, 'XData', time(k)*[1 1]);
         set(dot, 'XData', time(k), 'YData', trace(k));
-        set(running_trace, 'XLim', time(k) + time_window/2*[-1 1]);      
+        set(running_trace, 'XLim', time(k) + time_window/2*[-1 1]);
+        drawnow;
+        
+        temp_state.last_rendered_frame = k;
     end
 end % main function
 
