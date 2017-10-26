@@ -278,7 +278,7 @@ end % Main interaction loop
         gui.local_manual = plot(-1, -1, 'r');
         hold off;
         ylim(trace_display_range);
-        grid on;
+%         grid on;
         xlabel('Frame');
         ylabel('Fluorescence');
         
