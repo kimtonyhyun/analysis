@@ -41,8 +41,8 @@ if isempty(cutoff_freq)
 end
 if use_filter
     fprintf('Applying LPF (fc=%.1f Hz) to trace...\n', cutoff_freq);
-%     trace = filter_trace(trace_orig, cutoff_freq, fps);
 
+    % Don't apply LPF across trial boundaries
     filt_traces = cell(1,ds.num_trials);
     for tidx = 1:ds.num_trials
         filt_traces{tidx} = filter_trace(ds.get_trace(cell_idx,tidx), cutoff_freq, fps);
@@ -291,7 +291,6 @@ events.auto = sortrows(events.auto, 2);
         gui.local_manual = plot(-1, -1, 'r');
         hold off;
         ylim(trace_display_range);
-%         grid on;
         xlabel('Frame');
         ylabel('Fluorescence');
         
