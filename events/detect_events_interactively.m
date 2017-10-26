@@ -507,8 +507,7 @@ end % Main interaction loop
 
     function set_threshold(t, gui)
         events.threshold = t;
-        es = find_events_in_trials(trace, ds.trial_indices, t, stats.mode);
-        events.auto = cell2mat(es);
+        events.auto = find_events_in_trials(trace, ds.trial_indices, t, stats.mode);
         events.auto = sortrows(events.auto, 3); % Sort events by amplitude
         
         select_event(0, gui);

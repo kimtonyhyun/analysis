@@ -64,11 +64,6 @@ for k = 1:num_events
     events(k,:) = [trough_frame peak_frame event_amp];
 end
 
-% % Filter for amplitude heights (purposely very low threshold here)
-% max_event_amplitude = max(events(:,3));
-% filtered_events = events(:,3) > 0.05 * max_event_amplitude;
-% events = events(filtered_events,:);
-
 end % find_events
 
 function events = find_all_localmax(seg, tr_seg)
