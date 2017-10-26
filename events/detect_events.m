@@ -1,4 +1,4 @@
-function events = detect_events_interactively(ds, cell_idx, varargin)
+function events = detect_events(ds, cell_idx, varargin)
 
 use_filter = true;
 M = [];
@@ -141,6 +141,9 @@ while (1)
     resp = lower(strtrim(input(prompt, 's')));
     val = str2double(resp);
 end % Main interaction loop
+
+% Re-sort auto events by peak event time
+
 
     function get_next_page(gui)
         current_end = state.x_anchor + state.x_range;
