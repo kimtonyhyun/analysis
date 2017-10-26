@@ -61,7 +61,7 @@ state.x_anchor = 1;
 state.x_range = min(500, num_frames);
 state.show_orig = true;
 state.show_dots = false;
-state.show_trials = true;
+state.show_trials = (ds.num_trials > 1);
 state.sel_event = 0;
 state.last_requested_trial = 0;
 

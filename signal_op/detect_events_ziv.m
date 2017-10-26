@@ -1,6 +1,8 @@
-function transient_canvas = detect_events( traces )
-%DETECT_EVENTS detects transient events and outputs binary values for the
+function transient_canvas = detect_events_ziv( traces )
+%DETECT_EVENTS_ZIV detects transient events and outputs binary values for the
 %presence or absence of a transient
+%
+% Based on Yaniv's 2013 paper -- ported by Omer
 
 %parameters
 params.med_window_size = 101;
