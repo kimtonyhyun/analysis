@@ -1,4 +1,10 @@
 function events = find_events_in_trials(trace, trial_indices, threshold, baseline)
+% Small wrapper around 'find_events' so that event parameter determination
+% (e.g. trough preceding the event peak, event amplitude) respects trial
+% boundaries in the trace. This is necessary in the prefrontal dataset,
+% since the traces are concatenations of multiple trials -- time is not
+% actually continuous across the trial boundaries.
+%
 
 num_trials = size(trial_indices, 1);
 
@@ -16,3 +22,10 @@ for k = 1:num_trials
     end
     events{k} = es;
 end
+
+events = cell2mat(events);
+
+% Filter for amplitude heights (purposely very low threshold here)
+max_event_amplitude = max(events(:,3));
+filtered_events = events(:,3) > 0.1 * max_event_amplitude;
+events = events(filtered_events,:);

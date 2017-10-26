@@ -1,4 +1,9 @@
 function stats = compute_trace_stats(trace)
+% Compute trace statistics, including:
+%   - Basic histogram
+%   - Mode
+%   - Percentiles (95, 96, 97, 98, 99-th)
+%
 
 stats.num_bins = 500; % FIXME: Set dynamically
 [n, x] = hist(trace, stats.num_bins);

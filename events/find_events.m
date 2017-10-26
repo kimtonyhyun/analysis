@@ -6,7 +6,8 @@ function events = find_events(trace, threshold, baseline)
 %
 % Returns:
 %   events: [num_events x 3] where
-%     events(k,1): Frame of the trough preceding the k-th event
+%     events(k,1): Frame of the trough preceding the k-th event. Note, this
+%       will be set to -Inf if the trough frame could not be found.
 %     events(k,2): Frame corresponding to the peak of the k-th event
 %     events(k,3): Amplitude difference between peak and trough
 %
@@ -62,11 +63,6 @@ for k = 1:num_events
     
     events(k,:) = [trough_frame peak_frame event_amp];
 end
-
-% % Filter for amplitude heights (purposely very low threshold here)
-% max_event_amplitude = max(events(:,3));
-% filtered_events = events(:,3) > 0.05 * max_event_amplitude;
-% events = events(filtered_events,:);
 
 end % find_events
 

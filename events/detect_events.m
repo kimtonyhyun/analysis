@@ -1,5 +1,6 @@
-function events = detect_events_interactively(ds, cell_idx, varargin)
+function events = detect_events(ds, cell_idx, varargin)
 
+use_prompt = true;
 use_filter = true;
 M = [];
 movie_clim = [];
@@ -10,6 +11,8 @@ for i = 1:length(varargin)
     vararg = varargin{i};
     if ischar(vararg)
         switch lower(vararg)
+            case 'noprompt'
+                use_prompt = false;
             case 'fps'
                 fps = varargin{i+1};
             case 'cutoff'
@@ -38,8 +41,8 @@ if isempty(cutoff_freq)
 end
 if use_filter
     fprintf('Applying LPF (fc=%.1f Hz) to trace...\n', cutoff_freq);
-%     trace = filter_trace(trace_orig, cutoff_freq, fps);
 
+    % Don't apply LPF across trial boundaries
     filt_traces = cell(1,ds.num_trials);
     for tidx = 1:ds.num_trials
         filt_traces{tidx} = filter_trace(ds.get_trace(cell_idx,tidx), cutoff_freq, fps);
@@ -50,10 +53,14 @@ else
 end
 
 % Basic trace properties
+%------------------------------------------------------------
 num_frames = length(trace);
 trace_display_range = [min(trace) max(trace)];
 trace_display_range = trace_display_range + 0.1*diff(trace_display_range)*[-1 1];
-[init_threshold, stats] = estimate_baseline_threshold(trace);
+
+% Compute the threshold
+[baseline, sigma, stats] = estimate_baseline_sigma(trace);
+init_threshold = baseline + 3*sigma;
 
 % Application state
 state.allow_manual_events = false;
@@ -61,12 +68,13 @@ state.x_anchor = 1;
 state.x_range = min(500, num_frames);
 state.show_orig = true;
 state.show_dots = false;
-state.show_trials = true;
+state.show_trials = (ds.num_trials > 1);
 state.sel_event = 0;
 state.last_requested_trial = 0;
 
 events = struct('threshold', [], 'auto', [], 'manual', []);
 
+% FIXME: It'd be nice to not draw the figure when 'use_prompt' is disabled
 hfig = figure;
 gui = setup_gui(hfig, num_frames, trace_display_range, stats, trace_orig);
 set_threshold(init_threshold, gui);
@@ -75,10 +83,10 @@ update_gui_state(gui, state);
 % Interaction loop:
 %------------------------------------------------------------
 prompt = '  >> ';
-resp = lower(strtrim(input(prompt, 's')));
-val = str2double(resp);
+while (use_prompt)
+    resp = lower(strtrim(input(prompt, 's')));
+    val = str2double(resp);
 
-while (1)
     if (~isnan(val)) % Is a number
         if (1 <= val) && (val <= ds.num_trials)
             set_trial(val, gui);
@@ -86,7 +94,6 @@ while (1)
     else % Not a number
         switch (resp)
             case 'q' % "quit"
-                close(hfig);
                 break;
 
             case 'z' % zoom in
@@ -137,11 +144,17 @@ while (1)
                 fprintf('  Sorry, could not parse "%s"\n', resp);
         end
     end
-        
-    resp = lower(strtrim(input(prompt, 's')));
-    val = str2double(resp);
 end % Main interaction loop
 
+% Finished interaction
+%------------------------------------------------------------
+close(hfig);
+
+% Re-sort auto events by peak event time
+events.auto = sortrows(events.auto, 2);
+
+    % Supplementary functions
+    %------------------------------------------------------------
     function get_next_page(gui)
         current_end = state.x_anchor + state.x_range;
         if (current_end >= gui.num_frames)
@@ -278,7 +291,6 @@ end % Main interaction loop
         gui.local_manual = plot(-1, -1, 'r');
         hold off;
         ylim(trace_display_range);
-        grid on;
         xlabel('Frame');
         ylabel('Fluorescence');
         
@@ -507,8 +519,7 @@ end % Main interaction loop
 
     function set_threshold(t, gui)
         events.threshold = t;
-        es = find_events_in_trials(trace, ds.trial_indices, t, stats.mode);
-        events.auto = cell2mat(es);
+        events.auto = find_events_in_trials(trace, ds.trial_indices, t, stats.mode);
         events.auto = sortrows(events.auto, 3); % Sort events by amplitude
         
         select_event(0, gui);
