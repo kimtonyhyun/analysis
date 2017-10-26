@@ -1,5 +1,6 @@
 function events = detect_events(ds, cell_idx, varargin)
 
+use_prompt = true;
 use_filter = true;
 M = [];
 movie_clim = [];
@@ -10,6 +11,8 @@ for i = 1:length(varargin)
     vararg = varargin{i};
     if ischar(vararg)
         switch lower(vararg)
+            case 'noprompt'
+                use_prompt = false;
             case 'fps'
                 fps = varargin{i+1};
             case 'cutoff'
@@ -50,10 +53,14 @@ else
 end
 
 % Basic trace properties
+%------------------------------------------------------------
 num_frames = length(trace);
 trace_display_range = [min(trace) max(trace)];
 trace_display_range = trace_display_range + 0.1*diff(trace_display_range)*[-1 1];
-[init_threshold, stats] = estimate_baseline_threshold(trace);
+
+% Compute the threshold
+[baseline, sigma, stats] = estimate_baseline_sigma(trace);
+init_threshold = baseline + 3*sigma;
 
 % Application state
 state.allow_manual_events = false;
@@ -78,7 +85,7 @@ prompt = '  >> ';
 resp = lower(strtrim(input(prompt, 's')));
 val = str2double(resp);
 
-while (1)
+while (use_prompt)
     if (~isnan(val)) % Is a number
         if (1 <= val) && (val <= ds.num_trials)
             set_trial(val, gui);
