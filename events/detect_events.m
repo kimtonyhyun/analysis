@@ -82,10 +82,10 @@ update_gui_state(gui, state);
 % Interaction loop:
 %------------------------------------------------------------
 prompt = '  >> ';
-resp = lower(strtrim(input(prompt, 's')));
-val = str2double(resp);
-
 while (use_prompt)
+    resp = lower(strtrim(input(prompt, 's')));
+    val = str2double(resp);
+
     if (~isnan(val)) % Is a number
         if (1 <= val) && (val <= ds.num_trials)
             set_trial(val, gui);
@@ -144,9 +144,6 @@ while (use_prompt)
                 fprintf('  Sorry, could not parse "%s"\n', resp);
         end
     end
-        
-    resp = lower(strtrim(input(prompt, 's')));
-    val = str2double(resp);
 end % Main interaction loop
 
 % Re-sort auto events by peak event time
