@@ -74,6 +74,7 @@ state.last_requested_trial = 0;
 
 events = struct('threshold', [], 'auto', [], 'manual', []);
 
+% FIXME: It'd be nice to not draw the figure when 'use_prompt' is disabled
 hfig = figure;
 gui = setup_gui(hfig, num_frames, trace_display_range, stats, trace_orig);
 set_threshold(init_threshold, gui);
@@ -93,7 +94,6 @@ while (use_prompt)
     else % Not a number
         switch (resp)
             case 'q' % "quit"
-                close(hfig);
                 break;
 
             case 'z' % zoom in
@@ -146,9 +146,15 @@ while (use_prompt)
     end
 end % Main interaction loop
 
+% Finished interaction
+%------------------------------------------------------------
+close(hfig);
+
 % Re-sort auto events by peak event time
+events.auto = sortrows(events.auto, 2);
 
-
+    % Supplementary functions
+    %------------------------------------------------------------
     function get_next_page(gui)
         current_end = state.x_anchor + state.x_range;
         if (current_end >= gui.num_frames)
