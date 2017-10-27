@@ -72,7 +72,10 @@ state.show_trials = (ds.num_trials > 1);
 state.sel_event = 0;
 state.last_requested_trial = 0;
 
-event_info = struct('baseline', baseline, 'sigma', sigma, 'threshold', []);
+event_info = struct('baseline', baseline,...
+                    'sigma', sigma,...
+                    'threshold', [],...
+                    'amp_threshold', 0.1);
 events = struct('info', event_info, 'auto', [], 'manual', []);
 
 % FIXME: It'd be nice to not draw the figure when 'use_prompt' is disabled
@@ -83,7 +86,7 @@ update_gui_state(gui, state);
 
 % Interaction loop:
 %------------------------------------------------------------
-prompt = '  >> ';
+prompt = 'Detector >> ';
 while (use_prompt)
     resp = lower(strtrim(input(prompt, 's')));
     val = str2double(resp);
@@ -521,7 +524,9 @@ events.auto = sortrows(events.auto, 2);
 
     function set_threshold(t, gui)
         events.info.threshold = t;
-        events.auto = find_events_in_trials(trace, ds.trial_indices, t, stats.mode);
+        i = events.info;
+        events.auto = find_events_in_trials(trace, ds.trial_indices,...
+            i.threshold, i.baseline, i.amp_threshold);
         events.auto = sortrows(events.auto, 3); % Sort events by amplitude
         
         select_event(0, gui);
