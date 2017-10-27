@@ -436,12 +436,13 @@ events.auto = sortrows(events.auto, 2);
             case 1 % Left click -- Move the local viewpoint
                 x = round(e.IntersectionPoint(1));
                 if ((1<=x) && (x<=gui.num_frames))
-                    state.x_anchor = x - state.x_range/2;
-                    redraw_local_window(gui, state);
-                    
-                    % To have consistent behavior with subsequent mouse
-                    % scrolls, set last_requested_trial
-                    state.last_requested_trial = find(x >= ds.trial_indices(:,1)', 1, 'last');
+                    if state.show_trials
+                        t = find(x >= ds.trial_indices(:,1), 1, 'last');
+                        set_trial(t, gui);
+                    else
+                        state.x_anchor = x - state.x_range/2;
+                        redraw_local_window(gui, state);
+                    end
                 else
                     fprintf('\n  Not a valid frame for this trace!\n');
                 end
