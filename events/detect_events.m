@@ -60,7 +60,7 @@ trace_display_range = trace_display_range + 0.1*diff(trace_display_range)*[-1 1]
 
 % Compute the threshold
 [baseline, sigma, stats] = estimate_baseline_sigma(trace);
-init_threshold = baseline + 3*sigma;
+init_threshold = baseline + 5*sigma;
 
 % Application state
 state.allow_manual_events = false;
@@ -72,7 +72,8 @@ state.show_trials = (ds.num_trials > 1);
 state.sel_event = 0;
 state.last_requested_trial = 0;
 
-events = struct('threshold', [], 'auto', [], 'manual', []);
+event_info = struct('baseline', baseline, 'sigma', sigma, 'threshold', []);
+events = struct('info', event_info, 'auto', [], 'manual', []);
 
 % FIXME: It'd be nice to not draw the figure when 'use_prompt' is disabled
 hfig = figure;
@@ -380,13 +381,13 @@ events.auto = sortrows(events.auto, 2);
     
     function redraw_threshold(gui)
         % GLOBAL subplot
-        set(gui.global_thresh, 'YData', events.threshold*[1 1]);
+        set(gui.global_thresh, 'YData', events.info.threshold*[1 1]);
         auto_peaks = events.auto(:,2)';
         set(gui.global_auto, 'XData', auto_peaks, 'YData', trace(auto_peaks));
         update_event_tally(gui);
         
         % HISTOGRAM subplot
-        set(gui.histogram_thresh, 'XData', events.threshold*[1 1]);
+        set(gui.histogram_thresh, 'XData', events.info.threshold*[1 1]);
         
         % CDF subplot
         num_auto_events = size(events.auto, 1);
@@ -395,7 +396,7 @@ events.auto = sortrows(events.auto, 2);
                      'YData', (1:num_auto_events)/num_auto_events);
         
         % LOCAL subplot
-        set(gui.local_thresh, 'YData', events.threshold*[1 1]);
+        set(gui.local_thresh, 'YData', events.info.threshold*[1 1]);
         
         % Note: NaN's break connections between line segments
         X = kron(auto_peaks, [1 1 NaN]);
@@ -518,7 +519,7 @@ events.auto = sortrows(events.auto, 2);
     end % add_manual_event
 
     function set_threshold(t, gui)
-        events.threshold = t;
+        events.info.threshold = t;
         events.auto = find_events_in_trials(trace, ds.trial_indices, t, stats.mode);
         events.auto = sortrows(events.auto, 3); % Sort events by amplitude
         

@@ -25,7 +25,7 @@ end
 
 events = cell2mat(events);
 
-% Filter for amplitude heights (purposely very low threshold here)
-max_event_amplitude = max(events(:,3));
-filtered_events = events(:,3) > 0.1 * max_event_amplitude;
-events = events(filtered_events,:);
+% % Filter for amplitude heights (purposely very low threshold here)
+% max_event_amplitude = max(events(:,3));
+% filtered_events = events(:,3) > 0.1 * max_event_amplitude;
+% events = events(filtered_events,:);
