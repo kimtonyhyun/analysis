@@ -149,6 +149,8 @@ while (1)
     else % Not a number
         switch (resp)
             case {'', 'q'} % "quit"
+                % Unset the handler on fig handle, which persists!
+                set(state.fig_handle, 'WindowScrollWheelFcn', '');
                 break;
                 
             case 't' % "threshold"
