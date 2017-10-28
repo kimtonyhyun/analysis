@@ -6,23 +6,26 @@ M = [];
 movie_clim = [];
 fps = 30;
 cutoff_freq = [];
+ext_events = [];
 
-for i = 1:length(varargin)
-    vararg = varargin{i};
+for j = 1:length(varargin)
+    vararg = varargin{j};
     if ischar(vararg)
         switch lower(vararg)
             case 'noprompt'
                 use_prompt = false;
             case 'fps'
-                fps = varargin{i+1};
+                fps = varargin{j+1};
             case 'cutoff'
-                cutoff_freq = varargin{i+1};
+                cutoff_freq = varargin{j+1};
             case 'nofilter'
                 use_filter = false;
             case {'m', 'movie'}
-                M = varargin{i+1};
+                M = varargin{j+1};
             case {'clim', 'movie_clim'}
-                movie_clim = varargin{i+1};
+                movie_clim = varargin{j+1};
+            case {'ext', 'extevents', 'events'}
+                ext_events = varargin{j+1};
         end
     end
 end
@@ -61,6 +64,7 @@ trace_display_range = trace_display_range + 0.1*diff(trace_display_range)*[-1 1]
 % Compute the threshold
 [baseline, sigma, stats] = estimate_baseline_sigma(trace);
 init_threshold = baseline + 5*sigma;
+init_amp_threshold = 0.1;
 
 % Application state
 state.allow_manual_events = false;
@@ -72,18 +76,27 @@ state.show_trials = (ds.num_trials > 1);
 state.sel_event = 0;
 state.last_requested_trial = 0;
 
-event_info = struct('baseline', baseline, 'sigma', sigma, 'threshold', []);
+event_info = struct('baseline', baseline,...
+                    'sigma', sigma,...
+                    'threshold', [],...
+                    'amp_threshold', []);
 events = struct('info', event_info, 'auto', [], 'manual', []);
 
 % FIXME: It'd be nice to not draw the figure when 'use_prompt' is disabled
 hfig = figure;
 gui = setup_gui(hfig, num_frames, trace_display_range, stats, trace_orig);
-set_threshold(init_threshold, gui);
+set_threshold(init_threshold, init_amp_threshold, gui);
 update_gui_state(gui, state);
+
+if ~isempty(ext_events)
+    % TODO: Handle different types of external event specification
+    events.manual = ext_events;
+    redraw_manual_events(gui);
+end
 
 % Interaction loop:
 %------------------------------------------------------------
-prompt = '  >> ';
+prompt = 'Detector >> ';
 while (use_prompt)
     resp = lower(strtrim(input(prompt, 's')));
     val = str2double(resp);
@@ -127,7 +140,7 @@ while (use_prompt)
                 end
                 
             case 't' % reset threshold
-                set_threshold(init_threshold, gui);
+                set_threshold(init_threshold, init_amp_threshold, gui);
                                 
 %             case 'm' % toggle manual input -- DISABLED for now
 %                 state.allow_manual_events = ~state.allow_manual_events;
@@ -221,6 +234,7 @@ events.auto = sortrows(events.auto, 2);
         gui.cdf = plot(-1, -1, 'm.-', 'HitTest', 'off');
         hold on;
         gui.cdf_sel_event = plot(-1, -1, 'mo', 'HitTest', 'off');
+        gui.cdf_amp_threshold = plot(-1*[1 1], [0 1], 'k', 'HitTest', 'off');
         hold off;
         xlim([0 1]);
         ylim([0 1]);
@@ -392,6 +406,7 @@ events.auto = sortrows(events.auto, 2);
         % CDF subplot
         num_auto_events = size(events.auto, 1);
         max_amp = events.auto(end,3);
+        set(gui.cdf_amp_threshold, 'XData', events.info.amp_threshold*[1 1]);
         set(gui.cdf, 'XData', events.auto(:,3)/max_amp,...
                      'YData', (1:num_auto_events)/num_auto_events);
         
@@ -436,19 +451,20 @@ events.auto = sortrows(events.auto, 2);
             case 1 % Left click -- Move the local viewpoint
                 x = round(e.IntersectionPoint(1));
                 if ((1<=x) && (x<=gui.num_frames))
-                    state.x_anchor = x - state.x_range/2;
-                    redraw_local_window(gui, state);
-                    
-                    % To have consistent behavior with subsequent mouse
-                    % scrolls, set last_requested_trial
-                    state.last_requested_trial = find(x >= ds.trial_indices(:,1)', 1, 'last');
+                    if state.show_trials
+                        t = find(x >= ds.trial_indices(:,1), 1, 'last');
+                        set_trial(t, gui);
+                    else
+                        state.x_anchor = x - state.x_range/2;
+                        redraw_local_window(gui, state);
+                    end
                 else
                     fprintf('\n  Not a valid frame for this trace!\n');
                 end
                 
             case 3 % Right click -- Set threshold
                 t = e.IntersectionPoint(2);
-                set_threshold(t, gui);
+                set_threshold(t, [], gui);
         end
     end % global_plot_handler
 
@@ -458,13 +474,13 @@ events.auto = sortrows(events.auto, 2);
                 
             case 3 % Right click -- Set threshold
                 t = e.IntersectionPoint(1);
-                set_threshold(t, gui);
+                set_threshold(t, [], gui);
         end
     end % histogram_handler
 
     function cdf_handler(~, e, gui)
         switch e.Button
-            case 1 % Left click -- "Select" a particular event
+            case 1 % Left click -- Select a particular event
                 x = e.IntersectionPoint(1);
                 
                 % Find the event with the nearest amplitude
@@ -478,8 +494,11 @@ events.auto = sortrows(events.auto, 2);
                 sel_frame = events.auto(se,2);
                 state.x_anchor = sel_frame - 1/2 * state.x_range;             
                 redraw_local_window(gui, state);
-            case 3 % Right click
+            case 3 % Right click -- Set the amplitude threshold
+                x = e.IntersectionPoint(1);
+                x = max(0, x); x = min(x, 1); % Clamp to [0 1]
                 
+                set_threshold([], x, gui);
         end
     end % cdf_handler
 
@@ -518,9 +537,17 @@ events.auto = sortrows(events.auto, 2);
         end
     end % add_manual_event
 
-    function set_threshold(t, gui)
-        events.info.threshold = t;
-        events.auto = find_events_in_trials(trace, ds.trial_indices, t, stats.mode);
+    function set_threshold(threshold, amp_threshold, gui)
+        if ~isempty(threshold)
+            events.info.threshold = threshold;
+        end
+        if ~isempty(amp_threshold)
+            events.info.amp_threshold = amp_threshold;
+        end
+
+        i = events.info;
+        events.auto = find_events_in_trials(trace, ds.trial_indices,...
+            i.threshold, i.baseline, i.amp_threshold);
         events.auto = sortrows(events.auto, 3); % Sort events by amplitude
         
         select_event(0, gui);
