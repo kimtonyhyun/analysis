@@ -30,6 +30,8 @@ end
 events = cell2mat(events);
 
 % Filter for amplitude heights
-max_event_amplitude = max(events(:,3));
-filtered_events = events(:,3) > amp_threshold * max_event_amplitude;
-events = events(filtered_events,:);
+if ~isempty(events)
+    max_event_amplitude = max(events(:,3));
+    filtered_events = events(:,3) > amp_threshold * max_event_amplitude;
+    events = events(filtered_events,:);
+end

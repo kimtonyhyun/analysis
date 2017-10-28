@@ -4,7 +4,7 @@ use_prompt = true;
 use_filter = true;
 M = [];
 movie_clim = [];
-fps = 30;
+fps = 10;
 cutoff_freq = [];
 ext_events = [];
 
@@ -43,7 +43,7 @@ if isempty(cutoff_freq)
     cutoff_freq = 4/30 * fps;
 end
 if use_filter
-    fprintf('Applying LPF (fc=%.1f Hz) to trace...\n', cutoff_freq);
+%     fprintf('Applying LPF (fc=%.1f Hz) to trace...\n', cutoff_freq);
 
     % Don't apply LPF across trial boundaries
     filt_traces = cell(1,ds.num_trials);
@@ -58,13 +58,7 @@ end
 % Basic trace properties
 %------------------------------------------------------------
 num_frames = length(trace);
-trace_display_range = [min(trace) max(trace)];
-trace_display_range = trace_display_range + 0.1*diff(trace_display_range)*[-1 1];
-
-% Compute the threshold
 [baseline, sigma, stats] = estimate_baseline_sigma(trace);
-init_threshold = baseline + 5*sigma;
-init_amp_threshold = 0.1;
 
 % Application state
 state.allow_manual_events = false;
@@ -76,22 +70,32 @@ state.show_trials = (ds.num_trials > 1);
 state.sel_event = 0;
 state.last_requested_trial = 0;
 
-event_info = struct('baseline', baseline,...
-                    'sigma', sigma,...
-                    'threshold', [],...
-                    'amp_threshold', []);
-events = struct('info', event_info, 'auto', [], 'manual', []);
+init_info = struct('baseline', baseline,...
+                   'sigma', sigma,...
+                   'threshold', baseline + 5*sigma,...
+                   'amp_threshold', 0.1);
+events = struct('info', init_info, 'auto', [], 'manual', []);
 
 % FIXME: It'd be nice to not draw the figure when 'use_prompt' is disabled
 hfig = figure;
-gui = setup_gui(hfig, num_frames, trace_display_range, stats, trace_orig);
-set_threshold(init_threshold, init_amp_threshold, gui);
-update_gui_state(gui, state);
+gui = setup_gui(hfig, num_frames, compute_display_range(trace), stats, trace_orig);
 
 if ~isempty(ext_events)
-    % TODO: Handle different types of external event specification
-    events.manual = ext_events;
-    redraw_manual_events(gui);
+    if isstruct(ext_events)
+        % If struct, assume to have originated from the current event
+        % detection method
+        events.info = ext_events.info;
+    else        
+        % TODO: Handle different types of external event specification
+        events.manual = ext_events;
+        redraw_manual_events(gui);
+    end
+end
+
+set_threshold([], [], gui);
+update_gui_state(gui, state);
+if state.show_trials
+    set_trial(1, gui);
 end
 
 % Interaction loop:
@@ -140,7 +144,8 @@ while (use_prompt)
                 end
                 
             case 't' % reset threshold
-                set_threshold(init_threshold, init_amp_threshold, gui);
+                events.info = init_info;
+                set_threshold([], [], gui);
                                 
 %             case 'm' % toggle manual input -- DISABLED for now
 %                 state.allow_manual_events = ~state.allow_manual_events;
@@ -165,7 +170,9 @@ end % Main interaction loop
 close(hfig);
 
 % Re-sort auto events by peak event time
-events.auto = sortrows(events.auto, 2);
+if ~isempty(events.auto)
+    events.auto = sortrows(events.auto, 2);
+end
 
     % Supplementary functions
     %------------------------------------------------------------
@@ -394,9 +401,21 @@ events.auto = sortrows(events.auto, 2);
     end
     
     function redraw_threshold(gui)
+        % Handle the possibility that the eventdata is empty
+        if ~isempty(events.auto)
+            auto_peaks = events.auto(:,2);
+            num_auto_events = length(auto_peaks);
+            cdf_x = events.auto(:,3) / events.auto(end,3); % Assume events are sorted by amplitude
+            cdf_y = (1:num_auto_events)/num_auto_events;
+        else
+            auto_peaks = [];
+            num_auto_events = 0;
+            cdf_x = [];
+            cdf_y = [];
+        end
+        
         % GLOBAL subplot
         set(gui.global_thresh, 'YData', events.info.threshold*[1 1]);
-        auto_peaks = events.auto(:,2)';
         set(gui.global_auto, 'XData', auto_peaks, 'YData', trace(auto_peaks));
         update_event_tally(gui);
         
@@ -404,26 +423,28 @@ events.auto = sortrows(events.auto, 2);
         set(gui.histogram_thresh, 'XData', events.info.threshold*[1 1]);
         
         % CDF subplot
-        num_auto_events = size(events.auto, 1);
-        max_amp = events.auto(end,3);
         set(gui.cdf_amp_threshold, 'XData', events.info.amp_threshold*[1 1]);
-        set(gui.cdf, 'XData', events.auto(:,3)/max_amp,...
-                     'YData', (1:num_auto_events)/num_auto_events);
+        set(gui.cdf, 'XData', cdf_x, 'YData', cdf_y);
         
         % LOCAL subplot
         set(gui.local_thresh, 'YData', events.info.threshold*[1 1]);
         
         % Note: NaN's break connections between line segments
-        X = kron(auto_peaks, [1 1 NaN]);
+        X = kron(auto_peaks', [1 1 NaN]);
         Y = repmat([gui.trace_display_range NaN], 1, num_auto_events);
         set(gui.local_auto, 'XData', X, 'YData', Y);
         
         % Draw event amplitudes
-        Y = zeros(3, num_auto_events);
-        Y(1,:) = trace(events.auto(:,2)); % Peak
-        Y(2,:) = Y(1,:) - events.auto(:,3)'; % Peak minus amplitude
-        Y(3,:) = NaN;
-        set(gui.local_auto_amps, 'XData', X, 'YData', Y(:));
+        if (num_auto_events > 0)
+            Y = zeros(3, num_auto_events);
+            Y(1,:) = trace(auto_peaks);
+            Y(2,:) = Y(1,:) - events.auto(:,3)'; % Peak minus amplitude
+            Y(3,:) = NaN;
+            Y = Y(:);
+        else
+            Y = [];
+        end
+        set(gui.local_auto_amps, 'XData', X, 'YData', Y);
     end % redraw_threshold
 
     function redraw_manual_events(gui)
@@ -548,7 +569,9 @@ events.auto = sortrows(events.auto, 2);
         i = events.info;
         events.auto = find_events_in_trials(trace, ds.trial_indices,...
             i.threshold, i.baseline, i.amp_threshold);
-        events.auto = sortrows(events.auto, 3); % Sort events by amplitude
+        if ~isempty(events.auto)
+            events.auto = sortrows(events.auto, 3); % Sort events by amplitude
+        end
         
         select_event(0, gui);
         redraw_threshold(gui);
@@ -587,3 +610,8 @@ events.auto = sortrows(events.auto, 2);
     end % select_event
 
 end % detect_events_interactively
+
+function display_range = compute_display_range(trace)
+    display_range = [min(trace) max(trace)];
+    display_range = display_range + 0.1*diff(display_range)*[-1 1];
+end % compute_display_range
