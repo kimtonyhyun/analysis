@@ -4,7 +4,7 @@ use_prompt = true;
 use_filter = true;
 M = [];
 movie_clim = [];
-fps = 30;
+fps = 10;
 cutoff_freq = [];
 ext_events = [];
 
@@ -43,7 +43,7 @@ if isempty(cutoff_freq)
     cutoff_freq = 4/30 * fps;
 end
 if use_filter
-    fprintf('Applying LPF (fc=%.1f Hz) to trace...\n', cutoff_freq);
+%     fprintf('Applying LPF (fc=%.1f Hz) to trace...\n', cutoff_freq);
 
     % Don't apply LPF across trial boundaries
     filt_traces = cell(1,ds.num_trials);
@@ -165,7 +165,9 @@ end % Main interaction loop
 close(hfig);
 
 % Re-sort auto events by peak event time
-events.auto = sortrows(events.auto, 2);
+if ~isempty(events.auto)
+    events.auto = sortrows(events.auto, 2);
+end
 
     % Supplementary functions
     %------------------------------------------------------------
@@ -394,9 +396,21 @@ events.auto = sortrows(events.auto, 2);
     end
     
     function redraw_threshold(gui)
+        % Handle the possibility that the eventdata is empty
+        if ~isempty(events.auto)
+            auto_peaks = events.auto(:,2)';
+            num_auto_events = length(auto_peaks);
+            cdf_x = events.auto(:,3) / events.auto(end,3); % Assume events are sorted by amplitude
+            cdf_y = (1:num_auto_events)/num_auto_events;
+        else
+            auto_peaks = [];
+            num_auto_events = 0;
+            cdf_x = [];
+            cdf_y = [];
+        end
+        
         % GLOBAL subplot
         set(gui.global_thresh, 'YData', events.info.threshold*[1 1]);
-        auto_peaks = events.auto(:,2)';
         set(gui.global_auto, 'XData', auto_peaks, 'YData', trace(auto_peaks));
         update_event_tally(gui);
         
@@ -404,11 +418,8 @@ events.auto = sortrows(events.auto, 2);
         set(gui.histogram_thresh, 'XData', events.info.threshold*[1 1]);
         
         % CDF subplot
-        num_auto_events = size(events.auto, 1);
-        max_amp = events.auto(end,3);
         set(gui.cdf_amp_threshold, 'XData', events.info.amp_threshold*[1 1]);
-        set(gui.cdf, 'XData', events.auto(:,3)/max_amp,...
-                     'YData', (1:num_auto_events)/num_auto_events);
+        set(gui.cdf, 'XData', cdf_x, 'YData', cdf_y);
         
         % LOCAL subplot
         set(gui.local_thresh, 'YData', events.info.threshold*[1 1]);
@@ -419,10 +430,15 @@ events.auto = sortrows(events.auto, 2);
         set(gui.local_auto, 'XData', X, 'YData', Y);
         
         % Draw event amplitudes
-        Y = zeros(3, num_auto_events);
-        Y(1,:) = trace(events.auto(:,2)); % Peak
-        Y(2,:) = Y(1,:) - events.auto(:,3)'; % Peak minus amplitude
-        Y(3,:) = NaN;
+        if (num_auto_events > 0)
+            Y = zeros(3, num_auto_events);
+            Y(1,:) = trace(events.auto(:,2)); % Peak
+            Y(2,:) = Y(1,:) - events.auto(:,3)'; % Peak minus amplitude
+            Y(3,:) = NaN;
+            Y = Y(:);
+        else
+            Y = [];
+        end
         set(gui.local_auto_amps, 'XData', X, 'YData', Y(:));
     end % redraw_threshold
 
@@ -548,7 +564,9 @@ events.auto = sortrows(events.auto, 2);
         i = events.info;
         events.auto = find_events_in_trials(trace, ds.trial_indices,...
             i.threshold, i.baseline, i.amp_threshold);
-        events.auto = sortrows(events.auto, 3); % Sort events by amplitude
+        if ~isempty(events.auto)
+            events.auto = sortrows(events.auto, 3); % Sort events by amplitude
+        end
         
         select_event(0, gui);
         redraw_threshold(gui);
