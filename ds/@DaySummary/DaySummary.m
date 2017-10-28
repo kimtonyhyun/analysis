@@ -35,6 +35,7 @@ classdef DaySummary < handle
     end
     
     properties (SetAccess = private, Hidden=true)
+        trace_corrs
         cell_distances
         cell_map_ref_img
         behavior_vid
@@ -150,6 +151,14 @@ classdef DaySummary < handle
                 'time',  num2cell(trial_durations),...
                 'traces', traces,...
                 'centroids', centroids);
+            
+            % Compute trace correlation among all sources
+            full_traces = cell2mat(traces'); % [num_cells x num_frames]
+            fprintf('  Computing trace correlations between all sources...');
+            tic;
+            obj.trace_corrs = corr(full_traces');
+            t = toc;
+            fprintf(' Done (%.1f sec)\n', t);
             
             % Parse by CELL
             %------------------------------------------------------------
