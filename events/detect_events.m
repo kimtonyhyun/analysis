@@ -403,7 +403,7 @@ end
     function redraw_threshold(gui)
         % Handle the possibility that the eventdata is empty
         if ~isempty(events.auto)
-            auto_peaks = events.auto(:,2)';
+            auto_peaks = events.auto(:,2);
             num_auto_events = length(auto_peaks);
             cdf_x = events.auto(:,3) / events.auto(end,3); % Assume events are sorted by amplitude
             cdf_y = (1:num_auto_events)/num_auto_events;
@@ -430,21 +430,21 @@ end
         set(gui.local_thresh, 'YData', events.info.threshold*[1 1]);
         
         % Note: NaN's break connections between line segments
-        X = kron(auto_peaks, [1 1 NaN]);
+        X = kron(auto_peaks', [1 1 NaN]);
         Y = repmat([gui.trace_display_range NaN], 1, num_auto_events);
         set(gui.local_auto, 'XData', X, 'YData', Y);
         
         % Draw event amplitudes
         if (num_auto_events > 0)
             Y = zeros(3, num_auto_events);
-            Y(1,:) = trace(events.auto(:,2)); % Peak
+            Y(1,:) = trace(auto_peaks);
             Y(2,:) = Y(1,:) - events.auto(:,3)'; % Peak minus amplitude
             Y(3,:) = NaN;
             Y = Y(:);
         else
             Y = [];
         end
-        set(gui.local_auto_amps, 'XData', X, 'YData', Y(:));
+        set(gui.local_auto_amps, 'XData', X, 'YData', Y);
     end % redraw_threshold
 
     function redraw_manual_events(gui)
