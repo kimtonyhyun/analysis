@@ -6,23 +6,26 @@ M = [];
 movie_clim = [];
 fps = 30;
 cutoff_freq = [];
+ext_events = [];
 
-for i = 1:length(varargin)
-    vararg = varargin{i};
+for j = 1:length(varargin)
+    vararg = varargin{j};
     if ischar(vararg)
         switch lower(vararg)
             case 'noprompt'
                 use_prompt = false;
             case 'fps'
-                fps = varargin{i+1};
+                fps = varargin{j+1};
             case 'cutoff'
-                cutoff_freq = varargin{i+1};
+                cutoff_freq = varargin{j+1};
             case 'nofilter'
                 use_filter = false;
             case {'m', 'movie'}
-                M = varargin{i+1};
+                M = varargin{j+1};
             case {'clim', 'movie_clim'}
-                movie_clim = varargin{i+1};
+                movie_clim = varargin{j+1};
+            case {'ext', 'extevents', 'events'}
+                ext_events = varargin{j+1};
         end
     end
 end
@@ -84,6 +87,12 @@ hfig = figure;
 gui = setup_gui(hfig, num_frames, trace_display_range, stats, trace_orig);
 set_threshold(init_threshold, init_amp_threshold, gui);
 update_gui_state(gui, state);
+
+if ~isempty(ext_events)
+    % TODO: Handle different types of external event specification
+    events.manual = ext_events;
+    redraw_manual_events(gui);
+end
 
 % Interaction loop:
 %------------------------------------------------------------
