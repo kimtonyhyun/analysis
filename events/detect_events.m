@@ -58,13 +58,7 @@ end
 % Basic trace properties
 %------------------------------------------------------------
 num_frames = length(trace);
-trace_display_range = [min(trace) max(trace)];
-trace_display_range = trace_display_range + 0.1*diff(trace_display_range)*[-1 1];
-
-% Compute the threshold
 [baseline, sigma, stats] = estimate_baseline_sigma(trace);
-init_threshold = baseline + 5*sigma;
-init_amp_threshold = 0.1;
 
 % Application state
 state.allow_manual_events = false;
@@ -76,22 +70,32 @@ state.show_trials = (ds.num_trials > 1);
 state.sel_event = 0;
 state.last_requested_trial = 0;
 
-event_info = struct('baseline', baseline,...
-                    'sigma', sigma,...
-                    'threshold', [],...
-                    'amp_threshold', []);
-events = struct('info', event_info, 'auto', [], 'manual', []);
+init_info = struct('baseline', baseline,...
+                   'sigma', sigma,...
+                   'threshold', baseline + 5*sigma,...
+                   'amp_threshold', 0.1);
+events = struct('info', init_info, 'auto', [], 'manual', []);
 
 % FIXME: It'd be nice to not draw the figure when 'use_prompt' is disabled
 hfig = figure;
-gui = setup_gui(hfig, num_frames, trace_display_range, stats, trace_orig);
-set_threshold(init_threshold, init_amp_threshold, gui);
-update_gui_state(gui, state);
+gui = setup_gui(hfig, num_frames, compute_display_range(trace), stats, trace_orig);
 
 if ~isempty(ext_events)
-    % TODO: Handle different types of external event specification
-    events.manual = ext_events;
-    redraw_manual_events(gui);
+    if isstruct(ext_events)
+        % If struct, assume to have originated from the current event
+        % detection method
+        events.info = ext_events.info;
+    else        
+        % TODO: Handle different types of external event specification
+        events.manual = ext_events;
+        redraw_manual_events(gui);
+    end
+end
+
+set_threshold([], [], gui);
+update_gui_state(gui, state);
+if state.show_trials
+    set_trial(1, gui);
 end
 
 % Interaction loop:
@@ -140,7 +144,8 @@ while (use_prompt)
                 end
                 
             case 't' % reset threshold
-                set_threshold(init_threshold, init_amp_threshold, gui);
+                events.info = init_info;
+                set_threshold([], [], gui);
                                 
 %             case 'm' % toggle manual input -- DISABLED for now
 %                 state.allow_manual_events = ~state.allow_manual_events;
@@ -605,3 +610,8 @@ end
     end % select_event
 
 end % detect_events_interactively
+
+function display_range = compute_display_range(trace)
+    display_range = [min(trace) max(trace)];
+    display_range = display_range + 0.1*diff(display_range)*[-1 1];
+end % compute_display_range
