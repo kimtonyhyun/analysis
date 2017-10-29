@@ -502,6 +502,22 @@ classdef DaySummary < handle
             obj.is_tracking_loaded = true;
         end
         
+        % Load event data
+        %------------------------------------------------------------
+        function load_events(obj, event_source)
+            data = load(event_source);
+            assert(length(data.events) == obj.num_cells,...
+                'Error: Number of cells in event file does not match that in DaySummary!');
+            
+            assert(data.events(1).info.num_frames == obj.full_num_frames,...
+                'Error: Number of frames in event file does not match full number of frames in DaySummary!');
+            
+            for c = 1:obj.num_cells
+                eventdata = data.events(c).auto; % Format: [num_events x 3]
+
+            end
+        end
+        
         % Inspect switch data
         %------------------------------------------------------------
         function loaded = is_switchdata_loaded(obj)
