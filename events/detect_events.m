@@ -70,7 +70,8 @@ state.show_trials = (ds.num_trials > 1);
 state.sel_event = 0;
 state.last_requested_trial = 0;
 
-init_info = struct('baseline', baseline,...
+init_info = struct('num_frames', num_frames,...
+                   'baseline', baseline,...
                    'sigma', sigma,...
                    'threshold', baseline + 5*sigma,...
                    'amp_threshold', 0.1);
@@ -84,7 +85,7 @@ if ~isempty(ext_events)
     if isstruct(ext_events)
         % If struct, assume to have originated from the current event
         % detection method
-        events.info = ext_events.info;
+        init_info = ext_events.info;
     else        
         % TODO: Handle different types of external event specification
         events.manual = ext_events;
@@ -165,7 +166,7 @@ while (use_prompt)
     end
 end % Main interaction loop
 
-% Finished interaction
+% Finished interaction -- prepare output
 %------------------------------------------------------------
 close(hfig);
 
