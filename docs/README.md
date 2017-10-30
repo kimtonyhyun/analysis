@@ -5,6 +5,7 @@ The Matlab-based analysis workflow for the strategy shifting experiment at Herri
 1. [`DaySummary` QuickStart](ds_quickstart.md)
   * Using `DaySummary` with non-PlusMaze datasets
   * Using `browse_rasters`
+  * [Using `detect_events`](eventdetect.md)
 2. Classifying cells using `DaySummary`
 3. [Cross-dataset alignment](alignment.md)
 4. [Use of `MultiDay`](multiday.md)
