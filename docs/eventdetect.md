@@ -78,7 +78,7 @@ The columns of `events.auto` (and `events.manual`) are as follows:
 2. The frame index of the fluorescence peak,
 3. The event amplitude defined as the difference in fluorescence between the peak and the trough.
 
-Note that sometimes the trough preceding the peak cannot be found. This typically occurs if the event occurs at the beginning of a trial, and the minimum preceding the peak cannot be found _within_ that trial. In this case, `detect_events` sets the trough frame to be `-Inf`, and the event amplitude is defined to be the fluorescence difference between the peak and the trace baseline.
+Note that sometimes the trough preceding the peak cannot be found. This typically occurs if the event occurs at the beginning of a trial, and the minimum preceding the peak cannot be found within that trial. In this case, `detect_events` sets the trough frame to be `-Inf`, and the event amplitude is defined to be the fluorescence difference between the peak and the trace baseline.
 
 ### Detect events without user interaction
 
