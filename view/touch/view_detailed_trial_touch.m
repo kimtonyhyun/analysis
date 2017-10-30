@@ -40,7 +40,7 @@ trial_window_start = max(1, trial_idx-trial_window);
 trial_window_end = min(ds.num_trials, trial_idx+trial_window);
 gui.raster = subplot(3,2,[3 5]);
 ds.plot_cell_raster(cell_idx, 'draw_correct');
-scale = get(gca, 'CLim');
+trace_scale = get(gca, 'CLim');
 ylim([trial_window_start-0.5 trial_window_end+0.5]);
 x_ends = get(gca, 'XLim');
 line(x_ends, (trial_idx-0.5)*[1 1], 'Color', 'w', 'LineWidth', 2);
@@ -53,20 +53,43 @@ set(gui.raster, 'ButtonDownFcn', @jump_to_trial);
 % Show trace
 %------------------------------------------------------------
 gui.trace = subplot(3,2,2);
-plot(trial_frames(1):trial_frames(4), trace, 'LineWidth', 2, 'HitTest', 'off');
-xlim(trial_frames([1 4]));
-ylim(scale);
+t = trial_frames(1):trial_frames(end);
+plot(t, trace, 'LineWidth', 2, 'HitTest', 'off');
+xlim(t([1 end]));
+ylim(trace_scale);
 grid on;
 title(sprintf('Trial %d', trial_idx));
 xlabel('Frames relative to gate close');
 ylabel('Signal [a.u.]');
 hold on;
-plot(trial_frames(2)*[1 1], scale, 'k--', 'HitTest', 'off'); % Open-gate
-plot(trial_frames(3)*[1 1], scale, 'k--', 'HitTest', 'off'); % Close-gate
-gui.trace_bar = plot(trial_frames(1)*[1 1], scale, 'r', 'HitTest', 'off'); % Vertical bar
+plot(trial_frames(2)*[1 1], trace_scale, 'k--', 'HitTest', 'off'); % Open-gate
+plot(trial_frames(3)*[1 1], trace_scale, 'k--', 'HitTest', 'off'); % Close-gate
+gui.trace_bar = plot(trial_frames(1)*[1 1], trace_scale, 'r', 'HitTest', 'off'); % Vertical bar
 gui.trace_dot = plot(trial_frames(1), trace(1), 'r.',... % Dot
          'MarkerSize', 24,...
          'HitTest', 'off');
+
+% Show events, if present
+if ds.is_eventdata_loaded
+    eventdata = ds.get_events(cell_idx, trial_idx);
+    num_events = size(eventdata,1);
+    if (num_events > 0)
+        peaks = t(eventdata(:,2));
+        X = kron(peaks, [1 1 NaN]);
+        
+        % Draw event locations
+        Y = repmat([trace_scale NaN], 1, num_events);
+        plot(X, Y, 'm:', 'HitTest', 'off');
+        
+        % Draw amplitudes
+        Y = zeros(3, num_events);
+        Y(1,:) = trace(eventdata(:,2));
+        Y(2,:) = Y(1,:) - eventdata(:,3)';
+        Y(3,:) = NaN;
+        plot(X, Y(:), 'm', 'LineWidth', 2, 'HitTest', 'off');
+    end
+end
+hold off;
 
 set(gui.trace, 'ButtonDownFcn', @update_frame);
      
@@ -110,12 +133,12 @@ end
     end % update_frame
 
     function jump_to_trial(~, e)
-        t = round(e.IntersectionPoint(2));
-        t = max(1, t);
-        t = min(t, ds.num_trials);
+        trial_idx2 = round(e.IntersectionPoint(2));
+        trial_idx2 = max(1, trial_idx2);
+        trial_idx2 = min(trial_idx2, ds.num_trials);
         
-        if (t ~= trial_idx)
-            view_detailed_trial_touch(ds, cell_idx, t, 'fig', h_fig);
+        if (trial_idx2 ~= trial_idx)
+            view_detailed_trial_touch(ds, cell_idx, trial_idx2, 'fig', h_fig);
         end
     end % jump_to_trial
 

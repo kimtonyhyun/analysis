@@ -41,6 +41,7 @@ classdef DaySummary < handle
         behavior_vid
         behavior_ref_img
         is_tracking_loaded
+        is_eventdata_loaded
         orig_trial_indices
     end
         
@@ -150,6 +151,7 @@ classdef DaySummary < handle
                 'turn',  turns,...
                 'time',  num2cell(trial_durations),...
                 'traces', traces,...
+                'events', [],...
                 'centroids', centroids);
             
             % Compute trace correlation among all sources
@@ -237,6 +239,13 @@ classdef DaySummary < handle
                 if isfield(ds_source, 'tracking')
                     obj.load_tracking(ds_source.tracking);
                 end
+            end
+            
+            % Event data
+            obj.is_eventdata_loaded = false;
+            event_source = get_most_recent_file(rec_dir, 'events_*.mat');
+            if ~isempty(event_source)
+                obj.load_events(event_source);
             end
             
             % Fill in switch data
@@ -333,6 +342,11 @@ classdef DaySummary < handle
                 trace = [trace obj.trials(k).traces(cell_idx,:)]; %#ok<*AGROW>
                 frame_indices = [frame_indices obj.trial_indices(k,1):obj.trial_indices(k,end)];
             end
+        end
+        
+        function es = get_events(obj, cell_idx, trial_idx)
+            % WIP: To be elaborated
+            es = obj.trials(trial_idx).events{cell_idx};
         end
         
         function mask = get_mask(obj, cell_indices)
@@ -499,6 +513,28 @@ classdef DaySummary < handle
             fprintf('%s: Loaded tracking data from "%s"\n',...
                 datestr(now), tracking_source);
             obj.is_tracking_loaded = true;
+        end
+        
+        % Load event data
+        %------------------------------------------------------------
+        function load_events(obj, event_source)
+            data = load(event_source);
+            assert(length(data.events) == obj.num_cells,...
+                'Error: Number of cells in event file does not match that in DaySummary!');
+            
+            % Note: We are expecting that event detection has been run on
+            % _all_ trials, including probes.
+            assert(data.events(1).info.num_frames == obj.full_num_frames,...
+                'Error: Number of frames in event file does not match full number of frames in DaySummary!');
+            
+            events_per_trial = compute_events_per_trial({data.events.auto}, obj.orig_trial_indices);
+            for k = 1:obj.num_trials
+                obj.trials(k).events = events_per_trial{k};
+            end
+            
+            fprintf('%s: Loaded events from "%s"\n',...
+                datestr(now), event_source);
+            obj.is_eventdata_loaded = true;
         end
         
         % Inspect switch data
