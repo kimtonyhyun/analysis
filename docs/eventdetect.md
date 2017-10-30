@@ -24,7 +24,7 @@ sources =
 
 Remarks:
 - Do not apply probe trial elimination (e.g. the `'noprobe'` flag) on `DaySummary` instantiation. Global trace properties (e.g. the standard deviation of the baseline) will be affected by omission of trials. Let's pre-emptively avoid future confusion by always applying event detection on the full trace from each session.
-- Event detection will be performed for _all_ sources in the `DaySummary`, whether or not the source has been classified to be a cell. For this reason, it's advised to perform event detection on `DaySummary` instances containing only classified cells.
+- Event detection will be performed for _all_ sources in the `DaySummary`, whether or not the source has been classified to be a cell. For this reason, it's advised to perform event detection on `DaySummary` instances containing only classified cells (i.e. the output of `export_rec` with the `fix_baseline` flag enabled).
 
 The following command performs event detection on Cell 267 of this `DaySummary` instance:
 ```
@@ -79,7 +79,7 @@ The columns of `events.auto` (and `events.manual`) are as follows:
 2. The frame index of the fluorescence peak,
 3. The event amplitude defined as the difference in fluorescence between the peak and the trough.
 
-Note that sometimes the trough preceding the peak cannot be found. This typically occurs if the event occurs at the beginning of a trial, and the minimum preceding the peak cannot be found within that trial. In this case, I define the trough frame to be `-Inf`, and the event amplitude is defined to be the fluorescence difference between the peak and the baseline of the trace.
+Note that sometimes the trough preceding the peak cannot be found. This typically occurs if the event occurs at the beginning of a trial, and the minimum preceding the peak cannot be found _within_ that trial. In this case, `detect_events` sets the trough frame to be `-Inf`, and the event amplitude is defined to be the fluorescence difference between the peak and the trace baseline.
 
 ### Detect events without user interaction
 
@@ -87,8 +87,9 @@ To bypass the interaction loop (and use default parameters for event detection),
 ```
 >> events = detect_events(ds, 267, 'noprompt');
 ```
+which returns immediately.
 
-To detect events for all cells in the `DaySummary` instance, use `detect_all_events`:
+To detect events for all cells in the `DaySummary` instance, use the `detect_all_events` convenience function:
 ```
 >> all_events = detect_all_events(ds);
 30-Oct-2017 13:12:41: At cell 1 of 364...
