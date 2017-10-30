@@ -1,4 +1,4 @@
-function events_per_trial = convert_eventdata_per_trial(eventdata, trial_indices)
+function events_per_trial = compute_events_per_trial(eventdata, trial_indices)
 % Reorganize event data by trials -- as required by DaySummary event
 % storage. Namely,
 %
