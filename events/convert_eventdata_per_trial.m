@@ -9,7 +9,7 @@ function events_per_trial = convert_eventdata_per_trial(eventdata, trial_indices
 % Return:
 %   events_per_trial: {num_trials x 1} cell where,
 %       events_per_trial{t}: {num_cells x 1} contains the event data for
-%       all cells for trial t. Frame numbers are referenced to each trial.
+%       all cells in trial t. Frame numbers are referenced to each trial.
 %
 
 num_trials = size(trial_indices, 1);
@@ -24,32 +24,32 @@ num_cells = length(eventdata);
 events = cell(num_cells, num_trials);
 
 for c = 1:num_cells
-    eventdata_c = eventdata{c};    
+    eventdata_c = eventdata{c}; % Format: [trough-frame peak-frame amp]
     if ~isempty(eventdata_c)
         num_events = size(eventdata_c,1);
         events2trial = frames2trial(eventdata_c(:,2));
 
-        new_trial_inds = [1; find(diff(events2trial))+1];
-        
-        % Note: A trial "chunk" is the set of events that belong to the
-        % same trial
-        num_trial_chunks = length(new_trial_inds);
+        % A trial "chunk" is the set of events in eventdata_c that belong
+        % to the same trial. Note that we are assuming that the events in
+        % eventdata_c are sorted in time.
+        trial_chunk_start_inds = [1; find(diff(events2trial))+1];
+        num_trial_chunks = length(trial_chunk_start_inds);
         for k = 1:num_trial_chunks
             % Pull out a single trial chunk from eventdata
-            start_idx = new_trial_inds(k);
+            start_idx = trial_chunk_start_inds(k);
             if k ~= num_trial_chunks
-                end_idx = new_trial_inds(k+1)-1;
+                end_idx = trial_chunk_start_inds(k+1)-1;
             else
                 end_idx = num_events;
             end
-            trial_eventdata = eventdata_c(start_idx:end_idx, :);
+            trial_chunk = eventdata_c(start_idx:end_idx, :);
 
             % Reindex the frame indices on a per-trial basis
             trial_idx = events2trial(start_idx);
             trial_init_frame = trial_indices(trial_idx, 1);
-            trial_eventdata(:,1:2) = trial_eventdata(:,1:2) - trial_init_frame + 1;
+            trial_chunk(:,1:2) = trial_chunk(:,1:2) - trial_init_frame + 1;
 
-            events{c, trial_idx} = trial_eventdata;
+            events{c, trial_idx} = trial_chunk;
         end
     end
 end
