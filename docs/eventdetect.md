@@ -71,7 +71,7 @@ events =
 where:
 - `events.info` is itself a struct containing extra information associated with the event detection run, such as the standard deviation of the trace baseline, and algorithm thresholds.
 - `events.auto` is a `[num_events x 3]` matrix that specifies the "automatically" (i.e. algorithmically) computed events.
-- `events.manual` is a `[num_events x 3]` matrix containing events manually selected by the user during `detect_events`. (This field is currently unused.)
+- `events.manual` is a `[num_events x 3]` matrix containing events manually selected by the user during `detect_events`. (This feature is currently disabled.)
 
 The columns of `events.auto` are as follows:
 1. The frame index of the trough immediately preceding the fluorescence peak,
