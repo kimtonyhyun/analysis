@@ -527,7 +527,8 @@ classdef DaySummary < handle
             assert(data.events(1).info.num_frames == obj.full_num_frames,...
                 'Error: Number of frames in event file does not match full number of frames in DaySummary!');
             
-            events_per_trial = compute_events_per_trial({data.events.auto}, obj.orig_trial_indices);
+            events_per_trial = compute_events_per_trial({data.events.auto},...
+                obj.orig_trial_indices, obj.full_num_frames);
             for k = 1:obj.num_trials
                 obj.trials(k).events = events_per_trial{k};
             end

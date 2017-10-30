@@ -1,4 +1,4 @@
-function events_per_trial = compute_events_per_trial(eventdata, trial_indices)
+function events_per_trial = compute_events_per_trial(eventdata, trial_indices, full_num_frames)
 % Reorganize event data by trials -- as required by DaySummary event
 % storage. Namely,
 %
@@ -11,11 +11,14 @@ function events_per_trial = compute_events_per_trial(eventdata, trial_indices)
 %       events_per_trial{t}: {num_cells x 1} contains the event data for
 %       all cells in trial t. Frame numbers are referenced to each trial.
 %
+if nargin < 3
+    full_num_frames = trial_indices(end, end);
+end
 
 num_trials = size(trial_indices, 1);
 
 % A lookup table from frames to trial index
-frames2trial = zeros(trial_indices(end,end), 1);
+frames2trial = zeros(full_num_frames, 1);
 for k = 1:num_trials
     frames2trial(trial_indices(k,1):trial_indices(k,end)) = k;
 end
