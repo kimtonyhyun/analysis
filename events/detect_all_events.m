@@ -1,7 +1,10 @@
 function events = detect_all_events(ds)
 
+save_to_file = true;
 if ds.full_num_frames ~= ds.trial_indices(end,end)
-    fprintf('  Warning: Event detection should be performed on all trials, including probes!\n');
+    fprintf('Warning: Event detection should be performed for all trials, including probes!\n');
+    fprintf('  Current results will not be saved to file.\n');
+    save_to_file = false;
 end
 
 events = cell(ds.num_cells, 1);
@@ -15,6 +18,8 @@ end
 events = cell2mat(events); % Convert cell to array of structs
 
 % Save to file
-timestamp = datestr(now, 'yymmdd-HHMMSS');
-event_savename = sprintf('events_%s.mat', timestamp);
-save(event_savename, 'events', '-v7.3');
+if save_to_file
+    timestamp = datestr(now, 'yymmdd-HHMMSS');
+    event_savename = sprintf('events_%s.mat', timestamp);
+    save(event_savename, 'events', '-v7.3');
+end
