@@ -522,6 +522,8 @@ classdef DaySummary < handle
             assert(length(data.events) == obj.num_cells,...
                 'Error: Number of cells in event file does not match that in DaySummary!');
             
+            % Note: We are expecting that event detection has been run on
+            % _all_ trials, including probes.
             assert(data.events(1).info.num_frames == obj.full_num_frames,...
                 'Error: Number of frames in event file does not match full number of frames in DaySummary!');
             

@@ -68,7 +68,8 @@ gui.trace_bar = plot(trial_frames(1)*[1 1], trace_scale, 'r', 'HitTest', 'off');
 gui.trace_dot = plot(trial_frames(1), trace(1), 'r.',... % Dot
          'MarkerSize', 24,...
          'HitTest', 'off');
-% Also show events, if loaded
+
+% Show events, if present
 if ds.is_eventdata_loaded
     eventdata = ds.get_events(cell_idx, trial_idx);
     num_events = size(eventdata,1);
