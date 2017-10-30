@@ -1,5 +1,7 @@
 ## Detecting events from fluorescence traces
 
+### Basic usage
+
 Begin by instantiating a `DaySummary` object that contains the traces for event detection (see the [`DaySummary` Quickstart](docs/ds_quickstart.md) for background info):
 ```
 >> sources = data_sources
@@ -29,3 +31,61 @@ The following command performs event detection on Cell 267 of this `DaySummary` 
 >> events = detect_events(ds, 267);
 ```
 which opens the following window:
+![Detect_events GUI](eventdetect_trial1.PNG)
+
+The "Global" view shows the trace of Cell 267 for all frames. Additionally:
+- Dashed, horizontal magenta line indicates the fluorescence threshold for event detection. By default, it is five (baseline) standard deviations off of the "baseline" of the trace.
+- Magenta dots indicate detected events.
+- The cyan highlight indicates the portion of the trace that is displayed in the "Local" view.
+
+The "Local" view shows an expanded version of the trace, so that waveforms and exact event timings can be inspected:
+- Initially, the "Local" view shows the trace over Trial 1. The beginning of each trial is indicated by an open circle and a corresponding text that reads "Trial X".
+- The horizontal magenta line indicates the fluorescence threshold (same as in the Global view). Vertical magenta lines indicate detected events, with the length of the bolded portion indicating the event amplitude.
+- With the user's mouse cursor over the figure, scrolling up and down with the mouse wheel will decrement or increment the trial index, respectively.
+
+In addition to the mouse wheel, you can directly jump to a particular trial via the Command Window. For example:
+```
+>> events = detect_events(ds, 267);
+Detector >> 58
+Detector >>
+```
+will highlight Trial 58 in the Local view.
+
+To exit from the interaction loop of `detect_events`, type "q" in the Command Window:
+```
+>> events = detect_events(ds, 267);
+Detector >> 58
+Detector >> q
+>> 
+```
+
+The result of `detect_events` is a struct with the following content:
+```
+>> events
+events = 
+  struct with fields:
+      info: [1×1 struct]
+      auto: [38×3 double]
+    manual: []
+```
+where:
+- `events.info` is itself a struct containing extra information associated with the event detection run, such as the standard deviation of the trace baseline, and algorithm thresholds.
+- `events.auto` is a `[num_events x 3]` matrix that specifies the "automatically" (i.e. algorithmically) computed events.
+- `events.manual` is a `[num_events x 3]` matrix containing events manually selected by the user during `detect_events`. (This field is currently unused.)
+
+The columns of `events.auto` are as follows:
+1. The frame index of the trough immediately preceding the fluorescence peak,
+2. The frame index of the fluorescence peak,
+3. The event amplitude defined as the difference in fluorescence between the peak and the trough.
+
+### Detect events without user interaction
+
+
+
+### Adjusting event detection parameters
+
+To be added.
+
+### Explanation of event detection algorithm
+
+To be added.
