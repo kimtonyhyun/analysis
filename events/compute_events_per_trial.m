@@ -31,7 +31,7 @@ for c = 1:num_cells
 
         % A trial "chunk" is the set of events in eventdata_c that belong
         % to the same trial. Note that we are assuming that the events in
-        % eventdata_c are sorted in time.
+        % eventdata_c are ordered in time.
         trial_chunk_start_inds = [1; find(diff(events2trial))+1];
         num_trial_chunks = length(trial_chunk_start_inds);
         for k = 1:num_trial_chunks
@@ -44,12 +44,17 @@ for c = 1:num_cells
             end
             trial_chunk = eventdata_c(start_idx:end_idx, :);
 
-            % Reindex the frame indices on a per-trial basis
+            % Note: A trial_idx of 0 indicates that the frames associated
+            % with these events do not occur in 'trial_indices' -- which
+            % can occur if 'trial_indices' has probe trials removed.
             trial_idx = events2trial(start_idx);
-            trial_init_frame = trial_indices(trial_idx, 1);
-            trial_chunk(:,1:2) = trial_chunk(:,1:2) - trial_init_frame + 1;
+            if trial_idx ~= 0                
+                % Reindex the frame indices on a per-trial basis
+                trial_init_frame = trial_indices(trial_idx, 1);
+                trial_chunk(:,1:2) = trial_chunk(:,1:2) - trial_init_frame + 1;
 
-            events{c, trial_idx} = trial_chunk;
+                events{c, trial_idx} = trial_chunk;
+            end
         end
     end
 end
