@@ -54,10 +54,10 @@ set(gui.raster, 'ButtonDownFcn', @jump_to_trial);
 %------------------------------------------------------------
 gui.trace = subplot(3,2,2);
 t = trial_frames(1):trial_frames(end);
-plot(t, trace, 'LineWidth', 2, 'HitTest', 'off');
+plot(t, trace, '.-', 'LineWidth', 1, 'HitTest', 'off');
 xlim(t([1 end]));
 ylim(trace_scale);
-grid on;
+% grid on;
 title(sprintf('Trial %d', trial_idx));
 xlabel('Frames relative to gate close');
 ylabel('Signal [a.u.]');
