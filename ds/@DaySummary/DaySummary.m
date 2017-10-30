@@ -344,6 +344,11 @@ classdef DaySummary < handle
             end
         end
         
+        function es = get_events(obj, cell_idx, trial_idx)
+            % WIP: To be elaborated
+            es = obj.trials(trial_idx).events{cell_idx};
+        end
+        
         function mask = get_mask(obj, cell_indices)
             % When 'cell_indices' is omitted, then return the masks of all
             % classified cells
