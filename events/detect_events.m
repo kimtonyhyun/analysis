@@ -83,8 +83,8 @@ gui = setup_gui(hfig, num_frames, compute_display_range(trace), stats, trace_ori
 
 if ~isempty(ext_events)
     if isstruct(ext_events)
-        % If struct, assume to have originated from the current event
-        % detection method
+        % If struct, assume to have originated from the "default" event
+        % detection method implemented here and in 'find_events_in_trials'
         init_info = ext_events.info;
     else        
         % TODO: Handle different types of external event specification
