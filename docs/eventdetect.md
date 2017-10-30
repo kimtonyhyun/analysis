@@ -19,7 +19,6 @@ sources =
   Computing auxiliary spatial parameters... Done (5.3 sec)
   Computing distances between all sources... Done (0.3 sec)
 30-Oct-2017 11:59:47: Loaded classification from cm01-fix\class_161217-183059.txt
->> 
 ```
 
 Remarks:
