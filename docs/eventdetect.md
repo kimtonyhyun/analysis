@@ -50,7 +50,7 @@ Detector >> 58
 Detector >>
 ```
 will highlight Trial 58 in the Local view as follows:
-
+![Detect_events GUI Trial 58](eventdetect_trial58.PNG)
 
 To exit from the interaction loop of `detect_events`, type "q" in the Command Window:
 ```
@@ -74,7 +74,7 @@ where:
 - `events.auto` is a `[num_events x 3]` matrix that specifies the "automatically" (i.e. algorithmically) computed events.
 - `events.manual` is a `[num_events x 3]` matrix containing events manually selected by the user during `detect_events`. (This feature is currently disabled.)
 
-The columns of `events.auto` are as follows:
+The columns of `events.auto` (and `events.manual`) are as follows:
 1. The frame index of the trough immediately preceding the fluorescence peak,
 2. The frame index of the fluorescence peak,
 3. The event amplitude defined as the difference in fluorescence between the peak and the trough.
@@ -83,6 +83,20 @@ Note that sometimes the trough preceding the peak cannot be found. This typicall
 
 ### Detect events without user interaction
 
+To bypass the interaction loop (and use default parameters for event detection), use the `'noprompt'` flag:
+```
+>> events = detect_events(ds, 267, 'noprompt');
+```
+
+To detect events for all cells in the `DaySummary` instance, use `detect_all_events`:
+```
+>> all_events = detect_all_events(ds);
+30-Oct-2017 13:12:41: At cell 1 of 364...
+30-Oct-2017 13:12:53: At cell 50 of 364...
+...
+30-Oct-2017 13:14:11: At cell 350 of 364...
+```
+Here `all_events{k}` is the result of `detect_events` for Cell k.
 
 
 ### Adjusting event detection parameters
