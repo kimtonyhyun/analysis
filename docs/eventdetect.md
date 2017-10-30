@@ -21,7 +21,11 @@ sources =
 ```
 
 Remarks:
-- Do not apply probe trial elimination (e.g. the `'noprobe'` flag) on `DaySummary` instantiation. Global trace properties (e.g. the baseline standard deviation) will be affected by omission of trials. Let's pre-emptively avoid future confusion by always applying event detection on the full trace from each session.
+- Do not apply probe trial elimination (e.g. the `'noprobe'` flag) on `DaySummary` instantiation. Global trace properties (e.g. the standard deviation of the baseline) will be affected by omission of trials. Let's pre-emptively avoid future confusion by always applying event detection on the full trace from each session.
 - Event detection will be performed for _all_ sources in the `DaySummary`, whether or not the source has been classified to be a cell. For this reason, it's advised to perform event detection on `DaySummary` instances containing only classified cells.
 
-(In principle, event detection may be performed on the raw fluorescence traces without using the `DaySummary` wrapper. However, the `DaySummary` organization provides a convenient interface for accessing relevant behavioral parameters (e.g. frame indices associated with trial) which we'll make use of.)
+The following command performs event detection on Cell 267 of this `DaySummary` instance:
+```
+>> events = detect_events(ds, 267);
+```
+which opens the following window:
