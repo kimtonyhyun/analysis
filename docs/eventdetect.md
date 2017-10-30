@@ -34,7 +34,7 @@ which opens the following window:
 ![Detect_events GUI](eventdetect_trial1.PNG)
 
 The "Global" view shows the trace of Cell 267 for all frames. Additionally:
-- Dashed, horizontal magenta line indicates the fluorescence threshold for event detection. By default, it is five (baseline) standard deviations off of the "baseline" of the trace.
+- Dashed, horizontal magenta line indicates the fluorescence threshold for event detection. By default, it is five standard deviations off of the baseline.
 - Magenta dots indicate detected events.
 - The cyan highlight indicates the portion of the trace that is displayed in the "Local" view.
 
