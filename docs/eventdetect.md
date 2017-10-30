@@ -49,7 +49,8 @@ In addition to the mouse wheel, you can directly jump to a particular trial via 
 Detector >> 58
 Detector >>
 ```
-will highlight Trial 58 in the Local view.
+will highlight Trial 58 in the Local view as follows:
+
 
 To exit from the interaction loop of `detect_events`, type "q" in the Command Window:
 ```
@@ -77,6 +78,8 @@ The columns of `events.auto` are as follows:
 1. The frame index of the trough immediately preceding the fluorescence peak,
 2. The frame index of the fluorescence peak,
 3. The event amplitude defined as the difference in fluorescence between the peak and the trough.
+
+Note that sometimes the trough preceding the peak cannot be found. This typically occurs if the event occurs at the beginning of a trial, and the minimum preceding the peak cannot be found within that trial. In this case, I define the trough frame to be `-Inf`, and the event amplitude is defined to be the fluorescence difference between the peak and the baseline of the trace.
 
 ### Detect events without user interaction
 
