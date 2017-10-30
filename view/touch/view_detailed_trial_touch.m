@@ -70,24 +70,22 @@ gui.trace_dot = plot(trial_frames(1), trace(1), 'r.',... % Dot
          'HitTest', 'off');
 
 % Show events, if present
-if ds.is_eventdata_loaded
-    eventdata = ds.get_events(cell_idx, trial_idx);
-    num_events = size(eventdata,1);
-    if (num_events > 0)
-        peaks = t(eventdata(:,2));
-        X = kron(peaks, [1 1 NaN]);
-        
-        % Draw event locations
-        Y = repmat([trace_scale NaN], 1, num_events);
-        plot(X, Y, 'm:', 'HitTest', 'off');
-        
-        % Draw amplitudes
-        Y = zeros(3, num_events);
-        Y(1,:) = trace(eventdata(:,2));
-        Y(2,:) = Y(1,:) - eventdata(:,3)';
-        Y(3,:) = NaN;
-        plot(X, Y(:), 'm', 'LineWidth', 2, 'HitTest', 'off');
-    end
+eventdata = ds.get_events(cell_idx, trial_idx);
+num_events = size(eventdata,1);
+if (num_events > 0)
+    peak_times = t(eventdata(:,2));
+    X = kron(peak_times, [1 1 NaN]);
+
+    % Draw event locations
+    Y = repmat([trace_scale NaN], 1, num_events);
+    plot(X, Y, 'm:', 'HitTest', 'off');
+
+    % Draw amplitudes
+    Y = zeros(3, num_events);
+    Y(1,:) = trace(eventdata(:,2));
+    Y(2,:) = Y(1,:) - eventdata(:,3)';
+    Y(3,:) = NaN;
+    plot(X, Y(:), 'm', 'LineWidth', 2, 'HitTest', 'off');
 end
 hold off;
 
@@ -109,6 +107,11 @@ if (ds.is_tracking_loaded)
     centroids = ds.trials(trial_idx).centroids;
     plot(centroids(:,1), centroids(:,2), '.-');
     gui.behavior_pos = plot(centroids(1,1), centroids(1,2), 'ro');
+    
+    if (num_events > 0)
+        peak_frames = eventdata(:,2);
+        plot(centroids(peak_frames,1), centroids(peak_frames,2), 'm.', 'MarkerSize', 16);
+    end
 end
 
     function update_frame(~, e)
