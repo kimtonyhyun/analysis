@@ -41,6 +41,7 @@ classdef DaySummary < handle
         behavior_vid
         behavior_ref_img
         is_tracking_loaded
+        is_eventdata_loaded
         orig_trial_indices
     end
         
@@ -238,6 +239,13 @@ classdef DaySummary < handle
                 if isfield(ds_source, 'tracking')
                     obj.load_tracking(ds_source.tracking);
                 end
+            end
+            
+            % Event data
+            obj.is_eventdata_loaded = false;
+            event_source = get_most_recent_file(rec_dir, 'events_*.mat');
+            if ~isempty(event_source)
+                obj.load_events(event_source);
             end
             
             % Fill in switch data
@@ -512,10 +520,14 @@ classdef DaySummary < handle
             assert(data.events(1).info.num_frames == obj.full_num_frames,...
                 'Error: Number of frames in event file does not match full number of frames in DaySummary!');
             
-            for c = 1:obj.num_cells
-                eventdata = data.events(c).auto; % Format: [num_events x 3]
-
+            events_per_trial = compute_events_per_trial({data.events.auto}, obj.orig_trial_indices);
+            for k = 1:obj.num_trials
+                obj.trials(k).events = events_per_trial{k};
             end
+            
+            fprintf('%s: Loaded events from "%s"\n',...
+                datestr(now), event_source);
+            obj.is_eventdata_loaded = true;
         end
         
         % Inspect switch data
