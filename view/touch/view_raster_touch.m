@@ -134,6 +134,10 @@ end
                 draw_standard_subrasters(ds, cell_idx, raster_scale);
             case 'path'
                 draw_path_subrasters(ds, cell_idx, raster_scale);
+            case 'constant_path'
+                draw_constant_path_analysis(ds, cell_idx);
+            otherwise
+                msgbox(sprintf('Type "%s" not implemented!', raster_type));
         end
     end
 
