@@ -20,6 +20,7 @@ hold off;
 xlim([1 ds.num_trials]);
 ylabel('Trial times (s)');
 grid on;
+title('Constant path: Pre (blue) vs. Post (red)');
 
 % Comparison of fluorescence averages
 pre_avg_fluorescence = zeros(1,num_pre);
