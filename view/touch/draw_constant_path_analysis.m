@@ -6,6 +6,8 @@ trials = ds.get_switch_trials;
 pre_trials = trials.constant_pre;
 post_trials = trials.constant_post;
 
+true_trial_inds = [pre_trials; post_trials];
+
 x_pre = 1:length(pre_trials);
 x_post = x_pre(end) + (1:length(post_trials));
 x_range = [1 x_post(end)];
@@ -36,14 +38,20 @@ xlabel('Trial index');
 ylabel('Event counts');
 
     function draw_stem(pre_vals, post_vals)
-        stem(x_pre, pre_vals, 'b.', 'HitTest', 'off');
+        stem(x_pre, pre_vals, 'b.', 'ButtonDownFcn', @select_trial);
         hold on;
-        stem(x_post, post_vals, 'r.', 'HitTest', 'off');
+        stem(x_post, post_vals, 'r.', 'ButtonDownFcn', @select_trial);
         hold off;
         xlim(x_range);
         ylim(compute_ylim(pre_vals, post_vals));
         grid on;
     end % draw_stem
+
+    function select_trial(~, e)
+        x = e.IntersectionPoint(1);
+        t = true_trial_inds(x);
+        fprintf('%s: Trial %d clicked\n', datestr(now), t);
+    end
 
 end % draw_constant_path_analysis
 
