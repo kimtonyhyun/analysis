@@ -29,15 +29,16 @@ subplot(4,2,6);
 draw_stem(pre.event_sum, post.event_sum);
 ylabel('\Sigma Event amplitudes');
 
+% Event counts
 subplot(4,2,8);
 draw_stem(pre.num_events, post.num_events);
 xlabel('Trial index');
 ylabel('Event counts');
 
     function draw_stem(pre_vals, post_vals)
-        stem(x_pre, pre_vals, 'b', 'HitTest', 'off');
+        stem(x_pre, pre_vals, 'b.', 'HitTest', 'off');
         hold on;
-        stem(x_post, post_vals, 'r', 'HitTest', 'off');
+        stem(x_post, post_vals, 'r.', 'HitTest', 'off');
         hold off;
         xlim(x_range);
         ylim(compute_ylim(pre_vals, post_vals));
