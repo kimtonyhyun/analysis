@@ -8,6 +8,19 @@ post_trials = trials.constant_post;
 num_pre = length(pre_trials);
 num_post = length(post_trials);
 
+% Behavioral trial times
+pre_times = [ds.trials(pre_trials).time];
+post_times = [ds.trials(post_trials).time];
+subplot(4,2,2);
+stem(pre_trials, pre_times, 'b');
+hold on;
+stem(post_trials, post_times, 'r');
+hold off;
+% xlabel('Trial index');
+xlim([1 ds.num_trials]);
+ylabel('Trial times (s)');
+grid on;
+
 % Comparison of fluorescence averages
 pre_avg_fluorescence = zeros(1,num_pre);
 post_avg_fluorescence = zeros(1,num_post);
@@ -22,7 +35,7 @@ for k = 1:num_post
     post_avg_fluorescence(k) = mean(tr);
 end
 
-subplot(4,2,2);
+subplot(4,2,4);
 stem(pre_trials, pre_avg_fluorescence, 'b');
 hold on;
 stem(post_trials, post_avg_fluorescence, 'r');
@@ -31,7 +44,7 @@ all_fluorescence = [pre_avg_fluorescence, post_avg_fluorescence];
 min_f = min(all_fluorescence);
 max_f = max(all_fluorescence);
 f_range = [min_f max_f] + 0.1*(max_f - min_f)*[-1 1];
-xlabel('Trial index');
+% xlabel('Trial index');
 xlim([1 ds.num_trials]);
 ylim(f_range);
 grid on;
@@ -61,17 +74,17 @@ for k = 1:num_post
     end
 end
 
-subplot(4,2,4);
+subplot(4,2,6);
 stem(pre_trials, pre_event_sum, 'b');
 hold on;
 stem(post_trials, post_event_sum, 'r');
 hold off;
-xlabel('Trial index');
+% xlabel('Trial index');
 xlim([1 ds.num_trials]);
 ylabel('\Sigma Event amplitudes');
 grid on;
 
-subplot(4,2,6);
+subplot(4,2,8);
 stem(pre_trials, pre_event_count, 'b');
 hold on;
 stem(post_trials, post_event_count, 'r');
