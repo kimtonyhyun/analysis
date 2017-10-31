@@ -63,8 +63,13 @@ draw_subraster(subraster_type);
 back_btn = uicontrol('Style', 'pushbutton',...
     'String', '<<',...
     'Units', 'normalized',...
-    'Position', [0 0.1 0.05 0.8],...
+    'Position', [0 0.2 0.05 0.7],...
     'Callback', @back_to_browse);
+jump_btn = uicontrol('Style', 'pushbutton',...
+    'String', 'T#',...
+    'Units', 'normalized',...
+    'Position', [0 0.1 0.05 0.1],...
+    'Callback', @jump_to_trial);
 
 % NOTE: The up-down navigation assumes that the DaySummary contains no
 % non-cells
@@ -125,12 +130,27 @@ end
         view_raster_touch(ds, new_idx, 'fig', h_fig, 'type', subraster_type);
     end
 
+    function jump_to_trial(~, ~)
+        prompt = sprintf('Enter trial index [1-%d]', ds.num_trials);
+        jump_idx = inputdlg(prompt, 'Jump to trial');
+        jump_idx = str2double(jump_idx{1});
+        if ~isempty(jump_idx)
+            if (1 <= jump_idx) && (jump_idx <= ds.num_trials)
+                show_detailed_trial(jump_idx);
+            end
+        end
+    end
+
     function select_trial(~, e)
         trial_idx = round(e.IntersectionPoint(2));
         trial_idx = max(1, trial_idx);
         trial_idx = min(trial_idx, ds.num_trials);
+        show_detailed_trial(trial_idx);
+    end
+
+    function show_detailed_trial(trial_idx)
         if ds.is_behavior_loaded
-            view_detailed_trial_touch(ds, cell_idx, trial_idx, 'fig', h_fig);
+            view_detailed_trial_touch(ds, cell_idx, trial_idx, 'fig', h_fig, 'type', subraster_type);
         else
             fprintf('Error: Behavior video has not been loaded into this DaySummary!\n');
         end

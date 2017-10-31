@@ -1,5 +1,6 @@
 function view_detailed_trial_touch(ds, cell_idx, trial_idx, varargin)
 
+subraster_type = '';
 h_fig = [];
 for i = 1:length(varargin)
     vararg = varargin{i};
@@ -7,6 +8,10 @@ for i = 1:length(varargin)
         switch lower(vararg)
             case 'fig'
                 h_fig = varargin{i+1};
+            case 'type'
+                % The subraster type that should be requested when
+                % "returning" to view_raster_touch
+                subraster_type = varargin{i+1};
         end
     end
 end
@@ -183,7 +188,7 @@ end
     function back_to_raster(~, ~)
         % Clear callbacks associated with figure
         set(h_fig, 'WindowButtonUpFcn', '');
-        view_raster_touch(ds, cell_idx, 'fig', h_fig);
+        view_raster_touch(ds, cell_idx, 'fig', h_fig, 'type', subraster_type);
     end
 
     function trial_button_clicked(~, ~, trial_idx)
