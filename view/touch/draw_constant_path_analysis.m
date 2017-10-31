@@ -14,12 +14,12 @@ post_avg_fluorescence = zeros(1,num_post);
 for k = 1:num_pre
     trial_idx = pre_trials(k);
     tr = ds.get_trace(cell_idx, trial_idx);
-    pre_avg_fluorescence(k) = mean(tr) / ds.trials(trial_idx).time;
+    pre_avg_fluorescence(k) = mean(tr);
 end
 for k = 1:num_post
     trial_idx = post_trials(k);
     tr = ds.get_trace(cell_idx, trial_idx);
-    post_avg_fluorescence(k) = mean(tr) / ds.trials(trial_idx).time;
+    post_avg_fluorescence(k) = mean(tr);
 end
 
 subplot(4,2,2);
@@ -45,14 +45,14 @@ for k = 1:num_pre
     trial_idx = pre_trials(k);
     eventdata = ds.get_events(cell_idx, trial_idx);
     if ~isempty(eventdata)
-        pre_event_sum(k) = sum(eventdata(:,3)) / ds.trials(trial_idx).time;
+        pre_event_sum(k) = sum(eventdata(:,3));
     end
 end
 for k = 1:num_post
     trial_idx = post_trials(k);
     eventdata = ds.get_events(cell_idx, trial_idx);
     if ~isempty(eventdata)
-        post_event_sum(k) = sum(eventdata(:,3)) / ds.trials(trial_idx).time;
+        post_event_sum(k) = sum(eventdata(:,3));
     end
 end
 

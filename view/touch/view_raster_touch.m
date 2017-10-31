@@ -3,12 +3,16 @@ function view_raster_touch(ds, cell_idx, varargin)
 % but without keyboard interaction!
 
 h_fig = [];
+subraster_type = '';
+
 for i = 1:length(varargin)
     vararg = varargin{i};
     if ischar(vararg)
         switch lower(vararg)
             case 'fig'
                 h_fig = varargin{i+1};
+            case 'type'
+                subraster_type = varargin{i+1};
         end
     end
 end
@@ -44,12 +48,15 @@ if ds.is_switchdata_loaded
 end
 set(h_full_raster, 'ButtonDownFcn', @select_trial);
 
-% Different options for displaying subrasters
-if ds.is_switchdata_loaded
-    draw_path_subrasters(ds, cell_idx, raster_scale);
-else
-    draw_standard_subrasters(ds, cell_idx, raster_scale);
+% Default subraster option
+if isempty(subraster_type)
+    if ds.is_switchdata_loaded
+        subraster_type = 'path';
+    else
+        subraster_type = 'standard';
+    end
 end
+draw_subraster(subraster_type);
 
 % Navigation controls
 %------------------------------------------------------------
@@ -84,25 +91,25 @@ std_raster_btn = uicontrol('Style', 'pushbutton',...
     'TooltipString', 'Standard subrasters',...
     'Units', 'normalized',...
     'Position', [0.95 0.9 0.05 0.1],...
-    'Callback', {@redraw_raster, 'standard'});
+    'Callback', {@redraw_callback, 'standard'});
 path_raster_btn = uicontrol('Style', 'pushbutton',...
     'String', 'P',...
     'TooltipString', 'Path-specific subrasters',...
     'Units', 'normalized',...
     'Position', [0.95 0.8 0.05 0.1],...
-    'Callback', {@redraw_raster, 'path'});
+    'Callback', {@redraw_callback, 'path'});
 constant_path_btn = uicontrol('Style', 'pushbutton',...
     'String', 'CoP',...
     'TooltipString', 'Constant path analysis',...
     'Units', 'normalized',...
     'Position', [0.95 0.7 0.05 0.1],...
-    'Callback', {@redraw_raster, 'constant_path'});
+    'Callback', {@redraw_callback, 'constant_path'});
 changing_path_btn = uicontrol('Style', 'pushbutton',...
     'String', 'ChP',...
     'TooltipString', 'Changing path analysis',...
     'Units', 'normalized',...
     'Position', [0.95 0.6 0.05 0.1],...
-    'Callback', {@redraw_raster, 'changing_path'});
+    'Callback', {@redraw_callback, 'changing_path'});
 if ~ds.is_switchdata_loaded
     path_raster_btn.Enable = 'off';
     constant_path_btn.Enable = 'off';
@@ -114,7 +121,8 @@ end
     end
 
     function jump_to_cell(~, ~, new_idx)
-        view_raster_touch(ds, new_idx, 'fig', h_fig);
+        % Maintain subraster type when browsing cells
+        view_raster_touch(ds, new_idx, 'fig', h_fig, 'type', subraster_type);
     end
 
     function select_trial(~, e)
@@ -128,16 +136,23 @@ end
         end
     end
 
-    function redraw_raster(~, ~, raster_type)
-        switch raster_type
+    function redraw_callback(~, ~, type)
+        draw_subraster(type);
+    end
+
+    function draw_subraster(type)
+        switch type
             case 'standard'
                 draw_standard_subrasters(ds, cell_idx, raster_scale);
+                subraster_type = type;
             case 'path'
                 draw_path_subrasters(ds, cell_idx, raster_scale);
+                subraster_type = type;
             case 'constant_path'
                 draw_constant_path_analysis(ds, cell_idx);
+                subraster_type = type;
             otherwise
-                msgbox(sprintf('Type "%s" not implemented!', raster_type));
+                msgbox(sprintf('Type "%s" not implemented!', type));
         end
     end
 
