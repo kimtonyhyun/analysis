@@ -141,6 +141,12 @@ classdef DaySummary < handle
             % need to "compress" the trial indices to remove gaps due to 
             % the omitted probe trials.
             %
+            % Note that we _still_ need 'full_num_frames' in addition to
+            % 'orig_trial_indices'. Namely, we can't always assume that
+            % orig_trial_indices(end,end) == full_num_frames; this equality
+            % is false when the session ends on a probe trial, and probe
+            % trials are eliminated by DaySummary instantiation.
+            %
             obj.trial_indices = compress_frame_indices(trial_indices, [0 0]);
             obj.orig_trial_indices = double(trial_indices);
             obj.trials = struct(...
