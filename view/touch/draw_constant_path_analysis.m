@@ -41,11 +41,15 @@ ylabel('Avg fluorescence');
 pre_event_sum = zeros(1,num_pre);
 post_event_sum = zeros(1,num_post);
 
+pre_event_count = zeros(1,num_pre);
+post_event_count = zeros(1,num_post);
+
 for k = 1:num_pre
     trial_idx = pre_trials(k);
     eventdata = ds.get_events(cell_idx, trial_idx);
     if ~isempty(eventdata)
         pre_event_sum(k) = sum(eventdata(:,3));
+        pre_event_count(k) = size(eventdata,1);
     end
 end
 for k = 1:num_post
@@ -53,6 +57,7 @@ for k = 1:num_post
     eventdata = ds.get_events(cell_idx, trial_idx);
     if ~isempty(eventdata)
         post_event_sum(k) = sum(eventdata(:,3));
+        post_event_count(k) = size(eventdata,1);
     end
 end
 
@@ -64,4 +69,14 @@ hold off;
 xlabel('Trial index');
 xlim([1 ds.num_trials]);
 ylabel('\Sigma Event amplitudes');
+grid on;
+
+subplot(4,2,6);
+stem(pre_trials, pre_event_count, 'b');
+hold on;
+stem(post_trials, post_event_count, 'r');
+hold off;
+xlabel('Trial index');
+xlim([1 ds.num_trials]);
+ylabel('Event counts');
 grid on;
