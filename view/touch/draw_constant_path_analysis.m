@@ -24,7 +24,7 @@ title('Constant path: Pre (blue) vs. Post (red)');
 % Fluorescence averages
 subplot(4,2,4);
 draw_stem(pre.mean_fluorescence, post.mean_fluorescence);
-ylabel('Avg fluorescence');
+ylabel('Mean fluorescence');
 
 % Event amplitude sum
 subplot(4,2,6);

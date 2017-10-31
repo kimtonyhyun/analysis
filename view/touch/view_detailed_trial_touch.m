@@ -155,7 +155,7 @@ end
         trial_idx2 = min(trial_idx2, ds.num_trials);
         
         if (trial_idx2 ~= trial_idx)
-            view_detailed_trial_touch(ds, cell_idx, trial_idx2, 'fig', h_fig);
+            go_to_trial(trial_idx2);
         end
     end % jump_to_trial
 
@@ -171,7 +171,7 @@ prev_trial_btn = uicontrol('Style', 'pushbutton',...
     'String', '^^',...
     'Units', 'normalized',...
     'Position', [0 0.9 0.05 0.1],...
-    'Callback', {@trial_button_clicked, trial_idx-1});
+    'Callback', {@trial_btn_callback, trial_idx-1});
 if trial_idx == 1
     prev_trial_btn.Enable = 'off';
 end
@@ -180,7 +180,7 @@ next_trial_btn = uicontrol('Style', 'pushbutton',...
     'String', 'vv',...
     'Units', 'normalized',...
     'Position', [0 0.0 0.05 0.1],...
-    'Callback', {@trial_button_clicked, trial_idx+1});
+    'Callback', {@trial_btn_callback, trial_idx+1});
 if trial_idx == ds.num_trials
     next_trial_btn.Enable = 'off';
 end
@@ -191,9 +191,13 @@ end
         view_raster_touch(ds, cell_idx, 'fig', h_fig, 'type', subraster_type);
     end
 
-    function trial_button_clicked(~, ~, trial_idx)
+    function trial_btn_callback(~, ~, trial_idx)
+        go_to_trial(trial_idx);
+    end
+
+    function go_to_trial(trial_idx)
         set(h_fig, 'WindowButtonUpFcn', '');
-        view_detailed_trial_touch(ds, cell_idx, trial_idx, 'fig', h_fig);
+        view_detailed_trial_touch(ds, cell_idx, trial_idx, 'fig', h_fig, 'type', subraster_type);
     end
 
 end % view_detailed_trial_touch
