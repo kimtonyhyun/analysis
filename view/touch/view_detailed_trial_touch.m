@@ -64,7 +64,7 @@ ylabel('Signal [a.u.]');
 hold on;
 plot(trial_frames(2)*[1 1], trace_scale, 'k--', 'HitTest', 'off'); % Open-gate
 plot(trial_frames(3)*[1 1], trace_scale, 'k--', 'HitTest', 'off'); % Close-gate
-gui.trace_bar = plot(trial_frames(1)*[1 1], trace_scale, 'r', 'HitTest', 'off'); % Vertical bar
+gui.trace_bar = plot(trial_frames(1)*[1 1], trace_scale, 'r', 'ButtonDownFcn', @start_drag); % Vertical bar -- can be dragged
 gui.trace_dot = plot(trial_frames(1), trace(1), 'r.',... % Dot
          'MarkerSize', 24,...
          'HitTest', 'off');
@@ -89,6 +89,7 @@ if (num_events > 0)
 end
 hold off;
 
+set(h_fig, 'WindowButtonUpFcn', @end_drag);
 set(gui.trace, 'ButtonDownFcn', @update_frame);
      
 % Show behavior movie
@@ -113,6 +114,14 @@ if (ds.is_tracking_loaded)
         plot(centroids(peak_frames,1), centroids(peak_frames,2), 'm.', 'MarkerSize', 16);
     end
 end
+
+    function start_drag(~, ~)
+        set(h_fig, 'WindowButtonMotionFcn', @update_frame);
+    end
+
+    function end_drag(~, ~)
+        set(h_fig, 'WindowButtonMotionFcn', '');
+    end
 
     function update_frame(~, e)
         sel_frame = round(e.IntersectionPoint(1));
@@ -172,10 +181,13 @@ if trial_idx == ds.num_trials
 end
 
     function back_to_raster(~, ~)
+        % Clear callbacks associated with figure
+        set(h_fig, 'WindowButtonUpFcn', '');
         view_raster_touch(ds, cell_idx, 'fig', h_fig);
     end
 
     function trial_button_clicked(~, ~, trial_idx)
+        set(h_fig, 'WindowButtonUpFcn', '');
         view_detailed_trial_touch(ds, cell_idx, trial_idx, 'fig', h_fig);
     end
 
