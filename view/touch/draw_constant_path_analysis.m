@@ -43,6 +43,9 @@ ylabel('Event counts');
         stem(x_post, post_vals, 'r.', 'ButtonDownFcn', @select_trial);
         hold off;
         xlim(x_range);
+        tick_inds = x_range(1):5:x_range(end);
+        xticks(tick_inds);
+        xticklabels(num2cell(true_trial_inds(tick_inds)));
         ylim(compute_ylim(pre_vals, post_vals));
         grid on;
     end % draw_stem
