@@ -3,12 +3,16 @@ function view_raster_touch(ds, cell_idx, varargin)
 % but without keyboard interaction!
 
 h_fig = [];
+subraster_type = '';
+
 for i = 1:length(varargin)
     vararg = varargin{i};
     if ischar(vararg)
         switch lower(vararg)
             case 'fig'
                 h_fig = varargin{i+1};
+            case 'type'
+                subraster_type = varargin{i+1};
         end
     end
 end
@@ -44,20 +48,28 @@ if ds.is_switchdata_loaded
 end
 set(h_full_raster, 'ButtonDownFcn', @select_trial);
 
-% Different options for displaying subrasters
-if ds.is_switchdata_loaded
-    draw_path_subrasters(ds, cell_idx, raster_scale);
-else
-    draw_standard_subrasters(ds, cell_idx, raster_scale);
+% Default subraster option
+if isempty(subraster_type)
+    if ds.is_switchdata_loaded
+        subraster_type = 'path';
+    else
+        subraster_type = 'standard';
+    end
 end
+draw_subraster(subraster_type);
 
 % Navigation controls
 %------------------------------------------------------------
 back_btn = uicontrol('Style', 'pushbutton',...
     'String', '<<',...
     'Units', 'normalized',...
-    'Position', [0 0.1 0.05 0.8],...
+    'Position', [0 0.2 0.05 0.7],...
     'Callback', @back_to_browse);
+jump_btn = uicontrol('Style', 'pushbutton',...
+    'String', 'T#',...
+    'Units', 'normalized',...
+    'Position', [0 0.1 0.05 0.1],...
+    'Callback', @jump_to_trial);
 
 % NOTE: The up-down navigation assumes that the DaySummary contains no
 % non-cells
@@ -81,16 +93,32 @@ end
 % Visualize alternate rasters
 std_raster_btn = uicontrol('Style', 'pushbutton',...
     'String', 'S',...
+    'TooltipString', 'Standard subrasters',...
     'Units', 'normalized',...
     'Position', [0.95 0.9 0.05 0.1],...
-    'Callback', {@redraw_raster, 'standard'});
+    'Callback', {@redraw_callback, 'standard'});
 path_raster_btn = uicontrol('Style', 'pushbutton',...
     'String', 'P',...
+    'TooltipString', 'Path-specific subrasters',...
     'Units', 'normalized',...
     'Position', [0.95 0.8 0.05 0.1],...
-    'Callback', {@redraw_raster, 'path'});
+    'Callback', {@redraw_callback, 'path'});
+constant_path_btn = uicontrol('Style', 'pushbutton',...
+    'String', 'CoP',...
+    'TooltipString', 'Constant path analysis',...
+    'Units', 'normalized',...
+    'Position', [0.96 0.7 0.04 0.1],...
+    'Callback', {@redraw_callback, 'constant_path'});
+changing_path_btn = uicontrol('Style', 'pushbutton',...
+    'String', 'ChP',...
+    'TooltipString', 'Changing path analysis',...
+    'Units', 'normalized',...
+    'Position', [0.96 0.6 0.04 0.1],...
+    'Callback', {@redraw_callback, 'changing_path'});
 if ~ds.is_switchdata_loaded
     path_raster_btn.Enable = 'off';
+    constant_path_btn.Enable = 'off';
+    changing_path_btn.Enable = 'off';
 end
 
     function back_to_browse(~, ~)
@@ -98,26 +126,53 @@ end
     end
 
     function jump_to_cell(~, ~, new_idx)
-        view_raster_touch(ds, new_idx, 'fig', h_fig);
+        % Maintain subraster type when browsing cells
+        view_raster_touch(ds, new_idx, 'fig', h_fig, 'type', subraster_type);
+    end
+
+    function jump_to_trial(~, ~)
+        prompt = sprintf('Enter trial index [1-%d]', ds.num_trials);
+        jump_idx = inputdlg(prompt, 'Jump to trial');
+        jump_idx = str2double(jump_idx{1});
+        if ~isempty(jump_idx)
+            if (1 <= jump_idx) && (jump_idx <= ds.num_trials)
+                show_detailed_trial(jump_idx);
+            end
+        end
     end
 
     function select_trial(~, e)
         trial_idx = round(e.IntersectionPoint(2));
         trial_idx = max(1, trial_idx);
         trial_idx = min(trial_idx, ds.num_trials);
+        show_detailed_trial(trial_idx);
+    end
+
+    function show_detailed_trial(trial_idx)
         if ds.is_behavior_loaded
-            view_detailed_trial_touch(ds, cell_idx, trial_idx, 'fig', h_fig);
+            view_detailed_trial_touch(ds, cell_idx, trial_idx, 'fig', h_fig, 'type', subraster_type);
         else
             fprintf('Error: Behavior video has not been loaded into this DaySummary!\n');
         end
     end
 
-    function redraw_raster(~, ~, raster_type)
-        switch raster_type
+    function redraw_callback(~, ~, type)
+        draw_subraster(type);
+    end
+
+    function draw_subraster(type)
+        switch type
             case 'standard'
                 draw_standard_subrasters(ds, cell_idx, raster_scale);
+                subraster_type = type;
             case 'path'
                 draw_path_subrasters(ds, cell_idx, raster_scale);
+                subraster_type = type;
+            case 'constant_path'
+                draw_constant_path_analysis(ds, cell_idx);
+                subraster_type = type;
+            otherwise
+                msgbox(sprintf('Type "%s" not implemented!', type));
         end
     end
 

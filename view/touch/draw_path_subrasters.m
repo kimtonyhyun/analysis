@@ -46,6 +46,22 @@ title(changing_path_title);
         yticklabels(num2cell(trial_inds));
         ylabel(sprintf('%s (%d)', y_label, N));
         xlabel('');
+        
+        % Binary indicator on whether an event was detected for the trial
+        if ds.is_eventdata_loaded
+            eind_width = 0.05*length(aligned_time);
+            for k = 1:length(trial_inds)
+                trial_idx = trial_inds(k);
+                if ~isempty(ds.get_events(cell_idx, trial_idx))
+                    eind_color = 'y';
+                else
+                    eind_color = 'w';
+                end
+                rectangle('Position', [aligned_time(end) k-0.5 eind_width 1],...
+                          'FaceColor', eind_color);
+            end
+            xlim([aligned_time(1) aligned_time(end)+eind_width]);
+        end
     end % draw_subraster
 
     function draw_pre_post_averages(pre_traces, post_traces)

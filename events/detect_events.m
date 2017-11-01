@@ -197,6 +197,7 @@ end
 
     function gui = setup_gui(hf, num_frames, trace_display_range, stats, trace_orig)
         % Display parameters kept around for convenience
+        gui.hfig = hf;
         gui.num_frames = num_frames;
         gui.trace_display_range = trace_display_range;
         
@@ -392,6 +393,8 @@ end
     end
 
     function redraw_local_window(gui, state)
+        figure(gui.hfig);
+        
         rect_pos = get(gui.global_rect, 'Position');
         rect_pos(1) = state.x_anchor;
         rect_pos(3) = state.x_range;
@@ -460,10 +463,10 @@ end
 
     function update_event_tally(gui)
         num_auto = size(events.auto,1);
-        num_manual = length(events.manual);
+%         num_manual = length(events.manual);
         
         subplot(gui.global);
-        title(sprintf('Num events: %d (auto), %d (manual)', num_auto, num_manual));
+        title(sprintf('Cell %d: %d events (auto only)', cell_idx, num_auto));
     end % update_event_tally
 
     % Event handlers for mouse input
