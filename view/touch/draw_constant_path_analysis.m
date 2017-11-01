@@ -53,7 +53,7 @@ ylabel('Event counts');
     function select_trial(~, e)
         x = e.IntersectionPoint(1);
         t = true_trial_inds(x);
-        fprintf('%s: Trial %d clicked\n', datestr(now), t);
+        msgbox(sprintf('Trial %d', t));
     end
 
 end % draw_constant_path_analysis
