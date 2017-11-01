@@ -585,6 +585,14 @@ classdef DaySummary < handle
             end
         end
         
+        function trial_inds = get_constant_path_trials(obj)
+            trial_inds = find(obj.filter_trials('start', obj.switchdata.constant_path_start));
+        end
+        
+        function trial_inds = get_changing_path_trials(obj)
+            trial_inds = find(obj.filter_trials('start', obj.switchdata.changing_path_start));
+        end
+        
         function reset_switchdata(obj)
             obj.switchdata.pre_switch_trials = [];
             obj.switchdata.post_switch_trials = [];
