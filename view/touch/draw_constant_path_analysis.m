@@ -15,32 +15,36 @@ x_range = [1 x_post(end)];
 pre = compute_features(ds, cell_idx, pre_trials);
 post = compute_features(ds, cell_idx, post_trials);
 
+% Preallocate subplots
+gui.trial_times = subplot(4,2,2);
+gui.mean_fluorescence = subplot(4,2,4);
+gui.event_sum = subplot(4,2,6);
+gui.event_counts = subplot(4,2,8);
+
 % Behavioral trial times
-subplot(4,2,2);
-draw_stem(pre.times, post.times);
+draw_stem(gui.trial_times, pre.times, post.times);
 ylabel('Trial times (s)');
-title('Constant path: Pre (blue) vs. Post (red)');
+title(sprintf('Constant path: Pre (blue, %d) vs. Post (red, %d)',...
+              length(pre_trials), length(post_trials)));
 
 % Fluorescence averages
-subplot(4,2,4);
-draw_stem(pre.mean_fluorescence, post.mean_fluorescence);
+draw_stem(gui.mean_fluorescence, pre.mean_fluorescence, post.mean_fluorescence);
 ylabel('Mean fluorescence');
 
 % Event amplitude sum
-subplot(4,2,6);
-draw_stem(pre.event_sum, post.event_sum);
+draw_stem(gui.event_sum, pre.event_sum, post.event_sum);
 ylabel('\Sigma Event amplitudes');
 
 % Event counts
-subplot(4,2,8);
-draw_stem(pre.num_events, post.num_events);
+draw_stem(gui.event_counts, pre.num_events, post.num_events);
 xlabel('Trial index');
 ylabel('Event counts');
 
-    function draw_stem(pre_vals, post_vals)
-        stem(x_pre, pre_vals, 'b.', 'ButtonDownFcn', @select_trial);
+    function draw_stem(h_sp, pre_vals, post_vals)
+        subplot(h_sp);
+        stem(x_pre, pre_vals, 'b.', 'ButtonDownFcn', {@select_trial, h_sp});
         hold on;
-        stem(x_post, post_vals, 'r.', 'ButtonDownFcn', @select_trial);
+        stem(x_post, post_vals, 'r.', 'ButtonDownFcn', {@select_trial, h_sp});
         hold off;
         xlim(x_range);
         tick_inds = x_range(1):5:x_range(end);
@@ -50,10 +54,16 @@ ylabel('Event counts');
         grid on;
     end % draw_stem
 
-    function select_trial(~, e)
+    function select_trial(h_stem, e, h_sp)
         x = e.IntersectionPoint(1);
+        y = h_stem.YData(h_stem.XData==x);
         t = true_trial_inds(x);
-        msgbox(sprintf('Trial %d', t));
+        
+        subplot(h_sp);
+        hold on;
+        plot(x,y,'ko');
+        text(x+0.5,y,sprintf('Trial %d', t));
+        hold off;
     end
 
 end % draw_constant_path_analysis
