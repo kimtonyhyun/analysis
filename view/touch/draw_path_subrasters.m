@@ -55,7 +55,7 @@ title(changing_path_title);
                 if ~isempty(ds.get_events(cell_idx, trial_idx))
                     eind_color = 'y';
                 else
-                    eind_color = 'w';
+                    eind_color = 0.65*[1 1 1];
                 end
                 rectangle('Position', [aligned_time(end) k-0.5 eind_width 1],...
                           'FaceColor', eind_color);
