@@ -23,7 +23,7 @@ gui.trial_times = subplot(4,2,2);
 gui.mean_fluorescence = subplot(4,2,4);
 % gui.max_fluorescence = subplot(5,2,6);
 gui.event_sum = subplot(4,2,6);
-gui.event_counts = subplot(4,2,8);
+gui.num_events = subplot(4,2,8);
 
 % Behavioral trial times
 draw_stem(gui.trial_times, pre.times, post.times);
@@ -45,8 +45,8 @@ draw_stem(gui.event_sum, pre.event_sum, post.event_sum, true);
 ylabel('event\_sum');
 
 % Event counts
-draw_stem(gui.event_counts, pre.num_events, post.num_events, true);
-ylabel('event\_counts');
+draw_stem(gui.num_events, pre.num_events, post.num_events, true);
+ylabel('num\_events');
 xlabel('Trial index');
 
     function draw_stem(h_sp, pre_vals, post_vals, run_logistic_regression)
