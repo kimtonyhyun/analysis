@@ -19,11 +19,11 @@ pre = compute_features(ds, cell_idx, pre_trials);
 post = compute_features(ds, cell_idx, post_trials);
 
 % Preallocate subplots
-gui.trial_times = subplot(4,2,2);
-gui.mean_fluorescence = subplot(4,2,4);
-% gui.max_fluorescence = subplot(5,2,6);
-gui.event_sum = subplot(4,2,6);
-gui.num_events = subplot(4,2,8);
+gui.trial_times = subplot(5,2,2);
+gui.mean_fluorescence = subplot(5,2,4);
+gui.max_fluorescence = subplot(5,2,6);
+gui.event_sum = subplot(5,2,8);
+gui.num_events = subplot(5,2,10);
 
 % Behavioral trial times
 draw_stem(gui.trial_times, pre.times, post.times);
@@ -37,8 +37,8 @@ title(sprintf('Pre (%d; %.1f%%) vs. Post (%d; %.1f%%)',...
 draw_stem(gui.mean_fluorescence, pre.mean_fluorescence, post.mean_fluorescence, true);
 ylabel('mean\_fluorescence');
 
-% draw_stem(gui.max_fluorescence, pre.max_fluorescence, post.max_fluorescence);
-% ylabel('Max fluorescence');
+draw_stem(gui.max_fluorescence, pre.max_fluorescence, post.max_fluorescence, true);
+ylabel('max\_fluorescence');
 
 % Event amplitude sum
 draw_stem(gui.event_sum, pre.event_sum, post.event_sum, true);
