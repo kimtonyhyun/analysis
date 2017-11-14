@@ -35,19 +35,19 @@ title(sprintf('Pre (%d; %.1f%%) vs. Post (%d; %.1f%%)',...
 
 % Fluorescence
 draw_stem(gui.mean_fluorescence, pre.mean_fluorescence, post.mean_fluorescence, true);
-ylabel('Mean fluorescence');
+ylabel('mean\_fluorescence');
 
 % draw_stem(gui.max_fluorescence, pre.max_fluorescence, post.max_fluorescence);
 % ylabel('Max fluorescence');
 
 % Event amplitude sum
 draw_stem(gui.event_sum, pre.event_sum, post.event_sum, true);
-ylabel('\Sigma Event amplitudes');
+ylabel('event\_sum');
 
 % Event counts
 draw_stem(gui.event_counts, pre.num_events, post.num_events, true);
+ylabel('event\_counts');
 xlabel('Trial index');
-ylabel('Event counts');
 
     function draw_stem(h_sp, pre_vals, post_vals, run_logistic_regression)
         if nargin < 4
