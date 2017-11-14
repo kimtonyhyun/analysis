@@ -8,9 +8,12 @@ post_trials = trials.constant_post;
 
 true_trial_inds = [pre_trials; post_trials];
 
-x_pre = 1:length(pre_trials);
-x_post = x_pre(end) + (1:length(post_trials));
-x_range = [1 x_post(end)];
+n_pre = length(pre_trials);
+n_post = length(post_trials);
+
+x_pre = 1:n_pre;
+x_post = n_pre + (1:n_post);
+x_range = [1 n_pre+n_post];
 
 pre = compute_features(ds, cell_idx, pre_trials);
 post = compute_features(ds, cell_idx, post_trials);
@@ -25,42 +28,43 @@ gui.event_counts = subplot(4,2,8);
 % Behavioral trial times
 draw_stem(gui.trial_times, pre.times, post.times);
 ylabel('Trial times (s)');
-title(sprintf('Constant path: Pre (blue, %d) vs. Post (red, %d)',...
-              length(pre_trials), length(post_trials)));
+pre_frac = n_pre / (n_pre + n_post);
+post_frac = n_post / (n_pre + n_post);
+title(sprintf('Pre (%d; %.1f%%) vs. Post (%d; %.1f%%)',...
+              n_pre, pre_frac*100, n_post, post_frac*100));
 
 % Fluorescence
-draw_stem(gui.mean_fluorescence, pre.mean_fluorescence, post.mean_fluorescence);
+draw_stem(gui.mean_fluorescence, pre.mean_fluorescence, post.mean_fluorescence, true);
 ylabel('Mean fluorescence');
-test_scores = compute_logistic_test_scores(pre.mean_fluorescence, post.mean_fluorescence);
-mu = mean(test_scores);
-sig = std(test_scores);
-title(sprintf('LogReg test score = %.0f+/-%.0f%%', mu*100, sig*100));
 
 % draw_stem(gui.max_fluorescence, pre.max_fluorescence, post.max_fluorescence);
 % ylabel('Max fluorescence');
 
 % Event amplitude sum
-draw_stem(gui.event_sum, pre.event_sum, post.event_sum);
+draw_stem(gui.event_sum, pre.event_sum, post.event_sum, true);
 ylabel('\Sigma Event amplitudes');
-test_scores = compute_logistic_test_scores(pre.event_sum, post.event_sum);
-mu = mean(test_scores);
-sig = std(test_scores);
-title(sprintf('LogReg test score = %.0f+/-%.0f%%', mu*100, sig*100));
 
 % Event counts
-draw_stem(gui.event_counts, pre.num_events, post.num_events);
+draw_stem(gui.event_counts, pre.num_events, post.num_events, true);
 xlabel('Trial index');
 ylabel('Event counts');
-test_scores = compute_logistic_test_scores(pre.num_events, post.num_events);
-mu = mean(test_scores);
-sig = std(test_scores);
-title(sprintf('LogReg test score = %.0f+/-%.0f%%', mu*100, sig*100));
 
-    function draw_stem(h_sp, pre_vals, post_vals)
+    function draw_stem(h_sp, pre_vals, post_vals, run_logistic_regression)
+        if nargin < 4
+            run_logistic_regression = false;
+        end
+        
         subplot(h_sp);
         stem(x_pre, pre_vals, 'b.', 'ButtonDownFcn', {@select_trial, h_sp});
         hold on;
         stem(x_post, post_vals, 'r.', 'ButtonDownFcn', {@select_trial, h_sp});
+        if run_logistic_regression
+            % Run logistic regression just once
+            [score, w] = compute_logistic_test_scores(pre_vals, post_vals, 1);
+            decision_boundary = -w(2)/w(1);
+            plot(x_range, decision_boundary*[1 1], 'k--');
+            title(sprintf('Test acc=%.1f%%', score*100));
+        end
         hold off;
         xlim(x_range);
         tick_inds = x_range(1):5:x_range(end);
