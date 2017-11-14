@@ -16,11 +16,11 @@ pre = compute_features(ds, cell_idx, pre_trials);
 post = compute_features(ds, cell_idx, post_trials);
 
 % Preallocate subplots
-gui.trial_times = subplot(5,2,2);
-gui.mean_fluorescence = subplot(5,2,4);
-gui.max_fluorescence = subplot(5,2,6);
-gui.event_sum = subplot(5,2,8);
-gui.event_counts = subplot(5,2,10);
+gui.trial_times = subplot(4,2,2);
+gui.mean_fluorescence = subplot(4,2,4);
+% gui.max_fluorescence = subplot(5,2,6);
+gui.event_sum = subplot(4,2,6);
+gui.event_counts = subplot(4,2,8);
 
 % Behavioral trial times
 draw_stem(gui.trial_times, pre.times, post.times);
@@ -31,18 +31,30 @@ title(sprintf('Constant path: Pre (blue, %d) vs. Post (red, %d)',...
 % Fluorescence
 draw_stem(gui.mean_fluorescence, pre.mean_fluorescence, post.mean_fluorescence);
 ylabel('Mean fluorescence');
+test_scores = compute_logistic_test_scores(pre.mean_fluorescence, post.mean_fluorescence);
+mu = mean(test_scores);
+sig = std(test_scores);
+title(sprintf('LogReg test score = %.0f+/-%.0f%%', mu*100, sig*100));
 
-draw_stem(gui.max_fluorescence, pre.max_fluorescence, post.max_fluorescence);
-ylabel('Max fluorescence');
+% draw_stem(gui.max_fluorescence, pre.max_fluorescence, post.max_fluorescence);
+% ylabel('Max fluorescence');
 
 % Event amplitude sum
 draw_stem(gui.event_sum, pre.event_sum, post.event_sum);
 ylabel('\Sigma Event amplitudes');
+test_scores = compute_logistic_test_scores(pre.event_sum, post.event_sum);
+mu = mean(test_scores);
+sig = std(test_scores);
+title(sprintf('LogReg test score = %.0f+/-%.0f%%', mu*100, sig*100));
 
 % Event counts
 draw_stem(gui.event_counts, pre.num_events, post.num_events);
 xlabel('Trial index');
 ylabel('Event counts');
+test_scores = compute_logistic_test_scores(pre.num_events, post.num_events);
+mu = mean(test_scores);
+sig = std(test_scores);
+title(sprintf('LogReg test score = %.0f+/-%.0f%%', mu*100, sig*100));
 
     function draw_stem(h_sp, pre_vals, post_vals)
         subplot(h_sp);
