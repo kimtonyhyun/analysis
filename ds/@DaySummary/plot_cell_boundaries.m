@@ -22,7 +22,8 @@ function plot_cell_boundaries(obj, varargin)
 
     % Display the cell map
     if show_cell_map_background
-        imagesc(obj.cell_map_ref_img);
+        im = imagesc(obj.cell_map_ref_img);
+        im.AlphaData = 0.7; % Makes it easier to see the boundaries
         colormap gray;
     else
         [h, w] = size(obj.cell_map_ref_img);
