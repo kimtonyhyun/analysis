@@ -30,6 +30,10 @@ end
 subplot(3,2,1);
 imagesc(ds.cells(cell_idx).im);
 axis image;
+half_width = 30; % FIXME: Set dynamically
+com = ds.cells(cell_idx).com;
+xlim(com(1)+[-half_width half_width]);
+ylim(com(2)+[-half_width half_width]);
 title(sprintf('Cell %d (%s)', cell_idx, ds.cells(cell_idx).label));
 colormap jet; freezeColors;
 
