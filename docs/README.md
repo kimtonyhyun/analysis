@@ -14,7 +14,12 @@ The Matlab-based analysis workflow for the strategy shifting experiment at Herri
 
 ## Standard data formats
 
-This section describes the expected contents of stored data files.
+Basic formatting of data objects:
+- Movies: `[height width time]`
+- Traces: `[time cell-idx]`
+- Cell images: `[height width cell-idx]`
+
+This section describes the expected contents of stored files.
 
 #### "Rec" (mat) files:
 
@@ -28,6 +33,10 @@ info.num_pairs: Number of filter-trace pairs in file
 filters: [height x width x num_pairs]
 traces: [num_frames x num_pairs]
 ```
+
+#### "Class" (txt) files:
+
+#### "Events" (mat) files:
 
 ## Specialized analytic approaches
 

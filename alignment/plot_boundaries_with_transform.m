@@ -1,6 +1,12 @@
 function plot_boundaries_with_transform(ds, linespec, linewidth, filled_cells, tform)
     % Plot boundaries as a single color, with an optional transform. Can
     % subselect cells to be filled in
+    if (nargin < 3)
+        linewidth = 1;
+        filled_cells = [];
+        tform = [];
+    end
+    
     for k = 1:ds.num_cells
         boundary = ds.cells(k).boundary;
         if ~isempty(tform) % Optional spatial transform
