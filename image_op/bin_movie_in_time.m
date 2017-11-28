@@ -37,6 +37,10 @@ height = movie_size(1);
 width = movie_size(2);
 num_frames = movie_size(3);
 
+if (nargin < 4) % trial_indices not provided
+    trial_indices = make_frame_chunks(num_frames, bin_factor * 1000);
+end
+
 assert(num_frames == trial_indices(end,end),...
        'Number of frames in movie does not match table of trial indices!');
 
