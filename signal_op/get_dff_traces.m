@@ -97,6 +97,4 @@ info.options.truncate_filter = truncate_filter;
 info.options.use_ls = use_ls;
 info.options.use_all_filters = use_all_filters;
 
-timestamp = datestr(now, 'yymmdd-HHMMSS');
-rec_savename = sprintf('rec_%s.mat', timestamp);
-save(rec_savename, 'info', 'filters', 'traces', '-v7.3');
+save_rec(info, filters, traces);

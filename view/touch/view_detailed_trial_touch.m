@@ -75,22 +75,26 @@ gui.trace_dot = plot(trial_frames(1), trace(1), 'r.',... % Dot
          'HitTest', 'off');
 
 % Show events, if present
-eventdata = ds.get_events(cell_idx, trial_idx);
-num_events = size(eventdata,1);
-if (num_events > 0)
-    peak_times = t(eventdata(:,2));
-    X = kron(peak_times, [1 1 NaN]);
+if ds.is_eventdata_loaded
+    eventdata = ds.get_events(cell_idx, trial_idx);
+    num_events = size(eventdata,1);
+    if (num_events > 0)
+        peak_times = t(eventdata(:,2));
+        X = kron(peak_times, [1 1 NaN]);
 
-    % Draw event locations
-    Y = repmat([trace_scale NaN], 1, num_events);
-    plot(X, Y, 'm:', 'HitTest', 'off');
+        % Draw event locations
+        Y = repmat([trace_scale NaN], 1, num_events);
+        plot(X, Y, 'm:', 'HitTest', 'off');
 
-    % Draw amplitudes
-    Y = zeros(3, num_events);
-    Y(1,:) = trace(eventdata(:,2));
-    Y(2,:) = Y(1,:) - eventdata(:,3)';
-    Y(3,:) = NaN;
-    plot(X, Y(:), 'm', 'LineWidth', 2, 'HitTest', 'off');
+        % Draw amplitudes
+        Y = zeros(3, num_events);
+        Y(1,:) = trace(eventdata(:,2));
+        Y(2,:) = Y(1,:) - eventdata(:,3)';
+        Y(3,:) = NaN;
+        plot(X, Y(:), 'm', 'LineWidth', 2, 'HitTest', 'off');
+    end
+else
+    num_events = 0;
 end
 hold off;
 
