@@ -7,12 +7,12 @@ function meta = export_metadata(md, trial_map)
     num_trials = size(trial_map,1);
 
     % get moving average of turn probability on each day
-    ndays = length(md.valid_days);
-    tp = cell(ndays);
-    for di = 1:ndays
-        d = md.valid_days(di);
-        tp{di} = md.day(d).est_turn_probabilities;
-    end
+%     ndays = length(md.valid_days);
+%     tp = cell(ndays);
+%     for di = 1:ndays
+%         d = md.valid_days(di);
+%         tp{di} = md.day(d).est_turn_probabilities;
+%     end
 
     % copy selected trials into lightweight cell array
     meta.start = cell(num_trials,1);
@@ -35,8 +35,8 @@ function meta = export_metadata(md, trial_map)
         meta.turn{k} = trial.turn;
 
         % turn probability estimated for this trial
-        di = md.valid_days == d;
-        meta.turn_prob(k) = tp{di}(trial_map(k,2));
+%         di = md.valid_days == d;
+%         meta.turn_prob(k) = tp{di}(trial_map(k,2));
     end
 
     % mark each trial as allo vs ego-centric
