@@ -41,7 +41,8 @@ end
 plt = {'bar', 'line', 'scatter'};
 
 % plot titles
-nm = {'neuron factors', 'time factors', 'trial factors'};
+nm = {'neuron factors', 'time factors',...
+      sprintf('trial factors (%s)', trialcolor)};
 
 % formatting
 lspc = {[], '-r', '-k'};
