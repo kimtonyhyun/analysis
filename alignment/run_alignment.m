@@ -108,13 +108,16 @@ if use_transform % Transfer is irrelevant for in-place matches
     ds1_imsize = size(ds1.cells(1).im);
     ds1_ref = imref2d(ds1_imsize);
     filters_2to1 = zeros(ds1_imsize(1), ds1_imsize(2), num_unmatched_from_ds2);
+    coms_2to1 = zeros(num_unmatched_from_ds2, 2);
     for k = 1:num_unmatched_from_ds2
         cell_idx2 = unmatched_from_ds2(k);
         filters_2to1(:,:,k) = imwarp(...
             ds2.cells(cell_idx2).im, affine_info.tform, 'OutputView', ds1_ref);
+        coms_2to1(k,:) = transformPointsForward(affine_info.tform, ds2.cells(cell_idx2).com');
     end
     affine_info.filters_2to1.ds2_inds = unmatched_from_ds2;
     affine_info.filters_2to1.im = filters_2to1;
+    affine_info.filters_2to1.com = coms_2to1;
     
     % ds1 --> ds2
     unmatched_from_ds1 = find(cellfun(@isempty, match_1to2));
@@ -124,13 +127,16 @@ if use_transform % Transfer is irrelevant for in-place matches
     ds2_ref = imref2d(ds2_imsize);
     invtform = invert(affine_info.tform); % tform is computed for ds2 --> ds1
     filters_1to2 = zeros(ds2_imsize(1), ds2_imsize(2), num_unmatched_from_ds1);
+    coms_1to2 = zeros(num_unmatched_from_ds1, 2);
     for k = 1:num_unmatched_from_ds1
         cell_idx1 = unmatched_from_ds1(k);
         filters_1to2(:,:,k) = imwarp(...
             ds1.cells(cell_idx1).im, invtform, 'OutputView', ds2_ref);
+        coms_1to2(k,:) = transformPointsForward(invtform, ds1.cells(cell_idx1).com');
     end
     affine_info.filters_1to2.ds1_inds = unmatched_from_ds1;
     affine_info.filters_1to2.im = filters_1to2;
+    affine_info.filters_1to2.com = coms_1to2;
 end
 
 % If 'run_alignment' internally set the DaySummary labels for matching,
