@@ -102,7 +102,7 @@ fprintf('run_alignment: Found %d matches!\n', num_matches);
 %------------------------------------------------------------
 if use_transform % Transfer is irrelevant for in-place matches
     % ds2 --> ds1
-    unmatched_from_ds2 = find(cellfun(@isempty, match_2to1));
+    unmatched_from_ds2 = find(cellfun(@isempty, match_2to1)' & ds2.is_cell);
     num_unmatched_from_ds2 = length(unmatched_from_ds2);
     
     ds1_imsize = size(ds1.cells(1).im);
@@ -120,7 +120,7 @@ if use_transform % Transfer is irrelevant for in-place matches
     affine_info.filters_2to1.com = coms_2to1;
     
     % ds1 --> ds2
-    unmatched_from_ds1 = find(cellfun(@isempty, match_1to2));
+    unmatched_from_ds1 = find(cellfun(@isempty, match_1to2)' & ds1.is_cell);
     num_unmatched_from_ds1 = length(unmatched_from_ds1);
     
     ds2_imsize = size(ds2.cells(1).im);
