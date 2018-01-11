@@ -70,11 +70,21 @@ else
     num_filters = size(filter_input, 3);
     filters = zeros(num_pixels, num_filters);
     
+    idx = 0;
     for k = 1:num_filters
         filter = filter_input(:,:,k);
-        filter = filter / sum(filter(:));
-        filters(:,k) = reshape(filter, num_pixels, 1);
+        if (sum(filter(:)) > 0)
+            filter = filter / sum(filter(:));
+            
+            idx = idx + 1;
+            filters(:,idx) = reshape(filter, num_pixels, 1);
+        else
+            fprintf('Warning: Filter #%d is entirely zero -- skipping!\n', k);
+        end
     end
+
+    num_filters = idx;
+    filters = filters(:,1:idx);    
 end
 fprintf('%s: Computing traces ', datestr(now));
 tic;
