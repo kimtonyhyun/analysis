@@ -96,8 +96,9 @@ end
 num_matches = sum(~cellfun(@isempty, match_1to2));
 fprintf('run_alignment: Found %d matches!\n', num_matches);
 
-% "Transfer" unmatched filters across datasets
-% TODO: Clean up code
+% "Transfer" unmatched filters across datasets. TODOs:
+% - Clean up code
+% - Check if the transferred filter is out of bounds
 %------------------------------------------------------------
 if use_transform % Transfer is irrelevant for in-place matches
     % ds2 --> ds1

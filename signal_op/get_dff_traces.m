@@ -1,6 +1,7 @@
-function traces = get_dff_traces(ds, M_dff, varargin)
+function traces = get_dff_traces(filter_input, M_dff, varargin)
 % Compute DFF traces associated with classified cells from a DaySummary,
-% and saves the result as a rec file. Assumes that M_dff is a DFF movie!
+% and saves the result as a rec file. Assumes that M_dff is a DFF movie (in
+% order for the resulting traces to be interpreted as DFF).
 %
 % Note that the length of traces is derived from the length of the movie.
 % The DaySummary only provides the spatial filters.
@@ -10,7 +11,8 @@ function traces = get_dff_traces(ds, M_dff, varargin)
 
 use_ls = false;
 
-% Filter parameters relevant for trace extraction
+% Filter parameters relevant for trace extraction -- used only when
+% 'filter_input' is a DaySummary instance
 use_all_filters = false;
 truncate_filter = false;
 
@@ -25,7 +27,7 @@ for k = 1:length(varargin)
                 use_all_filters = true;
             case {'ls', 'leastsquares'}
                 use_ls = true;
-            case {'fix_baseline', 'remove_baseline'}
+            case {'fix', 'fix_baseline', 'remove_baseline'}
                 remove_baseline = true;
             case 'truncate'
                 fprintf('%s: Filter will be truncated...\n', datestr(now));
@@ -38,29 +40,42 @@ end
 num_pixels = height*width;
 M_dff = reshape(M_dff, num_pixels, num_frames); % Reshape movie as a matrix
 
-if use_all_filters
-    % Use all filters regardless of cell classification
-    cell_indices = 1:ds.num_cells;
-else 
-    % Use only filters that have been classified to be a cell
-    cell_indices = find(ds.is_cell);
-end
-num_filters = length(cell_indices);
-filters = zeros(num_pixels, num_filters); % Filter of actual cells only
+if isa(filter_input, 'DaySummary')
+    % Filter input is provided as a DaySummary object
+    ds = filter_input;
 
-fprintf('%s: Building matrix of %d filters...\n',...
-    datestr(now), num_filters);
-for k = 1:num_filters
-    cell_idx = cell_indices(k);
-    filter = ds.cells(cell_idx).im;
-    if truncate_filter
-        filter = filter .* ds.cells(cell_idx).mask;
+    if use_all_filters
+        % Use all filters regardless of cell classification
+        cell_indices = 1:ds.num_cells;
+    else 
+        % Use only filters that have been classified to be a cell
+        cell_indices = find(ds.is_cell);
     end
-    filter = filter / sum(filter(:)); % Normalize filter to 1
-    
-    filters(:,k) = reshape(filter, num_pixels, 1);
-end
+    num_filters = length(cell_indices);
+    filters = zeros(num_pixels, num_filters);
 
+    for k = 1:num_filters
+        cell_idx = cell_indices(k);
+        filter = ds.cells(cell_idx).im;
+        if truncate_filter
+            filter = filter .* ds.cells(cell_idx).mask;
+        end
+        filter = filter / sum(filter(:)); % Normalize filter to 1
+
+        filters(:,k) = reshape(filter, num_pixels, 1);
+    end
+else
+    % Otherwise, we assume 'filter_input' is a [height x width x
+    % num_filters] matrix of filter images.
+    num_filters = size(filter_input, 3);
+    filters = zeros(num_pixels, num_filters);
+    
+    for k = 1:num_filters
+        filter = filter_input(:,:,k);
+        filter = filter / sum(filter(:));
+        filters(:,k) = reshape(filter, num_pixels, 1);
+    end
+end
 fprintf('%s: Computing traces ', datestr(now));
 tic;
 if use_ls
