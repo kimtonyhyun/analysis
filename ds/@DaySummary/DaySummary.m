@@ -451,9 +451,12 @@ classdef DaySummary < handle
             obj.apply_labels_to([], cell_indices);
         end
         
-        function set_unlabeled_cells(obj)
+        function set_unlabeled_cells(obj, label)
+            if ~exist('label', 'var')
+                label = 'not a cell';
+            end
             unlabeled_cells = find(cellfun(@isempty, obj.get_class))';
-            obj.apply_labels_to('not a cell', unlabeled_cells);
+            obj.apply_labels_to(label, unlabeled_cells);
         end
         
         function invert_labels(obj)
