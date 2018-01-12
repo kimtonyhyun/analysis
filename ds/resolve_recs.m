@@ -1,11 +1,24 @@
-function res_list = resolve_recs(md)
+function res_list = resolve_recs(md, varargin)
+
+res_list = [];
+for i = 1:length(varargin)
+    vararg = varargin{i};
+    if ischar(vararg)
+        switch lower(vararg)
+            case 'res_list'
+                res_list = varargin{i+1};
+        end
+    end
+end
 
 h = figure;
 
 % For matched cell index k, "resolution_list" indicates:
 %   res_list(k,1): Selected rec index
 %   res_list(k,2): Cell index within that rec
-res_list = zeros(md.num_cells, 2);
+if isempty(res_list)
+    res_list = zeros(md.num_cells, 2);
+end
 
 % If a cell can only be assigned to a single rec, then automatically
 % populate the 'res_list' for convenience
