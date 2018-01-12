@@ -11,13 +11,18 @@ for k = 1:num_ds
     ds_list{k,2} = ds_array(k);
 end
 
-match_list = cell(num_ds-1, 4);
+num_match = num_ds*(num_ds-1)/2;
+match_list = cell(num_match, 4);
+idx = 1;
 for k = 1:(num_ds-1)
-    [m_itoj, m_jtoi] = run_alignment(ds_array(k), ds_array(k+1), 'notrans', 'noprompt');
-    close all;
-    match_list{k,1} = k;
-    match_list{k,2} = k+1;
-    match_list{k,3} = m_itoj;
-    match_list{k,4} = m_jtoi;
+    for l = (k+1):num_ds
+        [m_k2l, m_l2k] = run_alignment(ds_array(k), ds_array(l), 'notrans', 'noprompt');
+        close all;
+        match_list{idx,1} = k;
+        match_list{idx,2} = l;
+        match_list{idx,3} = m_k2l;
+        match_list{idx,4} = m_l2k;
+        idx = idx + 1;
+    end
 end
 md = MultiDay(ds_list, match_list, 'keepall');
