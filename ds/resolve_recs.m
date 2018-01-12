@@ -7,6 +7,17 @@ h = figure;
 %   res_list(k,2): Cell index within that rec
 res_list = zeros(md.num_cells, 2);
 
+% If a cell can only be assigned to a single rec, then automatically
+% populate the 'res_list' for convenience
+for m = 1:md.num_cells
+    cell_inds = md.matched_indices(m,:);
+    matched_recs = find(cell_inds);
+    if (length(matched_recs) == 1)
+        res_list(m,1) = matched_recs;
+        res_list(m,2) = cell_inds(matched_recs);
+    end
+end
+
 cell_idx = 1;
 while (1)
     draw_cell(cell_idx);

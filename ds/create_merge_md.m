@@ -1,9 +1,8 @@
-function md = create_extraction_md(ds_array)
-% Helper function to create MultiDay instance to represent multiple
-% extraction runs on the same dataset.
+function md = create_merge_md(ds_array)
+% See also 'resolve_recs'.
 %
 % Usage:
-%   md = create_extraction_md([ds1 ds2 ds3]);
+%   md = create_merge_md([ds1 ds2 ds3]);
 
 num_ds = length(ds_array);
 ds_list = cell(num_ds, 2);
