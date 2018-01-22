@@ -14,16 +14,16 @@ The Matlab-based analysis workflow for the strategy shifting experiment at Herri
 
 ## Standard data formats
 
-Basic formatting of data objects:
+Indexing convention for basic data:
 - Movies: `[height width time]`
 - Traces: `[time cell-idx]`
 - Cell images: `[height width cell-idx]`
 
-This section describes the expected contents of stored files.
+The following section describes the expected contents of files written to disk.
 
 #### "Rec" (mat) files:
 
-Contains cell candidates (i.e. trace and filter pairs) to be classified. Stored as native Matlab "mat" file. (In the past, "rec" stood for "reconstruction", but this is now vestigial.) File name should be `rec_*.mat`.
+Contains cell candidates (i.e. trace and filter pairs) to be classified. Stored as native Matlab "mat" file. (In the past, "rec" stood for "reconstruction", but this is now vestigial.) File name should be `rec_*.mat`, where `*` is a timestamp (e.g. `'rec_171213-191530.mat'`; see [`save_rec.m`](../ds/save_rec.m)).
 
 Top level variables are: `info`, `filters`, `traces`, which must have the following contents:
 ```
