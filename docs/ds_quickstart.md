@@ -20,7 +20,9 @@ Cell extraction data is stored in a separate `cm01` subdirectory:
 - __"rec_151125-102235.mat"__: Matlab data file (we'll call it a "rec" file), containing the cell filters and traces as produced by the cell extraction algorithm (here, CELLMax). _Necessary_ for instantiating a `DaySummary` object.
 - __"class_151125-172203.txt"__: Text file that contains the classification label for each of the candidate sources (filter-trace pair). Optional input for `DaySummary` instantiation.
  
-Note: The bare minimum for instantiating a `DaySummary` object is the PlusMaze text file ("c11m1d12_ti2.txt" in the above example) and the filter-trace Matlab data file ("rec_151125-102235.mat").
+The bare minimum for instantiating a `DaySummary` object is the PlusMaze text file ("c11m1d12_ti2.txt" in the above example) and the filter-trace Matlab data file ("rec_151125-102235.mat").
+
+Note: The `DaySummary` object _can_ be used with non-PlusMaze datasets. Please see [this note](ds_nonplusmaze.md).
 
 #### Instantiating the `DaySummary` object
 

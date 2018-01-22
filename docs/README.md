@@ -3,7 +3,7 @@
 The Matlab-based analysis workflow for the strategy shifting experiment at Herrin is organized around a `DaySummary` object. The basic idea behind the `DaySummary` class is to encapsulate all relevant information for a single session of the strategy shifting protocol.
 
 1. [`DaySummary` QuickStart](ds_quickstart.md)
-  * Using `DaySummary` with non-PlusMaze datasets
+  * [Using `DaySummary` with non-PlusMaze datasets](ds_nonplusmaze.md)
   * Using `browse_rasters`
   * [Using `detect_events`](eventdetect.md)
 2. Classifying cells using `DaySummary`
