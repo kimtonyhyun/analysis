@@ -1,5 +1,7 @@
 function meancorr_movie(movie_in, movie_out, varargin)
 % Perform mean correction from HDF5 file ('movie_in') to file ('movie_out').
+% Namely, we fit a simple curve (e.g. decaying exponential) to the mean 
+% fluorescence on all frames. Each frame is divided by the fitted value.
 %
 % If 'movie_out' is left as an empty string, then default name will be
 % provided.
@@ -22,12 +24,12 @@ end
 movie_dataset = '/Data/Images';
 
 % Grab the movie parameters
-[movie_size, movie_type] = get_dataset_info(movie_in, movie_dataset);
+[movie_size, ~] = get_dataset_info(movie_in, movie_dataset);
 height = movie_size(1);
 width = movie_size(2);
 num_frames = movie_size(3);
 
-% Begin DFF processing
+% Begin mean correction processing
 %------------------------------------------------------------
 frame_chunk_size = 2500;
 [frame_chunks, num_chunks] = make_frame_chunks(num_frames, frame_chunk_size);
