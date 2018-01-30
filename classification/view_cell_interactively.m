@@ -362,7 +362,8 @@ end
         plot(coord(1), coord(2), 'r*');
         hold off;
         
-        state.points_of_interest = [state.points_of_interest; coord];
+        frame_idx = get(h, 'UserData');
+        state.points_of_interest = [state.points_of_interest; coord frame_idx];
     end
 
     function go_to_selected_frame(~, e)
@@ -393,6 +394,7 @@ end
         k = max(1,k); k = min(length(frames_to_movie),k); % Clamp
         A = movie(:,:,frames_to_movie(k));
         set(h, 'CData', A);
+        set(h, 'UserData', k); % So that we can refer to the displayed frame elsewhere
         set(t_g, 'XData', time(k)*[1 1]);
         set(t_r, 'XData', time(k)*[1 1]);
         set(dot, 'XData', time(k), 'YData', trace(k));
