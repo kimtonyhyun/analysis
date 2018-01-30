@@ -20,6 +20,19 @@ if isempty(movie_out)
     fprintf('meancorr_movie: Output movie will be saved as "%s"\n', movie_out);
 end
 
+y = [];
+if ~isempty(varargin)
+    for k = 1:length(varargin)
+        if ischar(varargin{k})
+            vararg = lower(varargin{k});
+            switch vararg
+                case 'y' % Externally provide fitted fluorescence
+                    y = single(varargin{k+1});
+            end
+        end
+    end
+end
+
 % Default dataset name for the movie
 movie_dataset = '/Data/Images';
 
@@ -39,51 +52,59 @@ x = (1:num_frames)';
 F = compute_fluorescence_stats(movie_in);
 mu = double(F(:,2));
 
-% Perform fits:
-%   1) Two-term exponential fit
-%   2) Linear polyfit
-%------------------------------------------------------------
-fits = {'exp2', 'poly1'};
-num_fits = length(fits);
-ys = cell(num_fits, 1);
-gofs = cell(num_fits, 1); % Goodness of fit
-
-for k = 1:num_fits
-    [f, gofs{k}] = fit(x, mu, fits{k});
-    ys{k} = feval(f, x);
-end
-
 % Plot fits
+figure;
 plot(x,mu,'k.');
 xlim([1 num_frames]);
 hold on;
-colors = 'br';
-for k = 1:num_fits
-    color = colors(mod(k,length(colors))+1);
-    plot(x, ys{k}, color, 'LineWidth', 2);
-end
-legend(cat(2, {'Raw'}, fits), 'Location', 'NorthEast');
 xlabel('Frames');
 ylabel('Mean fluorescence');
+title(strrep(movie_in, '_', '\_'));
 grid on;
-
-% Have user select one of the fit options
-selected_fit_ind = 0;
-while ~ismember(1:num_fits, selected_fit_ind)
-    fprintf('meancorr_movie: Please select one of following fits:\n');
-    for k = 1:num_fits
-        fprintf('  %d: %s (Rsq=%.4f)\n', k, fits{k}, gofs{k}.rsquare);
-    end
     
-    % Get user input
-    resp = lower(strtrim(input('  >> ', 's')));
-    val = str2double(resp);
-    if ~isnan(val)
-        selected_fit_ind = val;
+if ~isempty(y) % Fitted fluorescence externally provided
+    plot(x, y, 'r', 'LineWidth', 2);
+    input('meancorr_movie: Press enter to continue with mean correction >> ');
+else 
+    % No external fitted fluorescence provided. Perform fits:
+    %   1) Two-term exponential fit
+    %   2) Linear polyfit
+    %------------------------------------------------------------
+    fits = {'exp2', 'poly1'};
+    num_fits = length(fits);
+    ys = cell(num_fits, 1);
+    gofs = cell(num_fits, 1); % Goodness of fit
+
+    for k = 1:num_fits
+        [f, gofs{k}] = fit(x, mu, fits{k});
+        ys{k} = feval(f, x);
     end
+
+    colors = 'br';
+    for k = 1:num_fits
+        color = colors(mod(k,length(colors))+1);
+        plot(x, ys{k}, color, 'LineWidth', 2);
+    end
+    legend(cat(2, {'Raw'}, fits), 'Location', 'NorthEast');
+
+    % Have user select one of the fit options
+    selected_fit_ind = 0;
+    while ~ismember(1:num_fits, selected_fit_ind)
+        fprintf('meancorr_movie: Please select one of following fits:\n');
+        for k = 1:num_fits
+            fprintf('  %d: %s (Rsq=%.4f)\n', k, fits{k}, gofs{k}.rsquare);
+        end
+
+        % Get user input
+        resp = lower(strtrim(input('  >> ', 's')));
+        val = str2double(resp);
+        if ~isnan(val)
+            selected_fit_ind = val;
+        end
+    end
+    fprintf('Fit selected (%s)!\n', fits{selected_fit_ind});
+    y = single(ys{selected_fit_ind});
 end
-fprintf('Fit selected (%s)!\n', fits{selected_fit_ind});
-y = single(ys{selected_fit_ind});
 
 % Prepare output movie
 %------------------------------------------------------------
