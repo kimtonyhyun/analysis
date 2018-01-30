@@ -215,6 +215,12 @@ end
                  'Color', 'w',...
                  'FontWeight', 'bold');
         end
+        
+        % Draw points of interest
+        pois = state.points_of_interest;
+        if ~isempty(pois)
+            plot(pois(:,1), pois(:,2), 'y*');
+        end
         hold off;
         
         [height, width, ~] = size(M);

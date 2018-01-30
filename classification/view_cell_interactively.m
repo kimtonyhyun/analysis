@@ -98,7 +98,7 @@ show_neighbors(state.show_neighbors);
 num_points = size(state.points_of_interest, 1);
 for i = 1:num_points
     pt = state.points_of_interest(i,:);
-    plot(pt(1), pt(2), 'r*');
+    plot(pt(1), pt(2), 'y*');
 end
 
 % Indicate the center of mass of the current filter
@@ -134,7 +134,6 @@ resp = lower(strtrim(input(prompt, 's')));
 val = str2double(resp);
 
 % State of interaction loop (will not carry over to other cells)
-temp_state.last_rendered_frame = [];
 temp_state.last_val = [];
 temp_state.zoomed = true;
 
@@ -359,7 +358,7 @@ end
         % Add new point of interest to plot
         subplot(movie_subplot);
         hold on;
-        plot(coord(1), coord(2), 'r*');
+        plot(coord(1), coord(2), 'y*');
         hold off;
         
         frame_idx = get(h, 'UserData');
@@ -400,15 +399,14 @@ end
         set(dot, 'XData', time(k), 'YData', trace(k));
         set(running_trace, 'XLim', time(k) + time_window/2*[-1 1]);
         drawnow;
-        
-        temp_state.last_rendered_frame = k;
     end
 
     function scroll_frame(~, e)
+        current_frame = get(h, 'UserData');
         if (e.VerticalScrollCount < 0) % Scroll up
-            k = temp_state.last_rendered_frame - 1;
+            k = current_frame - 1;
         else
-            k = temp_state.last_rendered_frame + 1;
+            k = current_frame + 1;
         end
         render_frame(k);
     end
