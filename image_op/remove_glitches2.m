@@ -25,7 +25,7 @@ fprintf('%s: Computing fluorescence stats...\n', datestr(now));
 F = compute_fluorescence_stats(M);
 
 fprintf('%s: Detect anomalous frames in the mean trace...\n', datestr(now));
-anomalous_frames = detect_anomalous_frames(F(:,2), 6);
+anomalous_frames = detect_anomalous_frames(F(:,2), 100);
 
 num_frames = size(M,3);
 plot(F(:,2), 'b.-');
