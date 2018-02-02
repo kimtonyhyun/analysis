@@ -5,6 +5,15 @@ function plot_boundaries_with_transform(ds, linespec, linewidth, filled_cells, t
         linewidth = 1;
         filled_cells = [];
         tform = [];
+    elseif (nargin < 4)
+        filled_cells = [];
+        tform = [];
+    elseif (nargin < 5)
+        tform = [];
+    end
+    
+    if isempty(linewidth)
+        linewidth = 1;
     end
     
     for k = 1:ds.num_cells
