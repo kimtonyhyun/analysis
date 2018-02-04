@@ -247,15 +247,14 @@ end
     end % display_map
     
     function go_to_next_unlabeled_cell()
-        labels = ds.get_class;
-        unlabeled = cellfun(@isempty, labels);
-        unlabeled = circshift(unlabeled, -cell_idx);
-        search_offset = find(unlabeled, 1);
-        if isempty(search_offset)
+        unlabeled = cellfun(@isempty, ds.get_class);
+        next_idx = find_next_cell_to_process(cell_idx, unlabeled);
+        
+        if isempty(next_idx)
             fprintf('  All cells have been classified!\n');
         else
             prev_cell_idx = cell_idx;
-            cell_idx = mod(cell_idx+search_offset-1, num_candidates) + 1;
+            cell_idx = next_idx;
         end
     end
         
