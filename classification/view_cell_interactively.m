@@ -73,7 +73,8 @@ show_map(state.show_map);
 % Plot boundaries and indices of the nearest neighbors of the
 % current cell
 %------------------------------------------------------------
-colors = 'ygr';
+corr_colors = redblue(201);
+
 neighbor_indices = ds.get_nearest_sources(cell_idx, num_neighbors_to_show);
 neighbor_handles = zeros(num_neighbors_to_show, 2); % [Boundary Text]
 for n = 1:num_neighbors_to_show
@@ -81,8 +82,16 @@ for n = 1:num_neighbors_to_show
     boundary = ds.cells(neighbor_idx).boundary;
     com = ds.cells(neighbor_idx).com;
     
-    color = colors(mod(n,length(colors))+1);
-    neighbor_handles(n,1) = plot(boundary(:,1), boundary(:,2), color,...
+    % Compute the color from trace correlations
+    trace_corr = ds.trace_corrs(cell_idx, neighbor_idx);
+    trace_corr = round(trace_corr*100) + 101;
+    color = corr_colors(trace_corr,:);
+    
+    neighbor_handles(n,1) = plot(boundary(:,1), boundary(:,2),...
+                                 'HitTest', 'off',...
+                                 'Clipping', 'on',...
+                                 'Color', color,...
+                                 'LineWidth', 2,...
                                  'HitTest', 'off');
     neighbor_handles(n,2) = text(com(1), com(2), num2str(neighbor_idx),...
                                  'HitTest', 'off',...
