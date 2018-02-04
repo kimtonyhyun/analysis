@@ -154,7 +154,7 @@ end
         clf;
         subplot(3,2,[1 2]);
         ds.plot_trace(cell_idx);
-        title(sprintf('Candidate %d of %d', cell_idx, num_candidates));
+        title(sprintf('Source %d of %d', cell_idx, num_candidates));
         
         subplot(3,2,[3 5]);
         ds.plot_superposed_trials(cell_idx);
@@ -167,7 +167,7 @@ end
         clf;
         subplot(3,1,1);
         ds.plot_trace(cell_idx);
-        title(sprintf('Candidate %d of %d', cell_idx, num_candidates));
+        title(sprintf('Source %d of %d', cell_idx, num_candidates));
         
         % Plot cell filter on top of correlation image. The correlations
         % are initially compute against the COM of the filter under review
