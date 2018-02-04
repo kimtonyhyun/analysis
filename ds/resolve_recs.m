@@ -7,6 +7,16 @@ h = figure;
 %   res_list(k,2): Cell index within that rec
 res_list = zeros(md.num_cells, 2);
 
+% If filter only shows up on one rec, then assign it automatically
+for j = 1:md.num_cells
+    inds = md.matched_indices(j,:);
+    num_recs = sum(inds>0);
+    if (num_recs == 1)
+        rec_ind = find(inds, 1);
+        res_list(j,:) = [rec_ind inds(rec_ind)];
+    end
+end
+
 cell_idx = 1;
 while (1)
     draw_cell(cell_idx);
@@ -29,11 +39,7 @@ while (1)
                 res_list(cell_idx,2) = ...
                     md.matched_indices(cell_idx, val);
 
-                if (cell_idx < md.num_cells)
-                    cell_idx = cell_idx + 1;
-                else
-                    fprintf('  Already at final md cell!\n');
-                end
+                go_to_next_cell();
             else
                 fprintf('  Sorry, %d is not a valid rec index for this cell\n', val);
             end
@@ -61,11 +67,7 @@ while (1)
                 end
                 
             case 'n'
-                if (cell_idx < md.num_cells)
-                    cell_idx = cell_idx + 1;
-                else
-                    fprintf('  Already at final md cell!\n');
-                end
+                go_to_next_cell();
                 
             case 'p' % Previous cell
                 if (cell_idx > 1)
@@ -83,6 +85,16 @@ while (1)
         end
     end    
 end
+
+    function go_to_next_cell()
+        to_be_assigned = (res_list(:,1) == 0);
+        next_idx = find_next_cell_to_process(cell_idx, to_be_assigned);
+        if isempty(next_idx)
+            fprintf('  All cells have been assigned!\n');
+        else
+            cell_idx = next_idx;
+        end
+    end
 
     function draw_cell(common_cell_idx)
         clf;
