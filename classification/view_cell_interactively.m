@@ -10,7 +10,7 @@ time = 1/fps*((1:length(trace_orig))-1);
 
 % Some parameters
 filter_threshold = 0.3; % For generating the filter outline
-num_neighbors_to_show = min(10, ds.num_cells-1);
+num_neighbors_to_show = min(25, ds.num_cells-1);
 
 % Display parameters
 active_frame_padding = round(5*fps); % Used by 'parse_active_frames'
@@ -243,7 +243,7 @@ while (1)
                 state.show_map = ~state.show_map;
                 show_map(state.show_map);
 
-            case 'n' % Show "neighbors"
+            case 'x' % Show cross correlation of neighbors
                 state.show_neighbors = ~state.show_neighbors;
                 show_neighbors(state.show_neighbors);
                 
