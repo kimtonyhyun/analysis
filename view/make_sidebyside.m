@@ -1,4 +1,4 @@
-function make_sidebyside(maze_source, behavior_source, miniscope_source, trials_to_record)
+function make_sidebyside(maze_source, behavior_source, miniscope_source, trials_to_record, annotations)
 % Generate a side-by-side AVI file of the specified trials.
 %
 % Example usage:
@@ -15,6 +15,11 @@ function make_sidebyside(maze_source, behavior_source, miniscope_source, trials_
 frame_indices = get_trial_frame_indices(maze_source);
 frame_indices = frame_indices(:,[1 end]); % [Trial-start Trial-end]
 num_frames = frame_indices(end,end);
+num_trials = size(frame_indices, 1);
+
+if (nargin < 5) % 'annotations' not provided
+    annotations = cell(num_trials, 1);
+end
 
 % Open the behavior video and make sure the number of frames matches the
 % trial index table
@@ -34,6 +39,10 @@ assert(num_frames == movie_size(3),...
     sprintf('Number of frames in miniscope recording (%d) does not match that in the maze file (%d)!\n',...
             movie_size(3), num_frames));
         
+% Behavioral clim
+behavior_clim = [0 196];
+behavior_clim_range = diff(behavior_clim);
+
 % Open one trial of the miniscope movie, to compute the appropriate CLim
 M = load_movie_from_hdf5(miniscope_source, frame_indices(1,:));
 movie_clim = compute_movie_scale(M);
@@ -55,7 +64,7 @@ fprintf('%s: Side-by-side video will be saved to "%s"...\n', datestr(now), outpu
 
 writerObj = VideoWriter(output_name, 'Motion JPEG AVI');
 writerObj.Quality = 100;
-writerObj.FrameRate = 20; % FIXME
+writerObj.FrameRate = 2*20; % FIXME
 open(writerObj);
 
 for trial_idx = trials_to_record
@@ -67,15 +76,24 @@ for trial_idx = trials_to_record
     
     for k = 1:num_frames_in_trial
         b = rgb2gray(behavior_vid.read(trial_frames(1) + (k-1))); % uint8
-        b = single(b) / 255; % Rescaled to [0 1]
-        
+        b = (single(b)-behavior_clim(1))/ behavior_clim_range; % Rescaled to [0 1]
+              
         m = imresize(M_trial(:,:,k), [behavior_height NaN]); % Match to behavior height
-        m = (m-movie_clim(1)) / movie_clim_range; % Rescaled to [0 1]
+%         m = (m-movie_clim(1)) / movie_clim_range; % Rescaled to [0 1]
         
         sbs = [b m];
         sbs = max(sbs, 0); % Clamp at 0 from below
         sbs = min(sbs, 1); % Clamp at 1 from top
         
+        annotation = annotations{trial_idx};
+        if ~isempty(annotation)
+            sbs = insertText(sbs, [310,450], annotation,...
+                'Font','Arial Bold',...
+                'AnchorPoint','CenterBottom',...
+                'FontSize',18,...
+                'BoxOpacity',0.8,...
+                'BoxColor','w');
+        end
         set(h, 'CData', sbs);
         drawnow;
         
