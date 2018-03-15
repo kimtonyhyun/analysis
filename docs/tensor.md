@@ -110,6 +110,13 @@ visualize_neuron_ktensor(cpd, trial_meta, 'day') % colors by session
 visualize_neuron_ktensor(cpd, trial_meta, 'strategy') % colors by inferred navigation strategy
 ```
 
+The neural, time, trial vectors may be accessed directly as:
+```
+neuron_vs = cpd.U{1};
+time_vs = cpd.U{2};
+trial_vs = cpd.U{3};
+```
+
 #### Visualizing the model fit
 
 It is useful to view the model's prediction and the raw data on the same plot, this can be done with the following commands:
