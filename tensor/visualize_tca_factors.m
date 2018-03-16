@@ -150,7 +150,7 @@ function recolor_trial_vector(h, ~, trial_meta)
     data = h.UserData;
     x = data.x;
     y = data.y;
-    h_neurons = data.h_neurons_in_factor
+    h_neurons = data.h_neurons_in_factor;
     
     % Cycle through possible new coloring options
     switch (data.trial_coloring)
@@ -161,6 +161,8 @@ function recolor_trial_vector(h, ~, trial_meta)
         case 'end'
             new_coloring = 'correct';
         case 'correct'
+            new_coloring = 'day';
+        case 'day'
             new_coloring = 'none';
         otherwise
             new_coloring = 'none';
@@ -173,6 +175,7 @@ function recolor_trial_vector(h, ~, trial_meta)
             plot(x, y, '.', 'Color', 0.4*[1 1 1], 'HitTest', 'off');
             ylabel('none', 'Color', 'k', 'FontWeight', 'normal');
             set(h_neurons, 'FaceColor', 'k');
+
         case 'start'
             east_trials = strcmp(trial_meta.start, 'east');
             west_trials = strcmp(trial_meta.start, 'west');
@@ -205,6 +208,28 @@ function recolor_trial_vector(h, ~, trial_meta)
             hold off;
             ylabel('correct', 'Color', dark_green, 'FontWeight', 'bold');
             set(h_neurons, 'FaceColor', dark_green);
+            
+        case 'day'
+            unique_days = unique(trial_meta.day)'; % Row vector
+            
+            colors = [0.929 0.694 0.125; % Orange
+                      0.6503 0.4858 0.0875];
+            color_ind = 1;
+            for unique_day = unique_days
+                day_trials = find(trial_meta.day == unique_day);
+                plot(x(day_trials), y(day_trials), '.', 'Color', colors(color_ind,:), 'HitTest', 'off');
+                hold on;
+                
+                % Toggle colors
+                if color_ind == 1
+                    color_ind = 2;
+                else
+                    color_ind = 1;
+                end
+            end
+            hold off;
+            ylabel('day', 'Color', colors(1,:), 'FontWeight', 'bold');
+            set(h_neurons, 'FaceColor', colors(1,:));
     end
     xlim(x([1 end]));
     ylim(data.yrange);
