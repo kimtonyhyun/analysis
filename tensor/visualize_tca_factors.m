@@ -4,7 +4,7 @@ function visualize_tca_factors(tca, info, trial_meta)
 %   trial vector weights for a given TCA factor.
 
 R = length(tca.lambda); % Rank of the TCA factorization
-[neuron_vs, cluster_boundaries] = soft_cluster_neurons(tca.U{1});
+[neuron_vs, factor_assignments, cluster_boundaries] = soft_cluster_neurons(tca.U{1});
 time_vs = tca.U{2};
 trial_vs = tca.U{3};
 
@@ -42,6 +42,8 @@ cluster_boundaries_x = cluster_boundaries_x(:);
 cluster_boundaries_y = [repmat(neuron_yrange,num_dividers,1) NaN(num_dividers,1)]';
 cluster_boundaries_y = cluster_boundaries_y(:);
 
+all_neurons = 1:num_neurons;
+
 for r = 1:R
     neuron_v = neuron_vs(:,r);
     time_v = time_vs(:,r);
@@ -49,11 +51,14 @@ for r = 1:R
 
     % Neuron dimension
     axes(ha((r-1)*3+1)); %#ok<*LAXES>
-    bar(neuron_v, 'k');
-    ylabel(sprintf('r = %d', r));
+    neurons_in_factor = find(factor_assignments==r);
+    other_neurons = setdiff(all_neurons, neurons_in_factor);
+    h_neurons_in_factor = bar(neurons_in_factor, neuron_v(neurons_in_factor), 'k', 'EdgeColor', 'none');
     hold on;
+    bar(other_neurons, neuron_v(other_neurons), 'k', 'EdgeColor', 'none');
     plot(cluster_boundaries_x, cluster_boundaries_y, 'k:');
     hold off;
+    ylabel(sprintf('r = %d', r));
     
     % Time dimension
     axes(ha((r-1)*3+2));
@@ -74,7 +79,8 @@ for r = 1:R
         'trial_coloring', 'none',...
         'x', (1:num_trials)',...
         'y', trial_v,...
-        'yrange', trial_yrange);
+        'yrange', trial_yrange,...
+        'h_neurons_in_factor', h_neurons_in_factor);
     set(h_factor_trial_axes, 'buttonDownFcn',...
         @(h,e) recolor_trial_vector(h,e,trial_meta));
 end
@@ -112,7 +118,7 @@ tightfig;
 
 end % visualize_tca_factors
 
-function [neuron_vs, cluster_boundaries] = soft_cluster_neurons(neuron_vs)
+function [neuron_vs, sorted_factor_assignment, cluster_boundaries] = soft_cluster_neurons(neuron_vs)
     [num_neurons, num_factors] = size(neuron_vs);
     factor_assignment = zeros(num_neurons, 1);
     
@@ -144,6 +150,7 @@ function recolor_trial_vector(h, ~, trial_meta)
     data = h.UserData;
     x = data.x;
     y = data.y;
+    h_neurons = data.h_neurons_in_factor
     
     % Cycle through possible new coloring options
     switch (data.trial_coloring)
@@ -165,6 +172,7 @@ function recolor_trial_vector(h, ~, trial_meta)
         case 'none'
             plot(x, y, '.', 'Color', 0.4*[1 1 1], 'HitTest', 'off');
             ylabel('none', 'Color', 'k', 'FontWeight', 'normal');
+            set(h_neurons, 'FaceColor', 'k');
         case 'start'
             east_trials = strcmp(trial_meta.start, 'east');
             west_trials = strcmp(trial_meta.start, 'west');
@@ -174,6 +182,8 @@ function recolor_trial_vector(h, ~, trial_meta)
             plot(x(west_trials), y(west_trials), '.', 'Color', light_blue, 'HitTest', 'off');
             hold off;
             ylabel('start', 'Color', 'b', 'FontWeight', 'bold');
+            set(h_neurons, 'FaceColor', 'b');
+            
         case 'end'
             north_trials = strcmp(trial_meta.end, 'north');
             south_trials = strcmp(trial_meta.end, 'south');
@@ -183,6 +193,8 @@ function recolor_trial_vector(h, ~, trial_meta)
             plot(x(south_trials), y(south_trials), '.', 'Color', 'm', 'HitTest', 'off');
             hold off;
             ylabel('end', 'Color', 'm', 'FontWeight', 'bold');
+            set(h_neurons, 'FaceColor', 'm');
+            
         case 'correct'
             correct_trials = logical(trial_meta.correct);
             incorrect_trials = ~correct_trials;
@@ -192,6 +204,7 @@ function recolor_trial_vector(h, ~, trial_meta)
             plot(x(incorrect_trials), y(incorrect_trials), '.', 'Color', 'r', 'HitTest', 'off');
             hold off;
             ylabel('correct', 'Color', dark_green, 'FontWeight', 'bold');
+            set(h_neurons, 'FaceColor', dark_green);
     end
     xlim(x([1 end]));
     ylim(data.yrange);
