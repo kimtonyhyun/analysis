@@ -57,7 +57,7 @@ for r = 1:R
     
     % Time dimension
     axes(ha((r-1)*3+2));
-    plot(t,time_v,'r');
+    plot(t,time_v,'k');
     hold on;
     if (info.timewarp_method == 'align_to')
         plot(t0*[1 1], time_yrange', 'k:');
@@ -164,22 +164,25 @@ function recolor_trial_vector(h, ~, trial_meta)
     switch new_coloring
         case 'none'
             plot(x, y, '.', 'Color', 0.4*[1 1 1], 'HitTest', 'off');
+            ylabel('none', 'Color', 'k', 'FontWeight', 'normal');
         case 'start'
             east_trials = strcmp(trial_meta.start, 'east');
             west_trials = strcmp(trial_meta.start, 'west');
             plot(x(east_trials), y(east_trials), '.', 'Color', 'b', 'HitTest', 'off');
             hold on;
-            orange = [0.91 0.41 0.17];
-            plot(x(west_trials), y(west_trials), '.', 'Color', orange, 'HitTest', 'off');
+            light_blue = [100 150 220] / 255;
+            plot(x(west_trials), y(west_trials), '.', 'Color', light_blue, 'HitTest', 'off');
             hold off;
+            ylabel('start', 'Color', 'b', 'FontWeight', 'bold');
         case 'end'
             north_trials = strcmp(trial_meta.end, 'north');
             south_trials = strcmp(trial_meta.end, 'south');
-            dark_purple = [130 40 137]/255;
+            dark_purple = [130 40 100] / 255;
             plot(x(north_trials), y(north_trials), '.', 'Color', dark_purple, 'HitTest', 'off');
             hold on;
             plot(x(south_trials), y(south_trials), '.', 'Color', 'm', 'HitTest', 'off');
             hold off;
+            ylabel('end', 'Color', 'm', 'FontWeight', 'bold');
         case 'correct'
             correct_trials = logical(trial_meta.correct);
             incorrect_trials = ~correct_trials;
@@ -188,10 +191,10 @@ function recolor_trial_vector(h, ~, trial_meta)
             hold on;
             plot(x(incorrect_trials), y(incorrect_trials), '.', 'Color', 'r', 'HitTest', 'off');
             hold off;
+            ylabel('correct', 'Color', dark_green, 'FontWeight', 'bold');
     end
     xlim(x([1 end]));
     ylim(data.yrange);
-    ylabel(new_coloring);
     
     % Save new state
     h.UserData.trial_coloring = new_coloring;
