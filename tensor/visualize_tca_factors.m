@@ -163,6 +163,8 @@ function recolor_trial_vector(h, ~, trial_meta)
         case 'correct'
             new_coloring = 'day';
         case 'day'
+            new_coloring = 'turn';
+        case 'turn'
             new_coloring = 'none';
         otherwise
             new_coloring = 'none';
@@ -212,7 +214,7 @@ function recolor_trial_vector(h, ~, trial_meta)
         case 'day'
             unique_days = unique(trial_meta.day)'; % Row vector
             
-            colors = [0.929 0.694 0.125; % Orange
+            colors = [0.929 0.694 0.125; % Yellowish
                       0.6503 0.4858 0.0875];
             color_ind = 1;
             for unique_day = unique_days
@@ -230,6 +232,18 @@ function recolor_trial_vector(h, ~, trial_meta)
             hold off;
             ylabel('day', 'Color', colors(1,:), 'FontWeight', 'bold');
             set(h_neurons, 'FaceColor', colors(1,:));
+            
+        case 'turn'
+            left_trials = strcmp(trial_meta.turn, 'left');
+            right_trials = strcmp(trial_meta.turn, 'right');
+            orange = [0.85 0.3250 0.0980];
+            plot(x(left_trials), y(left_trials), '.', 'Color', orange, 'HitTest', 'off');
+            hold on;
+            plot(x(right_trials), y(right_trials), '.', 'Color', 0.6*orange, 'HitTest', 'off');
+            hold off;
+            ylabel('turn', 'Color', orange, 'FontWeight', 'bold');
+            set(h_neurons, 'FaceColor', orange);
+            
     end
     xlim(x([1 end]));
     ylim(data.yrange);
