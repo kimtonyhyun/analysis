@@ -67,6 +67,7 @@ for r = 1:R
     % Trial dimension
     axes(ha((r-1)*3+3));
     plot(trial_v, '.', 'Color', 0.4*[1 1 1], 'HitTest', 'off');
+    ylabel('none');
     h_factor_trial_axes = gca;
     h_factor_trial_axes.UserData = struct(...
         'factor_idx', r,...
@@ -97,6 +98,7 @@ set(ha(setdiff(all_subplots, bottom_row_subplots)), 'XTickLabel', [], 'XTick', [
 
 % Other formatting
 set(ha, 'FontName', 'Arial');
+set(ha(trial_col_subplots), 'YAxisLocation', 'right');
 
 % Labels at the very bottom row
 axes(ha(bottom_row_subplots(1)));
@@ -189,6 +191,8 @@ function recolor_trial_vector(h, ~, trial_meta)
     end
     xlim(x([1 end]));
     ylim(data.yrange);
+    ylabel(new_coloring);
+    
+    % Save new state
     h.UserData.trial_coloring = new_coloring;
-    fprintf('Factor %d now colored by "%s"\n', data.factor_idx, new_coloring);
 end
