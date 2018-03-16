@@ -116,6 +116,7 @@ neuron_vs = cpd.U{1};
 time_vs = cpd.U{2};
 trial_vs = cpd.U{3};
 ```
+and the singular values via `cpd.lambda`.
 
 #### Visualizing the model fit
 
