@@ -15,6 +15,9 @@ neuron_yrange = [0 max(neuron_vs(:))];
 time_yrange = [0 max(time_vs(:))];
 trial_yrange = [0 max(trial_vs(:))];
 
+unique_days = unique(trial_meta.day);
+num_unique_days = length(unique_days);
+
 % Within-trial "time" (as opposed to index). Actual interpretation depends
 % on the info.timewarp_method for trial alignment.
 switch (info.timewarp_method)
@@ -128,7 +131,13 @@ xlabel(sprintf('Neurons (%d total)', num_neurons));
 axes(ha(bottom_row_subplots(2)));
 xlabel(time_label);
 axes(ha(bottom_row_subplots(3)));
-xlabel('Trial index');
+
+if num_unique_days == 1
+    daystr = 'on 1 day';
+else
+    daystr = sprintf('over %d days', num_unique_days);
+end
+xlabel(sprintf('Trial index (%s)', daystr));
 
 tightfig;
 
