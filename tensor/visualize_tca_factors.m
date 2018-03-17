@@ -32,7 +32,8 @@ switch (info.timewarp_method)
 end
 
 % Prepare figure for TCA factor visualization
-figure;
+hf = figure; %#ok<NASGU>
+% set(hf, 'MenuBar', 'none');
 [ha, ~] = tight_subplot(R,3,0.01,0.01,0.01);
 
 % For drawing vertical boundaries between different neuron clusters
@@ -53,10 +54,12 @@ for r = 1:R
     axes(ha((r-1)*3+1)); %#ok<*LAXES>
     neurons_in_factor = find(factor_assignments==r);
     other_neurons = setdiff(all_neurons, neurons_in_factor);
-    h_neurons_in_factor = bar(neurons_in_factor, neuron_v(neurons_in_factor), 'k', 'EdgeColor', 'none');
+    h_neurons_in_factor = bar(neurons_in_factor/num_neurons, ...
+        neuron_v(neurons_in_factor), 'k', 'EdgeColor', 'none');
     hold on;
-    bar(other_neurons, neuron_v(other_neurons), 'k', 'EdgeColor', 'none');
-    plot(cluster_boundaries_x, cluster_boundaries_y, 'k:');
+    bar(other_neurons/num_neurons, neuron_v(other_neurons), ...
+        'k', 'EdgeColor', 'none');
+    plot(cluster_boundaries_x/num_neurons, cluster_boundaries_y, 'k:');
     hold off;
     ylabel(sprintf('r = %d', r));
     
@@ -94,13 +97,17 @@ trial_col_subplots = 3:3:(3*R);
 bottom_row_subplots = all_subplots(end-2:end);
 
 % All plots within a column have the same scale
-set(ha(neuron_col_subplots), 'XLim', [1 num_neurons], 'YLim', neuron_yrange);
+set(ha(neuron_col_subplots), 'XLim', [0 1], 'YLim', neuron_yrange);
 set(ha(time_col_subplots), 'XLim', t([1 end]), 'YLim', time_yrange);
 set(ha(trial_col_subplots), 'XLim', [1 num_trials], 'YLim', trial_yrange);
 
 % Remove ticks and labels except for the bottom row
-set(ha, 'YTickLabel', [], 'YTick', []);
+set(ha, 'YTickLabel', [], 'YTick', [], 'FontSize', 8);
 set(ha(setdiff(all_subplots, bottom_row_subplots)), 'XTickLabel', [], 'XTick', []);
+
+xticks = round(cluster_boundaries/num_neurons, 2);
+set(ha(bottom_row_subplots(1)), 'XTick', xticks,...
+    'XTickLabelRotation', 90);
 
 % Other formatting
 set(ha, 'FontName', 'Arial');
@@ -108,7 +115,7 @@ set(ha(trial_col_subplots), 'YAxisLocation', 'right');
 
 % Labels at the very bottom row
 axes(ha(bottom_row_subplots(1)));
-xlabel('Neuron index');
+xlabel(sprintf('Neurons (%d total)', num_neurons));
 axes(ha(bottom_row_subplots(2)));
 xlabel(time_label);
 axes(ha(bottom_row_subplots(3)));
@@ -146,28 +153,32 @@ function [neuron_vs, sorted_factor_assignment, cluster_boundaries] = soft_cluste
     cluster_boundaries = 1 + find(diff(sorted_factor_assignment));
 end % soft_cluster_neurons
 
-function recolor_trial_vector(h, ~, trial_meta)
+function recolor_trial_vector(h, e, trial_meta)
     data = h.UserData;
     x = data.x;
     y = data.y;
     h_neurons = data.h_neurons_in_factor;
     
-    % Cycle through possible new coloring options
-    switch (data.trial_coloring)
-        case 'none'
-            new_coloring = 'start';
-        case 'start'
-            new_coloring = 'end';
-        case 'end'
-            new_coloring = 'correct';
-        case 'correct'
-            new_coloring = 'day';
-        case 'day'
-            new_coloring = 'turn';
-        case 'turn'
-            new_coloring = 'none';
-        otherwise
-            new_coloring = 'none';
+    if (e.Button == 3) % Right click
+        new_coloring = 'none';
+    else
+        % Cycle through possible new coloring options
+        switch (data.trial_coloring)
+            case 'none'
+                new_coloring = 'start';
+            case 'start'
+                new_coloring = 'end';
+            case 'end'
+                new_coloring = 'correct';
+            case 'correct'
+                new_coloring = 'day';
+            case 'day'
+                new_coloring = 'turn';
+            case 'turn'
+                new_coloring = 'none';
+            otherwise
+                new_coloring = 'none';
+        end
     end
     
     % Apply new metadata coloring
