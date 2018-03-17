@@ -39,7 +39,7 @@ hf = figure; %#ok<NASGU>
 % For drawing vertical boundaries between different neuron clusters
 num_dividers = length(cluster_boundaries);
 cluster_boundaries_x = [repmat(cluster_boundaries,1,2) NaN(num_dividers,1)]';
-cluster_boundaries_x = cluster_boundaries_x(:);
+cluster_boundaries_x = cluster_boundaries_x(:)-0.5;
 cluster_boundaries_y = [repmat(neuron_yrange,num_dividers,1) NaN(num_dividers,1)]';
 cluster_boundaries_y = cluster_boundaries_y(:);
 
@@ -53,11 +53,20 @@ for r = 1:R
     % Neuron dimension
     axes(ha((r-1)*3+1)); %#ok<*LAXES>
     neurons_in_factor = find(factor_assignments==r);
+    num_neurons_in_factor = length(neurons_in_factor);
+    % FIXME: This is a hack to handle bar display when there is only 1
+    % neuron assigned to the factor. The case where there are 0 is not
+    % handled explicitly for now.
+    if num_neurons_in_factor == 1
+        bw = 1/num_neurons;
+    else
+        bw = 1;
+    end
     other_neurons = setdiff(all_neurons, neurons_in_factor);
-    h_neurons_in_factor = bar(neurons_in_factor/num_neurons, ...
-        neuron_v(neurons_in_factor), 'k', 'EdgeColor', 'none');
+    h_neurons_in_factor = bar(neurons_in_factor/num_neurons,...
+        neuron_v(neurons_in_factor), bw, 'k', 'EdgeColor', 'none');
     hold on;
-    bar(other_neurons/num_neurons, neuron_v(other_neurons), ...
+    bar(other_neurons/num_neurons, neuron_v(other_neurons), bw,...
         'k', 'EdgeColor', 'none');
     plot(cluster_boundaries_x/num_neurons, cluster_boundaries_y, 'k:');
     hold off;
