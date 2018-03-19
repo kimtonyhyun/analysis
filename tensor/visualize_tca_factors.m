@@ -55,22 +55,11 @@ for r = 1:R
 
     % Neuron dimension
     axes(ha((r-1)*3+1)); %#ok<*LAXES>
-    neurons_in_factor = find(factor_assignments==r);
-    num_neurons_in_factor = length(neurons_in_factor);
-    % FIXME: This is a hack to handle bar display when there is only 1
-    % neuron assigned to the factor. The case where there are 0 is not
-    % handled explicitly for now.
-    if num_neurons_in_factor == 1
-        bw = 1/num_neurons;
-    else
-        bw = 1;
-    end
-    other_neurons = setdiff(all_neurons, neurons_in_factor);
-    h_neurons_in_factor = bar(neurons_in_factor/num_neurons,...
-        neuron_v(neurons_in_factor), bw, 'k', 'EdgeColor', 'none');
+    neurons_in_factor = (factor_assignments==r);
+    h_bar = bar(all_neurons/num_neurons, neuron_v, 'FaceColor', 'flat',...
+        'EdgeColor', 'none', 'BarWidth', 1);
+    h_bar.CData = repmat([0 0 0], num_neurons, 1); % Set all to black
     hold on;
-    bar(other_neurons/num_neurons, neuron_v(other_neurons), bw,...
-        'k', 'EdgeColor', 'none');
     plot(cluster_boundaries_x/num_neurons, cluster_boundaries_y, 'k:');
     hold off;
     ylabel(sprintf('r = %d', r));
@@ -95,7 +84,8 @@ for r = 1:R
         'x', (1:num_trials)',...
         'y', trial_v,...
         'yrange', trial_yrange,...
-        'h_neurons_in_factor', h_neurons_in_factor);
+        'h_bar', h_bar,...
+        'neurons_in_factor', neurons_in_factor);
     set(h_factor_trial_axes, 'buttonDownFcn',...
         @(h,e) recolor_trial_vector(h,e,trial_meta));
 end
@@ -117,7 +107,10 @@ set(ha(trial_col_subplots), 'XLim', [1 num_trials], 'YLim', trial_yrange);
 set(ha, 'YTickLabel', [], 'YTick', [], 'FontSize', 8);
 set(ha(setdiff(all_subplots, bottom_row_subplots)), 'XTickLabel', [], 'XTick', []);
 
-xticks = round(cluster_boundaries/num_neurons, 2);
+% Note: After rounding to 2 decimals, it's possible that we get ticks that
+% are redundant (typically occurs with clusters with a few assigned
+% neurons).
+xticks = unique(round(cluster_boundaries/num_neurons, 2));
 set(ha(bottom_row_subplots(1)), 'XTick', xticks,...
     'XTickLabelRotation', 90);
 
@@ -175,7 +168,8 @@ function recolor_trial_vector(h, e, trial_meta)
     data = h.UserData;
     x = data.x;
     y = data.y;
-    h_neurons = data.h_neurons_in_factor;
+    h_bar = data.h_bar;
+    neurons_in_factor = data.neurons_in_factor;
     
     if (e.Button == 3) % Right click
         new_coloring = 'none';
@@ -204,19 +198,25 @@ function recolor_trial_vector(h, e, trial_meta)
     switch new_coloring
         case 'none'
             plot(x, y, '.', 'Color', 0.4*[1 1 1], 'HitTest', 'off');
-            ylabel('none', 'Color', 'k', 'FontWeight', 'normal');
-            set(h_neurons, 'FaceColor', 'k');
+            label_color = [0 0 0];
 
         case 'start'
             east_trials = strcmp(trial_meta.start, 'east');
             west_trials = strcmp(trial_meta.start, 'west');
-            plot(x(east_trials), y(east_trials), '.', 'Color', 'b', 'HitTest', 'off');
+            
+            x1 = x(east_trials);
+            y1 = y(east_trials);
+            c1 = 'b';
+            
+            x2 = x(west_trials);
+            y2 = y(west_trials);
+            c2 = [100 150 220] / 255; % light blue
+            
+            plot(x1, y1, '.', 'Color', c1, 'HitTest', 'off');
             hold on;
-            light_blue = [100 150 220] / 255;
-            plot(x(west_trials), y(west_trials), '.', 'Color', light_blue, 'HitTest', 'off');
+            plot(x2, y2, '.', 'Color', c2, 'HitTest', 'off');
             hold off;
-            ylabel('start', 'Color', 'b', 'FontWeight', 'bold');
-            set(h_neurons, 'FaceColor', 'b');
+            label_color = [0 0 1];
             
         case 'end'
             north_trials = strcmp(trial_meta.end, 'north');
@@ -226,8 +226,7 @@ function recolor_trial_vector(h, e, trial_meta)
             hold on;
             plot(x(south_trials), y(south_trials), '.', 'Color', 'm', 'HitTest', 'off');
             hold off;
-            ylabel('end', 'Color', 'm', 'FontWeight', 'bold');
-            set(h_neurons, 'FaceColor', 'm');
+            label_color = [1 0 1]; % magenta
             
         case 'correct'
             correct_trials = logical(trial_meta.correct);
@@ -237,8 +236,7 @@ function recolor_trial_vector(h, e, trial_meta)
             hold on;
             plot(x(incorrect_trials), y(incorrect_trials), '.', 'Color', 'r', 'HitTest', 'off');
             hold off;
-            ylabel('correct', 'Color', dark_green, 'FontWeight', 'bold');
-            set(h_neurons, 'FaceColor', dark_green);
+            label_color = dark_green;
             
         case 'day'
             unique_days = unique(trial_meta.day)'; % Row vector
@@ -259,8 +257,7 @@ function recolor_trial_vector(h, e, trial_meta)
                 end
             end
             hold off;
-            ylabel('day', 'Color', colors(1,:), 'FontWeight', 'bold');
-            set(h_neurons, 'FaceColor', colors(1,:));
+            label_color = colors(1,:);
             
         case 'turn'
             left_trials = strcmp(trial_meta.turn, 'left');
@@ -270,12 +267,20 @@ function recolor_trial_vector(h, e, trial_meta)
             hold on;
             plot(x(right_trials), y(right_trials), '.', 'Color', 0.6*orange, 'HitTest', 'off');
             hold off;
-            ylabel('turn', 'Color', orange, 'FontWeight', 'bold');
-            set(h_neurons, 'FaceColor', orange);
             
+            label_color = orange;
+      
     end
     xlim(x([1 end]));
     ylim(data.yrange);
+    
+    if strcmp(new_coloring, 'none')
+        ylabel('none', 'Color', label_color, 'FontWeight', 'normal');
+    else
+        ylabel(new_coloring, 'Color', label_color, 'FontWeight', 'bold');
+    end
+    h_bar.CData(neurons_in_factor,:) = repmat(label_color,...
+        sum(neurons_in_factor), 1);
     
     % Save new state
     h.UserData.trial_coloring = new_coloring;
