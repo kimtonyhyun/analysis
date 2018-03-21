@@ -20,7 +20,7 @@ The sections below walks through the demo script and provides brief explanations
 The first step is to export data from the `MultiDay` object:
 
 ```matlab
-[X, trial_meta, info] = export(md);
+[X, trial_meta, info] = export_tensor(md);
 ```
 
 `X` is a three-dimensional tensor (`[neurons x time x trials]`) that contains the neural activity for all neurons and trials in `md`. Note that:
@@ -29,14 +29,14 @@ The first step is to export data from the `MultiDay` object:
 
 `trial_meta` is a struct array holding the metadata for each trial. For example, `trial_meta.start` is a cell array holding the start location of each trial.
 
-`info` is a struct containing additional information associated with the `export` run. For example:
+`info` is a struct containing additional information associated with the `export_tensor` run. For example:
 - `info.neuron_map` matches the neurons in `X` to their indicies for each day of the `MultiDay`, and
 - `info.trial_map` matches the trials in `X` to their `[day, trial_idx_in_day]` indices. 
 
-The `export` function provides options to filter the trials that are exported. For example, the following will filter out any probe trials (i.e. trials starting in the north or south arms):
+The `export_tensor` function provides options to filter the trials that are exported. For example, the following will filter out any probe trials (i.e. trials starting in the north or south arms):
 
 ```matlab
-[X, trial_meta, info] = export(md, 'start', {'east','west'});
+[X, trial_meta, info] = export_tensor(md, 'start', {'east','west'});
 ```
 
 #### Normalizing/Standardizing data
