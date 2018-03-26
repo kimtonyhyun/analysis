@@ -1,7 +1,10 @@
-function meancorr_movie(movie_in, movie_out, varargin)
+function F = meancorr_movie(movie_in, movie_out, varargin)
 % Perform mean correction from HDF5 file ('movie_in') to file ('movie_out').
-% Namely, we fit a simple curve (e.g. decaying exponential) to the mean 
-% fluorescence on all frames. Each frame is divided by the fitted value.
+% Namely, we fit a simple curve (e.g. decaying exponential) to the baseline
+% corrected mean fluorescence on all frames. Each (baseline corrected)
+% frame is then divided by the fitted value.
+%
+% Returns the _raw_ fluorescence matrix F, without baseline correction.
 %
 % If 'movie_out' is left as an empty string, then default name will be
 % provided.
@@ -50,7 +53,8 @@ frame_chunk_size = 2500;
 % Compute the mean from disk
 x = (1:num_frames)';
 F = compute_fluorescence_stats(movie_in);
-mu = double(F(:,2));
+baseline = mean(F(:,1));
+mu = double(F(:,2)-baseline);
 
 % Plot fits
 figure;
@@ -58,8 +62,9 @@ plot(x,mu,'k.');
 xlim([1 num_frames]);
 hold on;
 xlabel('Frames');
-ylabel('Mean fluorescence');
-title(strrep(movie_in, '_', '\_'));
+ylabel('Mean fluorescence (baseline corrected)');
+title(sprintf('%s. Baseline: %.1f',...
+        strrep(movie_in, '_', '\_'), baseline));
 grid on;
     
 if ~isempty(y) % Fitted fluorescence externally provided
@@ -133,7 +138,7 @@ for i = 1:num_chunks
     
     for frame_idx = 1:size(movie_chunk,3)
         movie_chunk(:,:,frame_idx) = ...
-            movie_chunk(:,:,frame_idx)/y_chunk(frame_idx);
+            (movie_chunk(:,:,frame_idx)-baseline)/y_chunk(frame_idx);
     end
     
     h5write(movie_out, movie_dataset,...
