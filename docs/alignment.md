@@ -72,4 +72,6 @@ Documentation to be filled out.
 
 #### Alignment without spatial transformation
 
+#### Transferring filters across datasets
+
 #### Heuristics used by the matching algorithm
