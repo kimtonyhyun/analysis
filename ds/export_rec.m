@@ -7,6 +7,9 @@ function export_rec(ds, varargin)
 % 'excludeprobe' as this can lead to synchronization problems with the
 % original trial metadata!
 
+% Cell selection options. By default, export only classified cells
+cell_indices = find(ds.is_cell);
+
 % Filter options
 truncate_filter = false;
 
@@ -30,12 +33,16 @@ for k = 1:length(varargin)
                 fprintf('  Filters will be truncated...\n');
                 truncate_filter = true;
                 
-
+            case 'remove_noncells'
+                fprintf('  Removing cells classified to be not a cell...\n');
+                labels = {ds.cells.label};
+                not_a_cell = cellfun(@strcmp,...
+                    labels, repmat({'not a cell'}, size(labels)));
+                cell_indices = find(~not_a_cell);
         end
     end
 end
 
-cell_indices = find(ds.is_cell);
 num_cells = length(cell_indices);
 num_frames = ds.full_num_frames;
 
