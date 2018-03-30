@@ -33,8 +33,8 @@ for k = 1:length(varargin)
                 fprintf('  Filters will be truncated...\n');
                 truncate_filter = true;
                 
-            case 'remove_noncells'
-                fprintf('  Removing cells classified to be not a cell...\n');
+            case {'keep_unlabeled', 'remove_noncells'}
+                fprintf('  Removing cells classified to be not a cell (but keeping unlabeled ones)...\n');
                 labels = {ds.cells.label};
                 not_a_cell = cellfun(@strcmp,...
                     labels, repmat({'not a cell'}, size(labels)));
