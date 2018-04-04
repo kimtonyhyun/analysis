@@ -350,9 +350,22 @@ classdef DaySummary < handle
             end
         end
         
+        % TODO: Consolidate the different event getters
         function es = get_events(obj, cell_idx, trial_idx)
-            % WIP: To be elaborated
+            % Syntactic sugar for the following...
             es = obj.trials(trial_idx).events{cell_idx};
+        end
+        
+        function es = get_events_full(obj, cell_idx)
+            % Retrieves the set of events for all trials, adding in frame
+            % offsets for each trial
+            es = [];
+            for k = 1:obj.num_trials
+                es_k = obj.trials(k).events{cell_idx};
+                trial_offset = obj.trial_indices(k,1) - 1;
+                es_k(:,1:2) = es_k(:,1:2) + trial_offset;
+                es = cat(1, es, es_k);
+            end
         end
         
         function mask = get_mask(obj, cell_indices)
