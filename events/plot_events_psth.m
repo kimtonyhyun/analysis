@@ -7,6 +7,7 @@ function plot_events_psth(ds, varargin)
 cell_indices = find(ds.is_cell);
 bin_width = 1; % Number of frames per bin
 align_to = 3;
+trial_count_norm = false;
 
 for j = 1:length(varargin)
     vararg = varargin{j};
@@ -20,6 +21,9 @@ for j = 1:length(varargin)
                 
             case {'align', 'align_to'}
                 align_to = varargin{j+1};
+                
+            case 'trial_norm'
+                trial_count_norm = true;
         end
     end
 end
@@ -48,9 +52,26 @@ for k = 1:num_cells
         end
     end
 end
+
+% Tally number of trials observed
+c = zeros(size(x));
+for k = 1:ds.num_trials
+    start_frame = ds.trial_indices(k,1) - ds.trial_indices(k,align_to);
+    end_frame = ds.trial_indices(k,4) - ds.trial_indices(k,align_to);
+    
+    start_bin = f2b(start_frame);
+    end_bin = f2b(end_frame);
+    c(start_bin:end_bin) = c(start_bin:end_bin) + 1;
+end
+c = c / ds.num_trials;
+
+if trial_count_norm
+    y = y ./ c;
+end
 y_range = [0 max(y)];
 
 % Display results
+yyaxis left;
 plot(x,y,'.-');
 xlim(x([1 end]));
 ylim(y_range);
@@ -63,6 +84,11 @@ common_bin2 = f2b(common_frames(2)) - bin0;
 plot(common_bin1*[1 1], y_range, 'r--');
 plot(common_bin2*[1 1], y_range, 'r--');
 hold off;
+
+yyaxis right;
+plot(x,c,'r.-');
+ylim([0 1.1]);
+ylabel(sprintf('Fraction of trials (%d) for which frame observed', ds.num_trials));
 end % plot_events_psth
 
 function [all_frames, common_frames] = compute_frame_bounds(frame_indices, align_to)
