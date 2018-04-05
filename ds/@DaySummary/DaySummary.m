@@ -350,10 +350,27 @@ classdef DaySummary < handle
             end
         end
         
-        % TODO: Consolidate the different event getters
-        function es = get_events(obj, cell_idx, trial_idx)
+        function es = get_events(obj, cell_idx, trial_idx, varargin)
+            % Default options
+            align_to = 1; % One of 1:4, indicating the frame within trial for alignment
+            
+            if ~isempty(varargin)
+                for k = 1:length(varargin)
+                    vararg = varargin{k};
+                    switch lower(vararg)
+                        case {'align', 'align_to'}
+                            align_to = varargin{k+1};
+                    end
+                end
+            end
+            
             % Syntactic sugar for the following...
             es = obj.trials(trial_idx).events{cell_idx};
+            
+            if ~isempty(es)
+                alignment_offset = diff(obj.trial_indices(trial_idx, [1 align_to]));
+                es(:,1:2) = es(:,1:2) - alignment_offset;
+            end
         end
         
         function es = get_events_full(obj, cell_idx)
