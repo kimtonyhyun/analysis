@@ -47,11 +47,14 @@ for k = 1:num_cells
         eventdata = ds.get_events(cell_idx, trial_idx, 'align_to', align_to);
         if ~isempty(eventdata)
             event_times = eventdata(:,2); % Note: Using peak times!
-            bin_locations = f2b(event_times);
-            y(bin_locations) = y(bin_locations) + 1;
+            event_bins = f2b(event_times);
+            
+            y_trial = hist(event_bins, 1:num_bins);
+            y = y + y_trial;
         end
     end
 end
+num_events = sum(y);
 
 % Tally number of trials observed
 c = zeros(size(x));
@@ -63,10 +66,11 @@ for k = 1:ds.num_trials
     end_bin = f2b(end_frame);
     c(start_bin:end_bin) = c(start_bin:end_bin) + 1;
 end
-c = c / ds.num_trials;
 
+y_label = '\Sigma Events';
 if trial_count_norm
     y = y ./ c;
+    y_label = '\Sigma Events / trial';
 end
 y_range = [0 max(y)];
 
@@ -76,7 +80,7 @@ plot(x,y,'.-');
 xlim(x([1 end]));
 ylim(y_range);
 xlabel(sprintf('Bin (each bin is %d frames; 0 contains the alignment frame)', bin_width));
-ylabel(sprintf('Event tallies (over %d cells)', num_cells));
+ylabel(sprintf('%s (%d events over %d cells)', y_label, num_events, num_cells));
 grid on;
 hold on;
 common_bin1 = f2b(common_frames(1)) - bin0;
@@ -86,9 +90,10 @@ plot(common_bin2*[1 1], y_range, 'r--');
 hold off;
 
 yyaxis right;
-plot(x,c,'r.-');
+plot(x,c./ds.num_trials,'r.-');
 ylim([0 1.1]);
 ylabel(sprintf('Fraction of trials (%d) for which frame observed', ds.num_trials));
+
 end % plot_events_psth
 
 function [all_frames, common_frames] = compute_frame_bounds(frame_indices, align_to)
