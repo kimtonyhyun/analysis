@@ -107,7 +107,7 @@ hold off;
 yyaxis right;
 plot(x,c./ds.num_trials,'r.-');
 ylim([0 1.1]);
-ylabel(sprintf('Fraction of trials (%d) for which frame observed', ds.num_trials));
+ylabel(sprintf('Fraction of trials (%d) for which bin observed', ds.num_trials));
 
 end % plot_events_psth
 
