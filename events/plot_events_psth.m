@@ -1,7 +1,11 @@
 function plot_events_psth(ds, varargin)
 % Plots the PSTH (peristimulus time histogram) for all cells (default).
 %
-% The PSTH will be computed over the frames that are common to all trials.
+% By default, trials are aligned to the closing of the gate arm
+% (align_idx=3). In addition to the PSTH, the number of trials that
+% contribute to the measurements at each bin will be indicated. Highlighted
+% bins indicate those that correspond to frames that are common to _all_
+% trials in the session.
 
 % Default parameters
 cell_indices = find(ds.is_cell);
@@ -22,19 +26,23 @@ for j = 1:length(varargin)
             case {'align', 'align_to'}
                 align_to = varargin{j+1};
                 
-            case 'trial_norm'
+            case {'norm', 'trial_norm'}
                 trial_count_norm = true;
         end
     end
 end
 
 % Determine the number of frames that is common to all trials
-[all_frames, common_frames] = compute_frame_bounds(ds.trial_indices, align_to);
+[all_frames, common_frames, mean_open_frame, mean_close_frame] = align_frames(ds.trial_indices, align_to);
 num_frames = diff(all_frames) + 1;
 num_bins = ceil(num_frames / bin_width);
 
 f2b = @(f) frame2bin(f, all_frames, bin_width, num_bins);
-bin0 = f2b(0); % Bin corresponding to the alignment frame
+
+% Compute special bins corresponding to...
+bin0 = f2b(0); % The alignment frame
+bin_open = f2b(mean_open_frame) - bin0; % Mean gate open frame
+bin_close = f2b(mean_close_frame) - bin0; % Mean gate close frame
 
 % Tally PSTH
 x = (1:num_bins) - bin0;
@@ -79,14 +87,21 @@ yyaxis left;
 plot(x,y,'.-');
 xlim(x([1 end]));
 ylim(y_range);
-xlabel(sprintf('Bin (each bin is %d frames; 0 contains the alignment frame)', bin_width));
+if bin_width == 1
+    width_str = 'frame';
+else
+    width_str = 'frames';
+end
+xlabel(sprintf('Bin (each bin is %d %s; bin=0 contains align\\_idx=%d)', bin_width, width_str, align_to));
 ylabel(sprintf('%s (%d events over %d cells)', y_label, num_events, num_cells));
 grid on;
 hold on;
 common_bin1 = f2b(common_frames(1)) - bin0;
 common_bin2 = f2b(common_frames(2)) - bin0;
-plot(common_bin1*[1 1], y_range, 'r--');
-plot(common_bin2*[1 1], y_range, 'r--');
+rectangle('Position',[common_bin1 y_range(1) common_bin2-common_bin1 diff(y_range)],...
+          'EdgeColor', 'none', 'FaceColor', [1 0 0 0.05]);
+plot(bin_open*[1 1], y_range, 'k--');
+plot(bin_close*[1 1], y_range, 'k--');
 hold off;
 
 yyaxis right;
@@ -96,12 +111,15 @@ ylabel(sprintf('Fraction of trials (%d) for which frame observed', ds.num_trials
 
 end % plot_events_psth
 
-function [all_frames, common_frames] = compute_frame_bounds(frame_indices, align_to)
+function [all_frames, common_frames, mean_open_frame, mean_close_frame] = align_frames(frame_indices, align_to)
 	start_frames = frame_indices(:,1) - frame_indices(:,align_to);
     end_frames = frame_indices(:,4) - frame_indices(:,align_to);
     
     common_frames = [max(start_frames) min(end_frames)];
     all_frames = [min(start_frames) max(end_frames)];
+    
+    mean_open_frame = mean(frame_indices(:,2) - frame_indices(:,align_to));
+    mean_close_frame = mean(frame_indices(:,3) - frame_indices(:,align_to));
 end % compute_common_frames
 
 function bin = frame2bin(frame, common_frames, frames_per_bin, num_bins)
