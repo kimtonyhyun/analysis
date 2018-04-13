@@ -379,9 +379,11 @@ classdef DaySummary < handle
             es = [];
             for k = 1:obj.num_trials
                 es_k = obj.trials(k).events{cell_idx};
-                trial_offset = obj.trial_indices(k,1) - 1;
-                es_k(:,1:2) = es_k(:,1:2) + trial_offset;
-                es = cat(1, es, es_k);
+                if ~isempty(es_k)
+                    trial_offset = obj.trial_indices(k,1) - 1;
+                    es_k(:,1:2) = es_k(:,1:2) + trial_offset;
+                    es = cat(1, es, es_k);
+                end
             end
         end
         
