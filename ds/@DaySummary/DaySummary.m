@@ -280,7 +280,7 @@ classdef DaySummary < handle
         end % compute_turn
 
         function filtered_trials = filter_trials(obj, varargin)
-            filtered_trials = ones(1, obj.num_trials);
+            filtered_trials = true(1, obj.num_trials);
             for k = 1:length(varargin)
                 vararg = varargin{k};
                 if ischar(vararg)
