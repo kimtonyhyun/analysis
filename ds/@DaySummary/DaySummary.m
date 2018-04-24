@@ -326,6 +326,10 @@ classdef DaySummary < handle
 
         end   
 
+        function highlight_cell(obj, cell_indices)
+            obj.plot_cell_map({cell_indices, 'c'}, 'enable_class_colors');
+        end
+        
         % Accessors
         %------------------------------------------------------------
         function count = num_classified_cells(obj)
