@@ -36,6 +36,7 @@ classdef DaySummary < handle
     
     properties (SetAccess = private, Hidden=true)
         trace_corrs
+        trace_range
         cell_distances
         cell_map_ref_img
         behavior_vid
@@ -160,11 +161,11 @@ classdef DaySummary < handle
                 'events', [],...
                 'centroids', centroids);
             
-            % Compute trace correlation among all sources
             full_traces = cell2mat(traces'); % [num_cells x num_frames]
-            fprintf('  Computing trace correlations between all sources...');
+            fprintf('  Computing auxiliary trace parameters...');
             tic;
             obj.trace_corrs = corr(full_traces');
+            obj.trace_range = [min(full_traces,[],2) max(full_traces,[],2)];
             t = toc;
             fprintf(' Done (%.1f sec)\n', t);
             
@@ -331,12 +332,41 @@ classdef DaySummary < handle
             count = sum(obj.is_cell);
         end
         
+        function traces = get_trial(obj, trial_idx, varargin)
+            % Return the traces for the selected trial
+            normalize_traces = false;
+            
+            for k = 1:length(varargin)
+                vararg = varargin{k};
+                switch lower(vararg)
+                    case 'norm'
+                        normalize_traces = true;
+                end
+            end
+            
+            traces = obj.trials(trial_idx).traces;
+            if normalize_traces
+                for j = 1:obj.num_cells
+                    min_j = obj.trace_range(j,1);
+                    max_j = obj.trace_range(j,2);
+                    traces(j,:) = (traces(j,:)-min_j)/(max_j-min_j);
+                end
+            end
+        end
+        
         function [trace, frame_indices, selected_trials] = get_trace(obj, cell_idx, varargin)
+            normalize_trace = false;
             selected_trials = 1:obj.num_trials;
+            
             for k = 1:length(varargin)
                 vararg = varargin{k};
                 if isnumeric(vararg)
                     selected_trials = vararg;
+                else
+                    switch lower(vararg)
+                        case 'norm'
+                            normalize_trace = true;
+                    end
                 end
             end
             filtered_trials = find(obj.filter_trials(varargin{:}));
@@ -347,6 +377,12 @@ classdef DaySummary < handle
             for k = selected_trials
                 trace = [trace obj.trials(k).traces(cell_idx,:)]; %#ok<*AGROW>
                 frame_indices = [frame_indices obj.trial_indices(k,1):obj.trial_indices(k,end)];
+            end
+            
+            if normalize_trace
+                trace_min = obj.trace_range(cell_idx,1);
+                trace_max = obj.trace_range(cell_idx,2);
+                trace = (trace - trace_min) / (trace_max - trace_min);
             end
         end
         
@@ -535,6 +571,12 @@ classdef DaySummary < handle
             trial_frames = obj.orig_trial_indices(trial_idx, [1 end]); % [Start end]
             Mb = obj.behavior_vid.read(trial_frames);
             Mb = squeeze(Mb(:,:,1,:)); % Movie is actually grayscale!
+        end
+        
+        function A = get_behavior_trial_frame(obj, trial_idx, trial_frame_idx)
+            frame_idx = obj.orig_trial_indices(trial_idx, 1) + trial_frame_idx - 1;
+            A = obj.behavior_vid.read(frame_idx);
+            A = squeeze(A(:,:,1));
         end
         
         % Load tracking data
