@@ -334,6 +334,10 @@ classdef DaySummary < handle
         
         function traces = get_trial(obj, trial_idx, varargin)
             % Return the traces for the selected trial
+            %
+            % TODO:
+            %   - z-scoring option,
+            %   - more precise baseline determination
             normalize_traces = false;
             
             for k = 1:length(varargin)
