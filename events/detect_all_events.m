@@ -22,4 +22,6 @@ if save_to_file
     timestamp = datestr(now, 'yymmdd-HHMMSS');
     event_savename = sprintf('events_%s.mat', timestamp);
     save(event_savename, 'events', '-v7.3');
+    
+    ds.load_events(event_savename);
 end
