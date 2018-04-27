@@ -337,7 +337,7 @@ classdef DaySummary < handle
         end
         
         function traces = get_trial(obj, trial_idx, varargin)
-            % Return the traces for the selected trial
+            % Return the traces for _all_ cells for the selected trial
             %
             % TODO:
             %   - z-scoring option,
@@ -392,6 +392,56 @@ classdef DaySummary < handle
                 trace_max = obj.trace_range(cell_idx,2);
                 trace = (trace - trace_min) / (trace_max - trace_min);
             end
+        end
+        
+        function [traces, align_info] = get_aligned_trace(obj, cell_idx, varargin)
+            % Q: Merge functionality with 'get_trace'?
+            % TODO:
+            %   - Specify different alignment frame for each trial (e.g.
+            %     for position-based alignment)
+            
+            align_idx = 3; % By default, align to the closing of gate
+            trial_inds = 1:obj.num_trials;
+            
+            if ~isempty(varargin)
+                for k = 1:length(varargin)
+                    vararg = varargin{k};
+                    if ischar(vararg)
+                        switch lower(vararg)
+                            case 'align'
+                                align_idx = varargin{k+1};
+                            case {'trial', 'trials'}
+                                trial_inds = varargin{k+1};
+                        end
+                    end
+                end
+            end
+            kept_trials = obj.filter_trials('inds', trial_inds, varargin{:});
+            num_kept_trials = sum(kept_trials);
+            trial_inds = find(kept_trials);
+            
+            [pre_offset, post_offset] = compute_frame_offsets(obj.trial_indices, align_idx);
+            num_trunc_frames = post_offset-pre_offset+1;
+            
+            traces = zeros(num_kept_trials, num_trunc_frames);
+            
+            for k = 1:num_kept_trials
+                trial_ind = trial_inds(k);
+                
+                % Compute aligned frame indices for current trial
+                ti = obj.trial_indices(trial_ind,:);
+                ti = ti - (ti(1)-1);
+                af = ti(align_idx); % alignment frame
+                pre_frame = af + pre_offset;
+                post_frame = af + post_offset;
+                tr = obj.trials(trial_ind).traces(cell_idx,:);
+                traces(k,:) = tr(pre_frame:post_frame);
+            end
+            
+            align_info.trial_inds = trial_inds;
+            align_info.num_trials = num_kept_trials;
+            align_info.align_idx = align_idx;
+            align_info.aligned_time = pre_offset:post_offset;
         end
         
         function es = get_events(obj, cell_idx, trial_idx, varargin)
