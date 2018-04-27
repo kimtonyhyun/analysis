@@ -1,4 +1,4 @@
-function [raster, aligned_time, trial_inds] = plot_cell_raster(obj, cell_idx, varargin)
+function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
 % Plots a raster of cell activity, where trials are aligned to the closing
 % gate frame. Other alignment points are also possible via the 'align'
 % vararg (see 'DaySummary.get_aligned_trace').
@@ -58,8 +58,4 @@ function [raster, aligned_time, trial_inds] = plot_cell_raster(obj, cell_idx, va
         end
         xlim([info.aligned_time(1) info.aligned_time(end)+corr_width]);
     end
-    
-    % FIXME: Legacy compatibility
-    aligned_time = info.aligned_time;
-    trial_inds = info.trial_inds;
 end
