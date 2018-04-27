@@ -401,7 +401,7 @@ classdef DaySummary < handle
             %     for position-based alignment)
             
             align_idx = 3; % By default, align to the closing of gate
-            kept_trials = ones(obj.num_trials, 1);
+            trial_inds = 1:obj.num_trials;
             
             if ~isempty(varargin)
                 for k = 1:length(varargin)
@@ -410,13 +410,13 @@ classdef DaySummary < handle
                         switch lower(vararg)
                             case 'align'
                                 align_idx = varargin{k+1};
+                            case {'trial', 'trials'}
+                                trial_inds = varargin{k+1};
                         end
                     end
                 end
-                
-                % Trial filtering arguments
-                kept_trials = obj.filter_trials(varargin{:});
             end
+            kept_trials = obj.filter_trials('inds', trial_inds, varargin{:});
             num_kept_trials = sum(kept_trials);
             trial_inds = find(kept_trials);
             
