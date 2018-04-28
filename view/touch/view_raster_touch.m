@@ -38,7 +38,6 @@ h_full_raster = subplot(3,2,[3 5]);
 ds.plot_cell_raster(cell_idx, 'draw_correct');
 raster_scale = get(gca, 'CLim'); % Scale that applies to all trials
 title('All trials');
-colormap jet; freezeColors;
 if ds.is_switchdata_loaded
     x_ends = get(gca, 'XLim');
     hold on;

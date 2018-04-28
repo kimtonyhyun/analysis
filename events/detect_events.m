@@ -310,7 +310,11 @@ end
         gui.local_cursor_bar = plot(-Inf*[1 1], trace_display_range, 'k--', 'HitTest', 'off');
         gui.local_thresh = plot([1 num_frames], -Inf*[1 1], 'm--', 'HitTest', 'off');
         gui.local_auto = plot(-1, -1, 'm:', 'HitTest', 'off');
-        gui.local_sel_event = plot([-1 -1], trace_display_range, 'm', 'HitTest', 'off');
+        gui.local_sel_event = rectangle('Position',[-1 trace_display_range(1) 0 diff(trace_display_range)],...
+                  'EdgeColor', 'none',...
+                  'FaceColor', [1 0 1 0.2],... // Transparent magenta
+                  'HitTest', 'off');
+        gui.local_sel_event_peak = plot([-1 -1], trace_display_range, 'm', 'HitTest', 'off');
         gui.local_auto_amps = plot(-1, -1, 'm', 'LineWidth', 2, 'HitTest', 'off');
         gui.local_manual = plot(-1, -1, 'r');
         hold off;
@@ -600,16 +604,24 @@ end
             state.sel_event = event_idx;
             if (event_idx > 0)
                 event_amps = events.auto(:,3);
-                sel_event_frame = events.auto(event_idx,2);
+                sel_event_onset_frame = events.auto(event_idx,1);
+                sel_event_peak_frame = events.auto(event_idx,2);
+                sel_event_duration = sel_event_peak_frame - sel_event_onset_frame;
                 sel_event_normamp = event_amps(event_idx)/max(event_amps);
                 sel_event_cdf = event_idx / num_events;
             else
-                sel_event_frame = -Inf;
+                sel_event_onset_frame = -1;
+                sel_event_peak_frame = -Inf;
+                sel_event_duration = 0;
                 sel_event_normamp = -Inf;
                 sel_event_cdf = -1;
             end
             set(gui.cdf_sel_event, 'XData', sel_event_normamp, 'YData', sel_event_cdf);
-            set(gui.local_sel_event, 'XData', sel_event_frame*[1 1]);
+            rect_pos = get(gui.global_rect, 'Position');
+            rect_pos(1) = sel_event_onset_frame;
+            rect_pos(3) = sel_event_duration;
+            set(gui.local_sel_event, 'Position', rect_pos);
+            set(gui.local_sel_event_peak', 'Xdata', sel_event_peak_frame*[1 1]);
         end
     end % select_event
 
