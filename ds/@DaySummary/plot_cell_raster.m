@@ -10,15 +10,18 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
 % Optional argument 'draw_correct' will place a box at the end
 % of each trial indicating correct (green) or incorrect (red)
 %
-    draw_correct = 0;
+    draw_events = false;
+    draw_correct = false;
     
     if ~isempty(varargin)
         for k = 1:length(varargin)
             vararg = varargin{k};
             if ischar(vararg)
                 switch lower(vararg)
+                    case {'draw_events', 'event', 'events'}
+                        draw_events = true;
                     case 'draw_correct'
-                        draw_correct = 1;
+                        draw_correct = true;
                 end
             end
         end
@@ -26,8 +29,11 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
    
     % Raster: [num_cells x num_aligned_frames]
     [raster, info] = obj.get_aligned_trace(cell_idx, varargin{:});
+    trial_inds = info.trial_inds;
+    num_trials = info.num_trials;
+    align_idx = info.align_idx;
     
-    switch info.align_idx
+    switch align_idx
         case 1
             align_str = 'Frames relative to trial start';
         case 2
@@ -38,16 +44,32 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
             align_str = 'Frames relative to trial end';
     end
     
-    imagesc(info.aligned_time, 1:info.num_trials, raster, 'HitTest', 'off');
+    imagesc(info.aligned_time, 1:num_trials, raster, 'HitTest', 'off');
+    hold on;
     colormap jet;
+    xlim(info.aligned_time([1 end]));
     xlabel(align_str);
     ylabel('Trial index');
     set(gca, 'TickLength', [0 0]);
 
+    if (draw_events && obj.is_eventdata_loaded)
+        for k = 1:num_trials
+            trial_idx = trial_inds(k);
+            eventdata = obj.get_events(cell_idx, trial_idx, 'align_to', align_idx);
+            if ~isempty(eventdata)
+                event_times = eventdata(:,2); % Peak times
+                num_events = length(event_times);
+                plot(event_times, k*ones(1,num_events), 'o',...
+                     'MarkerEdgeColor', 'k',...
+                     'MarkerFaceColor', 'm',...
+                     'HitTest', 'off');
+            end
+        end
+    end
+    
     if (draw_correct)
         corr_width = 0.025*size(raster,2);
-        trial_inds = info.trial_inds;
-        for k = 1:length(trial_inds)
+        for k = 1:num_trials
             trial_idx = trial_inds(k);
             if obj.trials(trial_idx).correct
                 corr_color = 'g';
@@ -59,4 +81,5 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
         end
         xlim([info.aligned_time(1) info.aligned_time(end)+corr_width]);
     end
+    hold off;
 end

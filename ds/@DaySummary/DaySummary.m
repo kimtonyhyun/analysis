@@ -420,6 +420,8 @@ classdef DaySummary < handle
             num_kept_trials = sum(kept_trials);
             trial_inds = find(kept_trials);
             
+            alignment_frames = zeros(1, num_kept_trials);
+            
             [pre_offset, post_offset] = compute_frame_offsets(obj.trial_indices, align_idx);
             num_trunc_frames = post_offset-pre_offset+1;
             
@@ -430,10 +432,10 @@ classdef DaySummary < handle
                 
                 % Compute aligned frame indices for current trial
                 ti = obj.trial_indices(trial_ind,:);
-                ti = ti - (ti(1)-1);
-                af = ti(align_idx); % alignment frame
-                pre_frame = af + pre_offset;
-                post_frame = af + post_offset;
+                ti = ti - (ti(1)-1);                
+                alignment_frames(k) = ti(align_idx);               
+                pre_frame = alignment_frames(k) + pre_offset;
+                post_frame = alignment_frames(k) + post_offset;
                 tr = obj.trials(trial_ind).traces(cell_idx,:);
                 traces(k,:) = tr(pre_frame:post_frame);
             end
@@ -441,6 +443,7 @@ classdef DaySummary < handle
             align_info.trial_inds = trial_inds;
             align_info.num_trials = num_kept_trials;
             align_info.align_idx = align_idx;
+            align_info.alignment_frames = alignment_frames;
             align_info.aligned_time = pre_offset:post_offset;
         end
         
