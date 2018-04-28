@@ -44,7 +44,7 @@ trial_window = 10;
 trial_window_start = max(1, trial_idx-trial_window);
 trial_window_end = min(ds.num_trials, trial_idx+trial_window);
 gui.raster = subplot(3,2,[3 5]);
-ds.plot_cell_raster(cell_idx, 'draw_correct','draw_events');
+ds.plot_cell_raster(cell_idx, 'draw_correct', 'draw_events');
 trace_scale = get(gca, 'CLim');
 ylim([trial_window_start-0.5 trial_window_end+0.5]);
 x_ends = get(gca, 'XLim');
