@@ -46,7 +46,7 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
     
     imagesc(info.aligned_time, 1:num_trials, raster, 'HitTest', 'off');
     hold on;
-    colormap jet;
+    colormap parula; freezeColors;
     xlim(info.aligned_time([1 end]));
     xlabel(align_str);
     ylabel('Trial index');

@@ -51,7 +51,6 @@ x_ends = get(gca, 'XLim');
 line(x_ends, (trial_idx-0.5)*[1 1], 'Color', 'w', 'LineWidth', 2);
 line(x_ends, (trial_idx+0.5)*[1 1], 'Color', 'w', 'LineWidth', 2);
 title('All trials');
-colormap jet; freezeColors;
 
 set(gui.raster, 'ButtonDownFcn', @jump_to_trial);
 
