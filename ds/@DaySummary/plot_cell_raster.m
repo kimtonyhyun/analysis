@@ -13,7 +13,7 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
     draw_events = false;
     draw_correct = false;
     
-    align_idx = 3;
+    align_idx = 3; % By default, align to closing of gate
     kept_trials = true(1, obj.num_trials);
     
     if ~isempty(varargin)
