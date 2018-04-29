@@ -394,9 +394,26 @@ classdef DaySummary < handle
             end
         end
         
-        function [traces, align_info] = get_aligned_trace(obj, cell_idx, trial_inds, alignment_frames)
+        function [traces, align_info] = get_aligned_trace(obj, cell_idx, trial_inds, alignment_frames, varargin)
             % Aligns a single cell trace across trials, and returns the
             % result as a [num_trials x num_common_frames] matrix.
+
+            if ~isempty(varargin)
+                for k = 1:length(varargin)
+                    vararg = varargin{k};
+                    if ischar(vararg)
+                        switch lower(vararg)
+                            % If the provided 'alignment_frames' is
+                            % computed with respect to the start of each
+                            % trial, then trial offsets need to be applied
+                            % before use by 'get_aligned_trace'
+                            case 'apply_trial_offset'
+                                alignment_frames = alignment_frames +...
+                                    (obj.trial_indices(trial_inds,1)-1);
+                        end
+                    end
+                end
+            end
             
             N = length(trial_inds);
             [pre_offset, post_offset] = compute_frame_offsets(obj.trial_indices, trial_inds, alignment_frames);
