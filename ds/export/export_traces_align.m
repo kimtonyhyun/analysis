@@ -15,20 +15,22 @@ function [X, xs, ys, alignment_axis] = export_traces_align(md, trial_map, align_
 % trajectory and traces are temporally aligned.
 %
 
-% Concatenate trial index information across all days. THK: Consider moving
-% this block (and type) of code into MultiDay itself.
+% Concatenate trial index information across all days, so that the set of
+% frames common to all trials (over days) can be computed
 trial_indices = [];
 for di = md.valid_days
     trial_indices = [trial_indices; md.day(di).trial_indices]; %#ok<AGROW>
 end
-[pre_offset, post_offset] = compute_frame_offsets(trial_indices, align_idx);
+num_trials = size(trial_indices,1);
+alignment_frames = trial_indices(:, align_idx);
+[pre_offset, post_offset] = compute_frame_offsets(trial_indices,...
+    1:num_trials, alignment_frames);
 alignment_axis = pre_offset:post_offset;
-num_trunc_frames = length(alignment_axis);
+num_common_frames = length(alignment_axis);
 
 num_cells = md.num_cells;
-num_trials = size(trial_map, 1);
 
-X = zeros(num_cells, num_trunc_frames, num_trials);
+X = zeros(num_cells, num_common_frames, num_trials);
 xs = cell(num_trials,1);
 ys = cell(num_trials,1);
 

@@ -5,7 +5,7 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
 %
 %   plot_cell_raster(cell_idx, 'start', 'east')
 %
-% See 'DaySummary.get_aligned_trace' for full details.
+% See 'DaySummary.filter_trials' for full details.
 %
 % Optional argument 'draw_correct' will place a box at the end
 % of each trial indicating correct (green) or incorrect (red)
@@ -13,11 +13,16 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
     draw_events = false;
     draw_correct = false;
     
+    align_idx = 3;
+    kept_trials = true(1, obj.num_trials);
+    
     if ~isempty(varargin)
         for k = 1:length(varargin)
             vararg = varargin{k};
             if ischar(vararg)
                 switch lower(vararg)
+                    case {'align', 'align_to'}
+                        align_idx = varargin{k+1};
                     case {'draw_events', 'event', 'events'}
                         draw_events = true;
                     case 'draw_correct'
@@ -25,13 +30,15 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
                 end
             end
         end
+        
+        kept_trials = obj.filter_trials(varargin{:});
     end
-   
-    % Raster: [num_cells x num_aligned_frames]
-    [raster, info] = obj.get_aligned_trace(cell_idx, varargin{:});
-    trial_inds = info.trial_inds;
-    num_trials = info.num_trials;
-    align_idx = info.align_idx;
+
+    trial_inds = find(kept_trials);
+    num_trials = length(trial_inds);
+    
+    alignment_frames = obj.trial_indices(trial_inds, align_idx);
+    [raster, info] = obj.get_aligned_trace(cell_idx, trial_inds, alignment_frames);
     
     switch align_idx
         case 1
