@@ -37,6 +37,7 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
     trial_inds = find(kept_trials);
     num_trials = length(trial_inds);
     if (num_trials == 0)
+        % Display message in place of showing raster
         xlim([0 1]);
         ylim([0 1]);
         set(gca, 'XTick', []);
