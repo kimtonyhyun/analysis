@@ -36,6 +36,15 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
 
     trial_inds = find(kept_trials);
     num_trials = length(trial_inds);
+    if (num_trials == 0)
+        xlim([0 1]);
+        ylim([0 1]);
+        set(gca, 'XTick', []);
+        set(gca, 'YTick', []);
+        text(0.5, 0.5, {'No trials','selected'},...
+             'HorizontalAlignment', 'center');
+        return;
+    end
     
     alignment_frames = obj.trial_indices(trial_inds, align_idx);
     [raster, info] = obj.get_aligned_trace(cell_idx, trial_inds, alignment_frames);
