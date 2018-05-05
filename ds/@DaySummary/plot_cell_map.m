@@ -44,8 +44,13 @@ function plot_cell_map(obj, color_grouping, varargin)
 
     % Color grouping provided, unpack into cell_linespec
     if exist('color_grouping', 'var')
-        for group = 1:size(color_grouping, 1)
-            for cell_idx = color_grouping{group,1}
+        num_groups = size(color_grouping, 1);
+        for group = 1:num_groups
+            cells_in_group = color_grouping{group,1};
+            if iscolumn(cells_in_group)
+                cells_in_group = cells_in_group'; % Want row
+            end
+            for cell_idx = cells_in_group
                 cell_colors{cell_idx} = color_grouping{group,2};
             end
         end
