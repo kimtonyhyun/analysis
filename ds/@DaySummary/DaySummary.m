@@ -415,6 +415,9 @@ classdef DaySummary < handle
                 end
             end
             
+            if islogical(trial_inds)
+                trial_inds = find(trial_inds);
+            end
             N = length(trial_inds);
             [pre_offset, post_offset] = compute_frame_offsets(obj.trial_indices, trial_inds, alignment_frames);
             num_common_frames = post_offset-pre_offset+1;
@@ -430,6 +433,7 @@ classdef DaySummary < handle
                 traces(k,:) = tr(pre_frame:post_frame);
             end
             
+            align_info.num_trials = N;
             align_info.trial_inds = trial_inds;
             align_info.alignment_frames = alignment_frames;
             align_info.aligned_time = pre_offset:post_offset;
