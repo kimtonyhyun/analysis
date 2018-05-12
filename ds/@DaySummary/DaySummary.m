@@ -365,6 +365,7 @@ classdef DaySummary < handle
         function [trace, frame_indices, selected_trials] = get_trace(obj, cell_idx, varargin)
             normalize_trace = false;
             selected_trials = 1:obj.num_trials;
+            fill_type = '';
             
             for k = 1:length(varargin)
                 vararg = varargin{k};
@@ -374,6 +375,8 @@ classdef DaySummary < handle
                     switch lower(vararg)
                         case 'norm'
                             normalize_trace = true;
+                        case 'fill'
+                            fill_type = varargin{k+1};
                     end
                 end
             end
@@ -383,7 +386,26 @@ classdef DaySummary < handle
             trace = [];
             frame_indices = [];
             for k = selected_trials
-                trace = [trace obj.trials(k).traces(cell_idx,:)]; %#ok<*AGROW>
+                tr = obj.trials(k).traces(cell_idx,:);
+                ed = obj.trials(k).events{cell_idx};
+                trf = zeros(size(tr));
+                switch fill_type
+                    case 'copy'                       
+                        for m = 1:size(ed,1)
+                            ef = ed(m,1):ed(m,2); % event frames (trough to peak)
+                            trf(ef) = tr(ef);
+                        end
+                        
+                    case 'copyzero'
+                        for m = 1:size(ed,1)
+                            ef = ed(m,1):ed(m,2);
+                            trf(ef) = tr(ef) - tr(ef(1));
+                        end
+                        
+                    otherwise
+                        trf = tr;
+                end
+                trace = [trace trf]; %#ok<*AGROW>
                 frame_indices = [frame_indices obj.trial_indices(k,1):obj.trial_indices(k,end)];
             end
             
@@ -429,7 +451,7 @@ classdef DaySummary < handle
                 af = alignment_frames(k) - (obj.trial_indices(trial_ind,1)-1);
                 pre_frame = af + pre_offset;
                 post_frame = af + post_offset;
-                tr = obj.trials(trial_ind).traces(cell_idx,:);
+                tr = obj.get_trace(cell_idx, trial_ind, varargin{:});
                 traces(k,:) = tr(pre_frame:post_frame);
             end
             
