@@ -365,14 +365,16 @@ classdef DaySummary < handle
         function [trace, frame_indices, selected_trials] = get_trace(obj, cell_idx, varargin)
             normalize_trace = false;
             selected_trials = 1:obj.num_trials;
-            fill_type = '';
+            fill_type = 'traces';
             
             for k = 1:length(varargin)
                 vararg = varargin{k};
                 if isnumeric(vararg)
                     selected_trials = vararg;
-                else
+                elseif ischar(vararg)
                     switch lower(vararg)
+                        % TODO: Explore complications (if any) between
+                        % normalization and trace fill type
                         case 'norm'
                             normalize_trace = true;
                         case 'fill'
@@ -390,20 +392,23 @@ classdef DaySummary < handle
                 ed = obj.trials(k).events{cell_idx};
                 trf = zeros(size(tr));
                 switch fill_type
+                    case {'trace', 'traces'}
+                        trf = tr;
+
                     case 'copy'                       
                         for m = 1:size(ed,1)
                             ef = ed(m,1):ed(m,2); % event frames (trough to peak)
                             trf(ef) = tr(ef);
                         end
                         
-                    case 'copyzero'
+                    case {'copyamp', 'copyzero'}
                         for m = 1:size(ed,1)
                             ef = ed(m,1):ed(m,2);
                             trf(ef) = tr(ef) - tr(ef(1));
                         end
                         
                     otherwise
-                        trf = tr;
+                        error('Fill type "%s" not recognized', fill_type);
                 end
                 trace = [trace trf]; %#ok<*AGROW>
                 frame_indices = [frame_indices obj.trial_indices(k,1):obj.trial_indices(k,end)];
