@@ -337,7 +337,7 @@ classdef DaySummary < handle
         end
         
         function traces = get_trial(obj, trial_idx, varargin)
-            % Return the traces for _all_ cells for the selected trial
+            % Return the traces for _all_ cells for the selected trial.
             %
             % TODO:
             %   - z-scoring option,
@@ -363,6 +363,7 @@ classdef DaySummary < handle
         end
         
         function [trace, frame_indices, selected_trials] = get_trace(obj, cell_idx, varargin)
+            % For a cell, return traces over selected sets of trials.
             normalize_trace = false;
             selected_trials = 1:obj.num_trials;
             fill_type = 'traces';
@@ -389,26 +390,32 @@ classdef DaySummary < handle
             frame_indices = [];
             for k = selected_trials
                 tr = obj.trials(k).traces(cell_idx,:);
-                ed = obj.trials(k).events{cell_idx};
-                trf = zeros(size(tr));
-                switch fill_type
-                    case {'trace', 'traces'}
-                        trf = tr;
+                if ~obj.is_eventdata_loaded
+                    % If eventdata is not available, then the only fill
+                    % type (currently) allowed is 'traces'
+                    trf = tr;
+                else
+                    ed = obj.trials(k).events{cell_idx};
+                    trf = zeros(size(tr));
+                    switch fill_type
+                        case {'trace', 'traces'}
+                            trf = tr;
 
-                    case 'copy'                       
-                        for m = 1:size(ed,1)
-                            ef = ed(m,1):ed(m,2); % event frames (trough to peak)
-                            trf(ef) = tr(ef);
-                        end
-                        
-                    case {'copyamp', 'copyzero'}
-                        for m = 1:size(ed,1)
-                            ef = ed(m,1):ed(m,2);
-                            trf(ef) = tr(ef) - tr(ef(1));
-                        end
-                        
-                    otherwise
-                        error('Fill type "%s" not recognized', fill_type);
+                        case 'copy'                       
+                            for m = 1:size(ed,1)
+                                ef = ed(m,1):ed(m,2); % event frames (trough to peak)
+                                trf(ef) = tr(ef);
+                            end
+
+                        case {'copyamp', 'copyzero'}
+                            for m = 1:size(ed,1)
+                                ef = ed(m,1):ed(m,2);
+                                trf(ef) = tr(ef) - tr(ef(1));
+                            end
+
+                        otherwise
+                            error('Fill type "%s" not recognized', fill_type);
+                    end
                 end
                 trace = [trace trf]; %#ok<*AGROW>
                 frame_indices = [frame_indices obj.trial_indices(k,1):obj.trial_indices(k,end)];
