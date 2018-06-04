@@ -23,13 +23,21 @@ if isempty(movie_out)
     fprintf('meancorr_movie: Output movie will be saved as "%s"\n', movie_out);
 end
 
+x = [];
 y = [];
 if ~isempty(varargin)
     for k = 1:length(varargin)
         if ischar(varargin{k})
             vararg = lower(varargin{k});
             switch vararg
-                case 'y' % Externally provide fitted fluorescence
+                case {'x', 'frames'}
+                    % Fit only to a subset of frames
+                    x = varargin{k+1};
+                    if ~iscolumn(x)
+                        x = x';
+                    end
+                case 'y'
+                    % Externally provide fitted fluorescence
                     y = single(varargin{k+1});
             end
         end
@@ -51,10 +59,14 @@ frame_chunk_size = 2500;
 [frame_chunks, num_chunks] = make_frame_chunks(num_frames, frame_chunk_size);
 
 % Compute the mean from disk
-x = (1:num_frames)';
+x_full = (1:num_frames)';
+if isempty(x)
+    x = x_full;
+end
 F = compute_fluorescence_stats(movie_in);
 baseline = mean(F(:,1));
 mu = double(F(:,2)-baseline);
+mu = mu(x);
 
 % Plot fits
 figure;
@@ -82,13 +94,13 @@ else
 
     for k = 1:num_fits
         [f, gofs{k}] = fit(x, mu, fits{k});
-        ys{k} = feval(f, x);
+        ys{k} = feval(f, x_full);
     end
 
     colors = 'br';
     for k = 1:num_fits
         color = colors(mod(k,length(colors))+1);
-        plot(x, ys{k}, color, 'LineWidth', 2);
+        plot(x_full, ys{k}, color, 'LineWidth', 2);
     end
     legend(cat(2, {'Raw'}, fits), 'Location', 'NorthEast');
 
