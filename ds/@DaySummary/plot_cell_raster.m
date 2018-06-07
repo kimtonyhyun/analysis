@@ -13,7 +13,7 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
     draw_events = false;
     draw_correct = false;
     
-    align_idx = 3; % By default, align to closing of gate
+    align_idx = 3; % By default, align to closing of gate   
     kept_trials = true(1, obj.num_trials);
     
     if ~isempty(varargin)
@@ -62,6 +62,7 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
     end
     
     imagesc(info.aligned_time, 1:num_trials, raster, 'HitTest', 'off');
+    set(gca, 'CLim', obj.trace_range(cell_idx,:));
     hold on;
     colormap parula; freezeColors;
     xlim(info.aligned_time([1 end]));
