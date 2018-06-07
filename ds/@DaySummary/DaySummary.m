@@ -285,7 +285,7 @@ classdef DaySummary < handle
                 vararg = varargin{k};
                 if ischar(vararg)
                     switch lower(vararg)
-                        case {'range', 'inds'}
+                        case {'range', 'inds', 'trial_inds'}
                             % Convert list of trial indices to logical vector
                             lv = ismember(1:obj.num_trials, varargin{k+1});
                             filtered_trials = filtered_trials & lv;
