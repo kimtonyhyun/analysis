@@ -10,12 +10,12 @@ quartiles = cell2mat(quartiles);
 x = 1:num_groups;
 X = kron(x, [1 1 NaN]);
 Y = [quartiles(:,[2 4]) NaN(num_groups,1)]';
-plot(X + x_offset, Y(:), 'LineWidth', 1, 'Color', color);
+plot(X + x_offset, Y(:), 'LineWidth', 2, 'Color', color);
 hold on;
 
 % % Plot the 10-90 range
-% Y = [quartiles(:,[1 5]) NaN(num_groups,1)]';
-% plot(X + x_offset, Y(:), 'LineWidth', 1, 'Color', color);
+Y = [quartiles(:,[1 5]) NaN(num_groups,1)]';
+plot(X + x_offset, Y(:), 'LineWidth', 0.5, 'Color', color);
 
 % Plot the median
 plot(x + x_offset, quartiles(:,3), '.', 'MarkerSize', 16, 'Color', color);
