@@ -15,7 +15,7 @@ hold on;
 
 % % Plot the 10-90 range
 Y = [quartiles(:,[1 5]) NaN(num_groups,1)]';
-plot(X + x_offset, Y(:), 'LineWidth', 0.5, 'Color', color);
+plot(X + x_offset, Y(:), ':', 'LineWidth', 1, 'Color', color);
 
 % Plot the median
 plot(x + x_offset, quartiles(:,3), '.', 'MarkerSize', 16, 'Color', color);
