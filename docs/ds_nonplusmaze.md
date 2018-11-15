@@ -25,7 +25,7 @@ where
 
 Additionally, `<frame-idx2>` and `<frame-idx3>` can be used to indicate other salient frames within the trial. For example, in a conditioning paradigm `<frame-idx2>` can be the onset of the CS and `<frame-idx3>` can be the onset of the US.
 
-Note: To avoid possible breakage in `DaySummary` operation, the `<frame-idx(N)>` should be strictly larger than `<frame-idx(N-1)>`.
+Note: To avoid possible breakage in `DaySummary` operation, the frame indices should be strictly increasing.
 
 #### Correct vs. Incorrect trials
 
@@ -40,8 +40,8 @@ east north south 10.0 <frame-idx1> <frame-idx2> <frame-idx3> <frame-idx4>
 
 #### Hacks to bypass internal `DaySummary` checks
 
-During instantiation, `DaySummary` has a few built-in checks to confirm that the trial metadata (txt) file matches up with the calcium imaging data (i.e. "rec" file).
+During instantiation, `DaySummary` has a few built-in checks to confirm that the trial metadata (txt) file properly matches up with the calcium imaging data (i.e. "rec" file).
 
-One explicit check is that the final frame number in the metadata file (i.e. the rightmost column of the bottommost row) is equal to the length of the traces in the rec file.
+One such check verifies that the final frame number in the metadata/txt file (i.e. the rightmost column of the bottommost row) is equal to the length of `traces` in the rec file.
 
-If, in the non-PM dataset, the frame index corresponding to the last frame of the final trial is _not_ equal to the full length of traces, then I suggest manually adding one extra "trial" to the metadata file that ends with the full length of the traces.
+If, in the non-PM dataset, the frame index of the last frame of the final trial does _not_ equal to the full length of traces, I suggest manually adding one extra "trial" to the txt file that _does_ end at the full length of the traces.
