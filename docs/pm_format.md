@@ -1,6 +1,6 @@
 ## Explanation of PlusMaze metadata (txt) file format
 
-An example PlusMaze metadata (txt) file is here:
+An example PlusMaze metadata (txt) file is here: [mouse1_day13_ego-allo-switch.txt](mouse1_day13_ego-allo-switch.txt)
 
 The first five lines of the example file shows:
 ```
@@ -14,12 +14,15 @@ east north north 12.675 1067 1175 1217 1319
 
 Each line of the txt file represents a trial, in the format:
 ```
-<start-arm> <goal-arm> <choice-arm> <time> <frame-idx1> <frame-idx2> <frame-idx3> <frame-idx4>
+<start-arm> <goal-arm> <choice-arm> <trial-duration> <frame-idx1> <frame-idx2> <frame-idx3> <frame-idx4>
 ```
 where:
 - `<*-arm>` is one of `{'east', 'west', 'north', 'south'}`. Choice arm is the one selected by the animal. The trial is considered to be correct if the goal and choice arms are equal.
-- `<time>` is the time (in seconds) of the trial. This parameter is not actually used by `DaySummary` for computing any derivative quantities.
+- `<trial-duration>` is the duration (in seconds) of the trial.
+  - Note: This parameter is not actually used by `DaySummary` for computing any derivative quantities. All time-related quantities in `DaySummary` derive instead from the frame indices.
 - `<frame-idx1>` is the frame index corresponding to the _first frame_ of the trial.
 - `<frame-idx2>` is the frame index corresponding to the _opening_ of the _start_ gate.
 - `<frame-idx3>` is the frame index corresponding to the _closing_ of the _end_ gate.
 - `<frame-idx4>` is the frame index corresponding to the _last frame_ of the trial.
+
+For tips on "faking" the PlusMaze metadata file for non-PM datasets, see also: [Using DaySummary with non-PlusMaze datasets](ds_nonplusmaze.md)
