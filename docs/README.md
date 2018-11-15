@@ -3,6 +3,7 @@
 This Matlab-based analysis workflow is organized around a `DaySummary` object. The basic idea behind the `DaySummary` class is to encapsulate all relevant information for a single recording session (originally of the strategy shifting protocol).
 
 1. [`DaySummary` QuickStart](ds_quickstart.md)
+  * [Explanation of the PlusMaze metadata (txt) file](pm_format.md)
   * [Using `DaySummary` with non-PlusMaze datasets](ds_nonplusmaze.md)
   * Using `browse_rasters`
   * [Using `detect_events`](eventdetect.md)
