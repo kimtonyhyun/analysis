@@ -17,7 +17,7 @@ Each line of the txt file represents a trial, in the format:
 <start-arm> <goal-arm> <choice-arm> <trial-duration> <frame-idx1> <frame-idx2> <frame-idx3> <frame-idx4>
 ```
 where:
-- `<*-arm>` is one of `{'east', 'west', 'north', 'south'}`. Choice arm is the one selected by the animal. The trial is considered to be correct if the goal and choice arms are equal.
+- `<*-arm>` is one of `{'east', 'west', 'north', 'south'}`. Choice arm is the one selected by the animal. The trial is considered to be _correct_ if the goal and choice arms are equal.
 - `<trial-duration>` is the duration (in seconds) of the trial.
   - Note: This parameter is not actually used by `DaySummary` for computing any derivative quantities. All time-related quantities in `DaySummary` derive instead from the frame indices.
 - `<frame-idx1>` is the frame index corresponding to the _first frame_ of the trial.
