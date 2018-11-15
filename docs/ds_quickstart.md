@@ -10,7 +10,7 @@ The following screenshot illustrates my (Tony's) preferred folder structure for 
 
 The experimental data is stored in the `_data` subdirectory:
 
-- __"c11m1d12_ti2.txt"__: The "PlusMaze text file" containing trial metadata (e.g. for each trial mouse start, goal, choice, frame indices). _Necessary_ for instantiating a `DaySummary` object.
+- __"c11m1d12_ti2.txt"__: The "PlusMaze text file" containing trial metadata (e.g. for each trial mouse start, goal, choice, frame indices). _Necessary_ for instantiating a `DaySummary` object for PlusMaze datasets, but see _Note_ below.
 - __"c11m1d12_ti2.mp4"__: The overhead behavioral video associated with the session. Optional input for instantiating `DaySummary`.
 - __"c11m1d12_ti2.xy"__: Mouse spatial tracking data. Each line is the (x,y) coordinate of the mouse position for a given frame. Optional input for instantiating `DaySummary`.
 - __"c11m1d12_gfix_rm_mc_cr_norm40_dff_ti2.hdf5"__: The DFF movie associated with the session. Not an input to `DaySummary` (but is used during manual cell classification).
