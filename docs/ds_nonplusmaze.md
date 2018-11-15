@@ -15,7 +15,7 @@ At a minimum, the "rec directory" must contain a [rec file](README.md#rec-mat-fi
 
 For non-PM datasets that have a trial-based structure, it is possible to inject trial boundaries into `DaySummary` by instantiating it with a "fake" text file that encodes the trial structure. This allows, for example, visualization of trial-aligned single cell rasters by functions such as `browse_rasters`.
 
-As described [here](pm_format.md), each line of the text file represents a trial. To encode a non-PlusMaze trial, I suggest the format:
+As described [here](pm_format.md), each line of the text file represents a trial. To encode the trial structure of a non-PlusMaze trial, I suggest the format:
 ```
 east north north 10.0 <frame-idx1> <frame-idx2> <frame-idx3> <frame-idx4>
 ```
