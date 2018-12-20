@@ -147,6 +147,9 @@ for i = 1:num_chunks
     movie_chunk = h5read(movie_in, movie_dataset,...
                          [1 1 chunk_start],...
                          [height width chunk_count]);
+    if ~isa(movie_chunk, 'single')
+        movie_chunk = single(movie_chunk);
+    end
     
     for frame_idx = 1:size(movie_chunk,3)
         movie_chunk(:,:,frame_idx) = ...
