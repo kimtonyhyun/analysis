@@ -1,4 +1,5 @@
 function events = detect_events(ds, cell_idx, varargin)
+% For formatting info on event data, see 'find_events.m'
 
 use_prompt = true;
 use_filter = true;
