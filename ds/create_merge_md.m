@@ -5,7 +5,9 @@ function md = create_merge_md(ds_array)
 %
 % Usage:
 %   md = create_merge_md([ds1 ds2 ds3]);
-
+%   res_list = resolve_recs(md);
+%   save_resolved_recs(res_list, md);
+%
 num_ds = length(ds_array);
 ds_list = cell(num_ds, 2);
 for k = 1:num_ds
