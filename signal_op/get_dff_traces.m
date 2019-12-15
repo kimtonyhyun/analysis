@@ -10,6 +10,7 @@ function traces = get_dff_traces(filter_input, M_dff, varargin)
 %   - Load chunks of the movie at a time to reduce memory footprint
 
 use_ls = false;
+suppress_output = false;
 
 % Filter parameters relevant for trace extraction -- used only when
 % 'filter_input' is a DaySummary instance
@@ -32,6 +33,9 @@ for k = 1:length(varargin)
             case 'truncate'
                 fprintf('%s: Filter will be truncated...\n', datestr(now));
                 truncate_filter = true;
+            case 'no_rec'
+                fprintf('get_dff_traces: No output file will be generated.\n');
+                suppress_output = true;
         end
     end
 end
@@ -122,4 +126,6 @@ info.options.truncate_filter = truncate_filter;
 info.options.use_ls = use_ls;
 info.options.use_all_filters = use_all_filters;
 
-save_rec(info, filters, traces);
+if ~suppress_output
+    save_rec(info, filters, traces);
+end
