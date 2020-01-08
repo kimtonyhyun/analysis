@@ -28,7 +28,7 @@ try
             type = 'uint16';
         case 'IEEE floating point'
             type = 'single';
-        case "Two's complement signed integer"
+        case "Two's complement signed integer" % ScanImage
             type = 'int16';
         otherwise
             error('load_movie_from_tif: Unrecognized type "%s"\n', tif_type);
@@ -41,14 +41,17 @@ end
 % Load movie into memory
 movie = zeros(height, width, num_tif_frames, type);
 t = Tiff(source, 'r');
-for k = 1:num_tif_frames
+for k = 1:num_tif_frames-1
     if (mod(k,1000)==0)
-        fprintf('  Frames %d / %d loaded\n', k, num_tif_frames);
+        fprintf('  %s: Frames %d / %d loaded\n', datestr(now), k, num_tif_frames);
     end
-    t.setDirectory(k);
+%     t.setDirectory(k);
     movie(:,:,k) = t.read();
+    t.nextDirectory;
 end
+movie(:,:,end) = t.read();
 t.close();
+fprintf('  %s: Done!\n', datestr(now));
 
 % Optionally, check XML for dropped frame correction.
 if use_xml
