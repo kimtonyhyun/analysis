@@ -41,6 +41,7 @@ end
 % Load movie into memory
 movie = zeros(height, width, num_tif_frames, type);
 t = Tiff(source, 'r');
+t.setDirectory(1);
 for k = 1:num_tif_frames-1
     if (mod(k,1000)==0)
         fprintf('  %s: Frames %d / %d loaded\n', datestr(now), k, num_tif_frames);
