@@ -1,20 +1,16 @@
-function A = compute_mean_image(M, frame_inds)
-% Compute the mean image over specified 'frame_inds' of the movie 'M'. Is
-% far more memory efficient that A = mean(M(:,:,frame_inds),3);
+function A = compute_mean_image(M)
+% Compute the mean projection image of the movie 'M'. The movie 'M' can be
+% the name of a file.
 
-[height, width, num_frames] = size(M);
-A = zeros(height, width);
-
-if ~exist('frame_inds', 'var')
-    frame_inds = 1:num_frames;
+if ~ischar(M)
+    [height, width, num_frames] = size(M);
+    A = zeros(height, width);
+    
+    for k = 1:num_frames
+        A = A + M(:,:,k);
+    end
+    A = A / num_frames;
+else % HDF5 filename (string)
+    [~, A] = compute_std_image(M);
 end
 
-if iscolumn(frame_inds)
-    frame_inds = frame_inds'; % Want row
-end
-
-for k = frame_inds
-    A = A + M(:,:,k);
-end
-
-A = A / length(frame_inds);

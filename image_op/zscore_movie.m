@@ -34,27 +34,7 @@ frame_chunk_size = 2500;
 [frame_chunks, num_chunks] = make_frame_chunks(num_frames, frame_chunk_size);
 
 % Compute the mean and std projetions
-A = zeros(height, width);
-A2 = zeros(height, width);
-for i = 1:num_chunks
-    fprintf('%s: Reading frames %d to %d for STD image (out of %d)...\n',...
-        datestr(now), frame_chunks(i,1), frame_chunks(i,2), num_frames);
-
-    chunk_start = frame_chunks(i,1);
-    chunk_count = frame_chunks(i,2) - frame_chunks(i,1) + 1;
-
-    movie_chunk = h5read(movie_in, movie_dataset,...
-                         [1 1 chunk_start],...
-                         [height width chunk_count]);
-
-    for k = 1:size(movie_chunk,3)
-        A = A + movie_chunk(:,:,k);
-        A2 = A2 + movie_chunk(:,:,k).^2;
-    end
-end
-A = A / num_frames;
-A2 = A2 / num_frames;
-S = sqrt(A2-A.^2);
+[S, A] = compute_std_image(movie_in);
 
 imagesc(S);
 colormap gray;
