@@ -192,6 +192,7 @@ classdef DaySummary < handle
                 com = [(1:width)*sum(masked_filter,1)';
                        (1:height)*sum(masked_filter,2)];
                 coms{k} = com / sum(masked_filter(:));
+                coms{k} = double(coms{k});
             end
             t = toc;
             fprintf(' Done (%.1f sec)\n', t);
