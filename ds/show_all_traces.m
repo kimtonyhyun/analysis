@@ -38,4 +38,4 @@ num_frames = length(tr);
 xlim([1 num_frames]);
 xlabel(sprintf('Frames (%d total)', num_frames));
 ylim([0.5 (ind-1)+amp+0.5]);
-ylabel('Cell index');
+ylabel(sprintf('Cell index (%d total)', ind-1));
