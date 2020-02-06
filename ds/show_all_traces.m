@@ -12,13 +12,15 @@ for k = 1:length(varargin)
     end
 end
 
+% If no cells are classified, then assume all sources are cells
+show_all_cells = (ds.num_classified_cells==0);
 
 colors = 'kbr';
 num_colors = length(colors);
 
 ind = 1;
 for k = 1:ds.num_cells
-    if ds.is_cell(k)
+    if show_all_cells || ds.is_cell(k)
         tr = ds.get_trace(k);
         tr_min = min(tr);
         tr_max = max(tr);
