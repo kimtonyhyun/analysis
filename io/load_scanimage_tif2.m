@@ -17,6 +17,8 @@ for k = 1:length(varargin)
             case 'even'
                 fprintf('  Loading EVEN frames only!\n');
                 frames_to_load = 2:2:num_total_frames;
+            case 'frames'
+                frames_to_load = varargin{k+1};
         end
     end
 end
