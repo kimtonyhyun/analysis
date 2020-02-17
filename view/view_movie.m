@@ -1,26 +1,19 @@
 function view_movie(M, varargin)
-% Displays the frames of a movie matrix M [height x row x num_frames]
-%   (Note: also works with a single image)
+% Displays the frames of a movie matrix M. Movie can be:
+%   - Grayscale: [height x width x num_frames]
+%   - RGB: [height x width x RGB x num_frames]
 
 movie_clim = [];
-use_mask = 0;
 use_outline = 0;
 poi = [];
 num_repeats = inf;
-rescale_each_frame = false;
+
 for k = 1:length(varargin)
     vararg = varargin{k};
     if ischar(vararg)
         switch lower(vararg)
             case {'repeat', 'repeats'}
                 num_repeats = varargin{k+1};
-            case 'rescale'
-                rescale_each_frame = true;
-            case 'mask'
-                % Pixels with logical 1 in the provided mask will be displayed
-                use_mask = true;
-                ds = varargin{k+1};
-                mask = ds.get_mask;
             case 'poi'
                 poi = varargin{k+1};
             case 'clim'
@@ -32,25 +25,31 @@ for k = 1:length(varargin)
     end
 end
 
-num_frames = size(M,3);
-
-if ~isempty(movie_clim) % If CLim is provided, use it
-    h = imagesc(M(:,:,1), movie_clim);
-else
-    if (rescale_each_frame || isa(M, 'uint16'))
-        % Raw movies (e.g. uint16) are rescaled by default
-        h = imagesc(M(:,:,1));
-        mask_val = 0; % FIXME
-    else % Otherwise, use common CLim scaling
-        movie_clim = compute_movie_scale(M);
-        mask_val = movie_clim(1);
-        h = imagesc(M(:,:,1), movie_clim);
+if isempty(movie_clim)
+    switch class(M)
+        case {'uint8'}
+            movie_clim = [0 255];
+        case {'uint16'}
+            movie_clim = [0 0.9*max(M(:))];
+        case {'single'}
+            movie_clim = compute_movie_scale(M);
     end
 end
 
+nd = ndims(M);
+switch nd
+    case 3 % [height x width x num_frames]       
+        get_frame = @(k) M(:,:,k);
+        h = imagesc(get_frame(1), movie_clim);
+        colormap gray;
+    case 4 % [height x width x RGB x num_frames]
+        get_frame = @(k) M(:,:,:,k);
+        h = image(get_frame(1));
+end
+num_frames = size(M,nd);
+
 axis image;
 truesize;
-colormap gray;
 xlabel('x [px]');
 ylabel('y [px]');
 
@@ -74,11 +73,7 @@ num_playbacks = 1;
 while (num_playbacks <= num_repeats) 
     for k = 1:num_frames
         title(sprintf('Frame %d of %d', k, num_frames));
-        m = M(:,:,k);
-        if use_mask
-            m(mask) = mask_val;
-        end
-        set(h, 'CData', m);
+        set(h, 'CData', get_frame(k));
         drawnow;
     end
     num_playbacks = num_playbacks + 1;
