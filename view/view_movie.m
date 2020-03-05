@@ -31,7 +31,7 @@ if isempty(movie_clim)
             movie_clim = [0 255];
         case {'uint16'}
             movie_clim = [0 0.9*max(M(:))];
-        case {'single'}
+        case {'single', 'double'}
             movie_clim = compute_movie_scale(M);
     end
 end
