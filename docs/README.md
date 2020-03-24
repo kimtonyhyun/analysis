@@ -9,6 +9,7 @@ This Matlab-based analysis workflow is organized around a `DaySummary` object. T
   * [Using `detect_events`](eventdetect.md)
 2. Classifying cells using `DaySummary`
 3. [Cross-dataset alignment](alignment.md)
+  * [Generating cross-day "union" filters](union_filters.md)
 4. [Use of `MultiDay`](multiday.md)
   * Use of `browse_multiday`
   * Use of `export`
