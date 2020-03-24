@@ -1,4 +1,4 @@
-function traces = get_dff_traces(filter_input, M_dff, varargin)
+function [traces, rec_savename] = get_dff_traces(filter_input, M_dff, varargin)
 % Compute DFF traces associated with classified cells from a DaySummary,
 % and saves the result as a rec file. Assumes that M_dff is a DFF movie (in
 % order for the resulting traces to be interpreted as DFF).
@@ -126,6 +126,7 @@ info.options.truncate_filter = truncate_filter;
 info.options.use_ls = use_ls;
 info.options.use_all_filters = use_all_filters;
 
+rec_savename = [];
 if ~suppress_output
-    save_rec(info, filters, traces);
+    rec_savename = save_rec(info, filters, traces);
 end
