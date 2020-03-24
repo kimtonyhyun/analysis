@@ -22,7 +22,14 @@ function plot_cell_boundaries(obj, varargin)
 
     % Display the cell map
     if show_cell_map_background
-        imagesc(obj.cell_map_ref_img);
+        bkgd = obj.cell_map_ref_img;
+        bkgd_min = min(bkgd(:));
+        bkgd_max = max(bkgd(:));
+        
+        % In 2P datasets, the background can be  entirely black, which 
+        % makes the visualization hard to use with 'ginput'
+        bkgd_range = 0.15*(bkgd_max-bkgd_min)*[-1 0] + [bkgd_min bkgd_max];
+        imagesc(bkgd, bkgd_range);
         colormap gray;
     else
         [h, w] = size(obj.cell_map_ref_img);
