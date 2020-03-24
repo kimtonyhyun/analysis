@@ -85,12 +85,12 @@ tform = fitgeotrans(selected_centers(:,:,2),... % Moving points
                     'affine');
 
 figure; % Pre-transform comparison
-plot_boundaries_with_transform(ds1, 'b', 2, selected_cells(:,1), []);
-plot_boundaries_with_transform(ds2, 'r', 1, selected_cells(:,2), []);
+plot_boundaries_with_transform(ds1, 'b', 2, selected_cells(:,1));
+plot_boundaries_with_transform(ds2, 'r', 1, selected_cells(:,2));
 title('Pre-transform: Dataset1 (blue) vs. Dataset2 (red)');
 
 figure; % Post-transform comparison
-plot_boundaries_with_transform(ds1, 'b', 2, selected_cells(:,1), []);
+plot_boundaries_with_transform(ds1, 'b', 2, selected_cells(:,1));
 plot_boundaries_with_transform(ds2, 'r', 1, selected_cells(:,2), tform);
 title('Post-transform: Dataset1 (blue) vs. Dataset2 (red)');
 
