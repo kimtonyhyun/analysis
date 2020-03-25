@@ -1,4 +1,4 @@
-function [info, masks1, masks2] = compute_affine_transform(ds1, ds2)
+function [info, masks1, masks2] = compute_affine_transform(ds1, ds2, num_alignment_points)
 % IC map alignment based on user-defined control points.
 %
 % Inputs:
@@ -11,8 +11,6 @@ function [info, masks1, masks2] = compute_affine_transform(ds1, ds2)
 %           for source 2. (NOTE: the image dimensions of masks2 match the
 %           dimensions of source 1 masks!)
 %
-
-num_points_for_alignment = 4;
 
 % To programmatically address either of the two DaySummary's
 ds = cell(1,2);
@@ -35,14 +33,14 @@ title('Dataset 2');
 %------------------------------------------------------------
 sel_colors = 'ybmc';
 fprintf('compute_affine_transform: Please select %d cells from each dataset (in order)\n',...
-    num_points_for_alignment);
+    num_alignment_points);
 
-selected_cells = zeros(num_points_for_alignment,2); % List of selected ICs
-selected_centers = zeros(num_points_for_alignment, 2, 2); % XY position of each selected IC
+selected_cells = zeros(num_alignment_points,2); % List of selected ICs
+selected_centers = zeros(num_alignment_points, 2, 2); % XY position of each selected IC
 num_selected = [0 0]; % Number of ICs selected from each dataset
 
 % Loop until required number of ICs have been selected
-while (~all(num_selected == num_points_for_alignment))
+while (~all(num_selected == num_alignment_points))
     click_xy = round(ginput(1)); % Get user click
     if (gca == ax1) % Axis 1 was clicked
         source_idx = 1;
@@ -53,7 +51,7 @@ while (~all(num_selected == num_points_for_alignment))
     ic_idx = ds{source_idx}.get_cell_by_xy(click_xy, 'cells');
     if ~isempty(ic_idx) % Hit
         sel_idx = num_selected(source_idx) + 1;
-        if (sel_idx <= num_points_for_alignment)
+        if (sel_idx <= num_alignment_points)
             boundary = ds{source_idx}.cells(ic_idx).boundary;
             fill(boundary(:,1),...
                  boundary(:,2),...
@@ -104,7 +102,7 @@ for k = 1:ds2.num_cells
     masks2{k} = imwarp(masks2{k}, tform, 'OutputView', mask1_ref);
 end
 
-info.alignment.num_points = num_points_for_alignment;
+info.alignment.num_points = num_alignment_points;
 info.alignment.selected_cells = selected_cells;
 info.alignment.selected_centers = selected_centers;
 info.tform = tform;

@@ -32,6 +32,7 @@ function [match_1to2, match_2to1, info] = run_alignment(ds1, ds2, varargin)
 %------------------------------------------------------------
 wait_for_prompt = 1;
 use_transform = 1;
+num_alignment_points = 4;
 bijective_matching = 1;
 
 for k = 1:length(varargin)
@@ -48,6 +49,8 @@ for k = 1:length(varargin)
                 bijective_matching = 0;
             case 'noprompt' % For programmatic use
                 wait_for_prompt = 0;
+            case 'num_points'
+                num_alignment_points = varargin{k+1};
         end
     end
 end
@@ -67,7 +70,7 @@ end
 %------------------------------------------------------------
 if use_transform
     fprintf('run_alignment: Beginning alignment...\n');
-    [info, masks1, masks2] = compute_affine_transform(ds1, ds2);
+    [info, masks1, masks2] = compute_affine_transform(ds1, ds2, num_alignment_points);
 else
     masks1 = {ds1.cells.mask};
     masks2 = {ds2.cells.mask};
