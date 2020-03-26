@@ -1,21 +1,39 @@
 function res_list = resolve_recs(md, varargin)
+% Used to "resolve" duplicate cell filters for a given dataset. Used, for
+% example, during iterative cell sorting or generating "union" filters
+% (i.e. transferring unmatched filters across sessions).
+%
+% For matched cell index k, 'res_list' indicates:
+%   res_list(k,1): Selected rec index
+%   res_list(k,2): Cell index within that rec
 
+% Defaults
 normalize_traces = false;
+rec_names = cell(md.num_days, 1);
+for i = 1:md.num_days
+    rec_names{i} = sprintf('Rec %d', i);
+end
+
 for i = 1:length(varargin)
     vararg = varargin{i};
     if ischar(vararg)
         switch lower(vararg)
             case {'norm_traces', 'normalize_traces'}
                 normalize_traces = true;
+            case 'names'
+                rec_names = cellfun(...
+                    @(x) strrep(x, '_', '\_'),... % Escape underscores in names
+                    varargin{i+1},...
+                    'UniformOutput', false);
+                assert(length(rec_names) == md.num_days,...
+                    'Provided list of rec names does not match number of datasets in MultiDay');
         end
     end
 end
 
 h = figure;
+set(h, 'DefaultAxesTitleFontWeight', 'normal');
 
-% For matched cell index k, "resolution_list" indicates:
-%   res_list(k,1): Selected rec index
-%   res_list(k,2): Cell index within that rec
 res_list = zeros(md.num_cells, 2);
 
 % If filter only shows up on one rec, then assign it automatically
@@ -133,7 +151,8 @@ end
                 xlim(com(1)+zoom_half_width*[-1 1]);
                 ylim(com(2)+zoom_half_width*[-1 1]);
                 
-                title_str = sprintf('Iter %d -- Cell %d', day, cell_idx_k);
+                title_str = sprintf('\\fontsize{16}\\bf(%d)\n\\fontsize{12}\\rm%s, Cell %d',...
+                    day, rec_names{k}, cell_idx_k);
                 title(title_str);
             end
         end
