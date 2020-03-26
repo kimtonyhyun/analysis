@@ -13,6 +13,7 @@ rec_names = cell(md.num_days, 1);
 for i = 1:md.num_days
     rec_names{i} = sprintf('Rec %d', i);
 end
+rec_colors = flipud(winter(md.num_days));
 
 for i = 1:length(varargin)
     vararg = varargin{i};
@@ -144,7 +145,8 @@ end
                 colormap gray;
                 axis image;
                 hold on;
-                plot(boundary(:,1),boundary(:,2),'Color',get_color(k),...
+                plot(boundary(:,1), boundary(:,2),...
+                     'Color', rec_colors(k,:),...
                      'LineWidth', 2);
                 hold off;
                 zoom_half_width = min(size(ds_cell.im))/20;
@@ -172,7 +174,7 @@ end
                     trace_k_max = max(trace_k);
                     trace_k = (trace_k - trace_k_min)/(trace_k_max - trace_k_min);
                 end
-                plot(trace_k + trace_offset, 'Color', get_color(k));
+                plot(trace_k + trace_offset, 'Color', rec_colors(k,:));
                 trace_offset = trace_offset + max(trace_k);
                 hold on;
             end
@@ -180,14 +182,9 @@ end
         xlim([0 length(trace_k)]);
         ylim([0 trace_offset]);
         set(h_trace, 'YTick', []);
+        set(h_trace, 'TickLength', [0 0]);
         xlabel('Frame');
-        ylabel('Traces');
-
-        function color = get_color(day_idx)
-            colors = {'b', 'r', [0 0.5 0]};
-            color = colors{mod(day_idx-1, length(colors))+1};
-        end 
-        
+        ylabel('Traces');        
     end % draw_cell
 
 end % resolve_recs
