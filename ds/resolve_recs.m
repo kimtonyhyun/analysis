@@ -45,14 +45,22 @@ for i = 1:md.num_days
     colormap gray;
 end
 
-h_trace = subplot(3, md.num_days, (md.num_days+1):(3*md.num_days));
-set(zoom(h_trace), 'Motion', 'horizontal');
-set(h_trace, 'YTick', []);
-set(h_trace, 'TickLength', [0 0]);
+h_trace_sp = subplot(3, md.num_days, (md.num_days+1):(3*md.num_days));
+h_traces = cell(md.num_days, 1);
+hold on;
+num_frames = md.day(1).full_num_frames;
+dummy_trace_vals = -Inf*ones(1,num_frames);
+for i = 1:md.num_days
+    h_traces{i} = plot(1:num_frames, dummy_trace_vals,...
+        'Color', rec_colors(i,:));
+end
+set(zoom(h_trace_sp), 'Motion', 'horizontal');
+set(h_trace_sp, 'YTick', []);
+set(h_trace_sp, 'TickLength', [0 0]);
 xlabel('Frame');
 ylabel('Traces');
-xlim([1 md.day(1).full_num_frames]);
-hold on;
+xlim([1 num_frames]);
+hold off;
 
 [height, width] = size(md.day(1).cell_map_ref_img);
 zoom_half_width = min([height width])/20;
@@ -71,7 +79,7 @@ end
 
 cell_idx = 1;
 while (1)
-    draw_cell(cell_idx);
+    draw_match(cell_idx);
     
     % Ask user for command
     if (res_list(cell_idx) ~= 0)
@@ -148,22 +156,24 @@ end
         end
     end
 
-    function draw_cell(common_cell_idx)        
-        % Draw filters
-        %------------------------------------------------------------
+    function draw_match(common_cell_idx)        
+        
+        trace_offset = 0;
         for k = 1:md.num_days
             day = md.valid_days(k);
             cell_idx_k = md.get_cell_idx(common_cell_idx, day);
 
-            subplot(h_for_recs{k});
             if (cell_idx_k == 0) % No matching cell in this Rec
-                blank_subplot();
+                blank_subplot(h_for_recs{k});
+                set(h_traces{k}, 'YData', dummy_trace_vals);
             else
                 % Draw filters
+                %-------------------------------------------------------
                 ds_cell = md.day(day).cells(cell_idx_k);
                 com = ds_cell.com;
                 boundary = ds_cell.boundary;
 
+                subplot(h_for_recs{k});
                 imagesc(ds_cell.im);
                 hold on;
                 plot(boundary(:,1), boundary(:,2),...
@@ -177,35 +187,25 @@ end
                 title_str = sprintf('\\bf(%d)\n\\rm%s, cell %d',...
                     day, rec_names{k}, cell_idx_k);
                 title(title_str);
-            end
-        end
-        
-        % Draw traces
-        %------------------------------------------------------------
-        subplot(h_trace);
-        cla;
-        
-        trace_offset = 0;
-        for k = fliplr(1:md.num_days)
-            day = md.valid_days(k);
-            cell_idx_k = md.get_cell_idx(common_cell_idx, day);
-            
-            if (cell_idx_k ~= 0)
+                
+                % Draw traces
+                %-------------------------------------------------------
                 trace_k = md.day(day).get_trace(cell_idx_k);
                 if normalize_traces
                     trace_k_min = min(trace_k);
                     trace_k_max = max(trace_k);
                     trace_k = (trace_k - trace_k_min)/(trace_k_max - trace_k_min);
                 end
-                plot(trace_k + trace_offset, 'Color', rec_colors(k,:));
+                set(h_traces{k}, 'YData', trace_k  + trace_offset);
                 trace_offset = trace_offset + max(trace_k);
             end
         end
-        ylim([0 trace_offset]);
+        ylim(h_trace_sp, [0 trace_offset]);
         
     end % draw_cell
 
-    function blank_subplot()
+    function blank_subplot(h_sp)
+        subplot(h_sp);
         plot([1 width], [height 1], 'k');
         hold on;
         plot([1 width], [1 height], 'k');
@@ -213,8 +213,8 @@ end
         title('');
         xlim([1 width]);
         ylim([1 height]);
-        set(gca, 'XTick', []);
-        set(gca, 'YTick', []);
+        set(h_sp, 'XTick', []);
+        set(h_sp, 'YTick', []);
         axis image;
     end % blank_subplot
 
