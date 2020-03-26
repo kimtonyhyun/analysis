@@ -1,4 +1,15 @@
-function res_list = resolve_recs(md)
+function res_list = resolve_recs(md, varargin)
+
+normalize_traces = false;
+for i = 1:length(varargin)
+    vararg = varargin{i};
+    if ischar(vararg)
+        switch lower(vararg)
+            case {'norm_traces', 'normalize_traces'}
+                normalize_traces = true;
+        end
+    end
+end
 
 h = figure;
 
@@ -137,6 +148,11 @@ end
             
             if (cell_idx_k ~= 0)
                 trace_k = md.day(day).get_trace(cell_idx_k);
+                if normalize_traces
+                    trace_k_min = min(trace_k);
+                    trace_k_max = max(trace_k);
+                    trace_k = (trace_k - trace_k_min)/(trace_k_max - trace_k_min);
+                end
                 plot(trace_k + trace_offset, 'Color', get_color(k));
                 trace_offset = trace_offset + max(trace_k);
                 hold on;
