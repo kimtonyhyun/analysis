@@ -20,11 +20,16 @@ classdef MultiDay < handle
             % By default, MultiDay keeps only the cells that show up on
             % ALL days (DaySummary)
             keepall = false;
+            check_for_consistency = true;
             for k = 1:length(varargin)
                 if ischar(varargin{k})
                     switch varargin{k}
-                        case 'keepall' % Keep cells if it shows up on at least one DaySummary
+                        % "Keep-all" option:
+                        % Keeps cells if it shows up on at least one
+                        % DaySummary. USE WITH CAUTION!
+                        case 'keepall'
                             keepall = true;
+                            check_for_consistency = false;
                     end
                 end
             end
@@ -77,7 +82,9 @@ classdef MultiDay < handle
             
             % Compute matches
             M = obj.compute_all_matches();
-            M = obj.verify_match_consistency(M);
+            if check_for_consistency
+                M = obj.verify_match_list_consistency(M);
+            end
             
             % Filter out rows of M with unmatched indices (i.e. zeros) and
             % store result
@@ -401,7 +408,7 @@ classdef MultiDay < handle
             Mf = M(~unmatched,:);
         end % filter_matches
         
-        function Mf = verify_match_consistency(obj, M)
+        function Mf = verify_match_list_consistency(obj, M)
             % For each cross-day match set, make sure that for every pair
             % is consistent with the provided match_list
             num_matches = size(M,1);
@@ -434,7 +441,7 @@ classdef MultiDay < handle
             
             num_invalid_matches = sum(~is_valid);
             Mf = M(is_valid, :);
-            fprintf('  Removed %d matches inconsistent with provided match_list\n', num_invalid_matches);
+            cprintf('red', '  Removed %d matches inconsistent with provided match_list\n', num_invalid_matches);
             
         end % verify_match_consistency
 
