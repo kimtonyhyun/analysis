@@ -10,6 +10,7 @@ function res_list = resolve_recs(md, varargin)
 res_list = zeros(md.num_cells, 2);
 
 % Defaults
+M = [];
 normalize_traces = false;
 rec_names = cell(md.num_days, 1);
 for i = 1:md.num_days
@@ -21,6 +22,8 @@ for i = 1:length(varargin)
     vararg = varargin{i};
     if ischar(vararg)
         switch lower(vararg)
+            case {'m', 'movie'}
+                M = varargin{i+1};
             case {'norm_traces', 'normalize_traces'}
                 normalize_traces = true;
             case 'names'
@@ -38,10 +41,13 @@ end
 %------------------------------------------------------------
 h_fig = figure;
 set(h_fig, 'DefaultAxesTitleFontWeight', 'normal');
+set(h_fig, 'WindowButtonUpFcn', @end_drag);
+set(h_fig, 'WindowScrollWheelFcn', @scroll_frame);
 
-h_for_recs = cell(md.num_days, 1);
+h_recs = cell(md.num_days, 1);
+h_rec_ims = cell(md.num_days, 1);
 for i = 1:md.num_days
-    h_for_recs{i} = subplot(3, md.num_days, i);
+    h_recs{i} = subplot(3, md.num_days, i);
     colormap gray;
 end
 
@@ -52,7 +58,8 @@ num_frames = md.day(1).full_num_frames;
 dummy_trace_vals = -Inf*ones(1,num_frames);
 for i = 1:md.num_days
     h_traces{i} = plot(1:num_frames, dummy_trace_vals,...
-        'Color', rec_colors(i,:));
+        'Color', rec_colors(i,:),...
+        'HitTest', 'off');
 end
 set(zoom(h_trace_sp), 'Motion', 'horizontal');
 set(h_trace_sp, 'YTick', []);
@@ -60,7 +67,9 @@ set(h_trace_sp, 'TickLength', [0 0]);
 xlabel('Frame');
 ylabel('Traces');
 xlim([1 num_frames]);
+h_time = plot(-1*[1 1], [0 Inf], 'k', 'ButtonDownFcn', @start_drag); % Time indicator
 hold off;
+set(h_trace_sp, 'ButtonDownFcn', @click_handler);
 
 [height, width] = size(md.day(1).cell_map_ref_img);
 zoom_half_width = min([height width])/20;
@@ -150,13 +159,15 @@ end
         to_be_assigned = (res_list(:,1) == 0);
         next_idx = find_next_cell_to_process(cell_idx, to_be_assigned);
         if isempty(next_idx)
-            fprintf('  All cells have been assigned!\n');
+            cprintf([0 0.5 0], '  All cells have been assigned!\n');
         else
             cell_idx = next_idx;
         end
     end
 
     function draw_match(common_cell_idx)        
+        title(h_trace_sp, '');
+        set(h_time, 'XData', [0 0]); % Hide the cursor
         
         trace_offset = 0;
         for k = 1:md.num_days
@@ -164,7 +175,8 @@ end
             cell_idx_k = md.get_cell_idx(common_cell_idx, day);
 
             if (cell_idx_k == 0) % No matching cell in this Rec
-                blank_subplot(h_for_recs{k});
+                blank_subplot(h_recs{k});
+                h_rec_ims{k} = [];
                 set(h_traces{k}, 'YData', dummy_trace_vals);
             else
                 % Draw filters
@@ -173,8 +185,8 @@ end
                 com = ds_cell.com;
                 boundary = ds_cell.boundary;
 
-                subplot(h_for_recs{k});
-                imagesc(ds_cell.im);
+                subplot(h_recs{k});
+                h_rec_ims{k} = imagesc(ds_cell.im);
                 hold on;
                 plot(boundary(:,1), boundary(:,2),...
                      'Color', rec_colors(k,:),...
@@ -201,6 +213,7 @@ end
             end
         end
         ylim(h_trace_sp, [0 trace_offset]);
+        set(h_time, 'YData', [0 trace_offset]);
         
     end % draw_cell
 
@@ -217,5 +230,52 @@ end
         set(h_sp, 'YTick', []);
         axis image;
     end % blank_subplot
+
+    % Functions required for interactive display
+    %-------------------------------------------------------
+    function click_handler(~, e)
+        k = round(e.IntersectionPoint(1));
+        render_frame(k);
+    end
+
+    function start_drag(~, ~)
+        set(h_fig, 'WindowButtonMotionFcn', @drag_frame);
+    end
+
+    function end_drag(~, ~)
+        set(h_fig, 'WindowButtonMotionFcn', '');
+    end
+
+    function drag_frame(~, ~)
+        cp = get(h_trace_sp, 'CurrentPoint');
+        k = round(cp(1));
+        render_frame(k);
+    end
+
+    function scroll_frame(~, e)
+        k = get(h_time, 'XData'); k = k(1);
+        if (e.VerticalScrollCount < 0) % Scroll up
+            k = k - 1;
+        else
+            k = k + 1;
+        end
+        render_frame(k);
+    end
+
+    function render_frame(k)
+        k = max(1,k); k = min(k, num_frames); % Clamp
+        set(h_time, 'XData', k*[1 1]);
+        title(h_trace_sp, sprintf('Frame %d', k));
+        
+        if ~isempty(M)
+            A = M(:,:,k);
+            
+            for k = 1:md.num_days
+                if ~isempty(h_rec_ims{k})
+                    set(h_rec_ims{k}, 'CData', A);
+                end
+            end
+        end
+    end % render_frame)
 
 end % resolve_recs
