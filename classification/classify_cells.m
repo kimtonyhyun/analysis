@@ -251,7 +251,7 @@ end
         next_idx = find_next_cell_to_process(cell_idx, unlabeled);
         
         if isempty(next_idx)
-            fprintf('  All cells have been classified!\n');
+            cprintf([0 0.5 0], '  All cells have been classified!\n');
         else
             prev_cell_idx = cell_idx;
             cell_idx = next_idx;
