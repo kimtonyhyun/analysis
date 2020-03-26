@@ -151,7 +151,7 @@ end
                 xlim(com(1)+zoom_half_width*[-1 1]);
                 ylim(com(2)+zoom_half_width*[-1 1]);
                 
-                title_str = sprintf('\\fontsize{16}\\bf(%d)\n\\fontsize{12}\\rm%s, Cell %d',...
+                title_str = sprintf('\\bf(%d)\n\\rm%s, cell %d',...
                     day, rec_names{k}, cell_idx_k);
                 title(title_str);
             end
@@ -179,10 +179,9 @@ end
         end
         xlim([0 length(trace_k)]);
         ylim([0 trace_offset]);
-        grid on;
+        set(h_trace, 'YTick', []);
         xlabel('Frame');
         ylabel('Traces');
-        set(gca, 'YTickLabel', []);
 
         function color = get_color(day_idx)
             colors = {'b', 'r', [0 0.5 0]};
