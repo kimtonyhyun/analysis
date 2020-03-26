@@ -170,7 +170,7 @@ end
         set(h_time, 'XData', [0 0]); % Hide the cursor
         
         trace_offset = 0;
-        for k = 1:md.num_days
+        for k = fliplr(1:md.num_days) % For stacking of traces
             day = md.valid_days(k);
             cell_idx_k = md.get_cell_idx(common_cell_idx, day);
 
