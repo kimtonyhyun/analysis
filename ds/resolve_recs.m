@@ -7,6 +7,8 @@ function res_list = resolve_recs(md, varargin)
 %   res_list(k,1): Selected rec index
 %   res_list(k,2): Cell index within that rec
 
+res_list = zeros(md.num_cells, 2);
+
 % Defaults
 normalize_traces = false;
 rec_names = cell(md.num_days, 1);
@@ -32,12 +34,32 @@ for i = 1:length(varargin)
     end
 end
 
-h = figure;
-set(h, 'DefaultAxesTitleFontWeight', 'normal');
+% Set up GUI
+%------------------------------------------------------------
+h_fig = figure;
+set(h_fig, 'DefaultAxesTitleFontWeight', 'normal');
 
-res_list = zeros(md.num_cells, 2);
+h_for_recs = cell(md.num_days, 1);
+for i = 1:md.num_days
+    h_for_recs{i} = subplot(3, md.num_days, i);
+    colormap gray;
+end
 
-% If filter only shows up on one rec, then assign it automatically
+h_trace = subplot(3, md.num_days, (md.num_days+1):(3*md.num_days));
+set(zoom(h_trace), 'Motion', 'horizontal');
+set(h_trace, 'YTick', []);
+set(h_trace, 'TickLength', [0 0]);
+xlabel('Frame');
+ylabel('Traces');
+xlim([1 md.day(1).full_num_frames]);
+hold on;
+
+[height, width] = size(md.day(1).cell_map_ref_img);
+zoom_half_width = min([height width])/20;
+
+% For convenience, if a filter only shows up on one rec,
+% then assign it automatically
+%------------------------------------------------------------
 for j = 1:md.num_cells
     inds = md.matched_indices(j,:);
     num_recs = sum(inds>0);
@@ -107,7 +129,7 @@ while (1)
                 end
                 
             case 'q' % Exit
-                close(h);
+                close(h_fig);
                 break;
                 
             otherwise
@@ -126,30 +148,29 @@ end
         end
     end
 
-    function draw_cell(common_cell_idx)
-        clf;
-        
+    function draw_cell(common_cell_idx)        
         % Draw filters
+        %------------------------------------------------------------
         for k = 1:md.num_days
             day = md.valid_days(k);
             cell_idx_k = md.get_cell_idx(common_cell_idx, day);
-            
-            if (cell_idx_k ~= 0)
+
+            subplot(h_for_recs{k});
+            if (cell_idx_k == 0) % No matching cell in this Rec
+                blank_subplot();
+            else
                 % Draw filters
                 ds_cell = md.day(day).cells(cell_idx_k);
-                subplot(3, md.num_days, k);
                 com = ds_cell.com;
                 boundary = ds_cell.boundary;
-                
+
                 imagesc(ds_cell.im);
-                colormap gray;
-                axis image;
                 hold on;
                 plot(boundary(:,1), boundary(:,2),...
                      'Color', rec_colors(k,:),...
                      'LineWidth', 2);
                 hold off;
-                zoom_half_width = min(size(ds_cell.im))/20;
+                axis image;
                 xlim(com(1)+zoom_half_width*[-1 1]);
                 ylim(com(2)+zoom_half_width*[-1 1]);
                 
@@ -159,9 +180,11 @@ end
             end
         end
         
-        % Draw traces       
-        h_trace = subplot(3, md.num_days, (md.num_days+1):(3*md.num_days));
-        set(zoom(h_trace), 'Motion', 'horizontal');
+        % Draw traces
+        %------------------------------------------------------------
+        subplot(h_trace);
+        cla;
+        
         trace_offset = 0;
         for k = fliplr(1:md.num_days)
             day = md.valid_days(k);
@@ -176,15 +199,23 @@ end
                 end
                 plot(trace_k + trace_offset, 'Color', rec_colors(k,:));
                 trace_offset = trace_offset + max(trace_k);
-                hold on;
             end
         end
-        xlim([0 length(trace_k)]);
         ylim([0 trace_offset]);
-        set(h_trace, 'YTick', []);
-        set(h_trace, 'TickLength', [0 0]);
-        xlabel('Frame');
-        ylabel('Traces');        
+        
     end % draw_cell
+
+    function blank_subplot()
+        plot([1 width], [height 1], 'k');
+        hold on;
+        plot([1 width], [1 height], 'k');
+        hold off;
+        title('');
+        xlim([1 width]);
+        ylim([1 height]);
+        set(gca, 'XTick', []);
+        set(gca, 'YTick', []);
+        axis image;
+    end % blank_subplot
 
 end % resolve_recs

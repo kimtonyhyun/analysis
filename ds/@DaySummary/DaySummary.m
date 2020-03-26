@@ -32,13 +32,13 @@ classdef DaySummary < handle
         
         trial_indices
         full_num_frames
+        cell_map_ref_img
     end
     
     properties (SetAccess = private, Hidden=true)
         trace_corrs
         trace_range
         cell_distances
-        cell_map_ref_img
         behavior_vid
         behavior_ref_img
         is_tracking_loaded

@@ -96,7 +96,7 @@ if bijective_matching
 end
 
 info.num_matches = sum(~cellfun(@isempty, match_1to2));
-fprintf('run_alignment: Found %d matches!\n', info.num_matches);
+fprintf('run_alignment: Found %d matches\n', info.num_matches);
 
 % "Transfer" unmatched filters across datasets. TODOs:
 % - Clean up code
