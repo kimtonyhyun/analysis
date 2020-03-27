@@ -231,6 +231,7 @@ end
                 trace_offset = trace_offset + max(trace_k);
             end
         end
+        xlim(h_trace_sp, [1 num_frames]);
         ylim(h_trace_sp, [0 trace_offset]);
         set(h_time, 'YData', [0 trace_offset]);
         
