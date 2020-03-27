@@ -1,7 +1,9 @@
-function res_list = resolve_recs(md, varargin)
+function res_list = resolve_merged_recs(md, varargin)
 % Used to "resolve" duplicate cell filters for a given dataset. Used, for
 % example, during iterative cell sorting or generating "union" filters
 % (i.e. transferring unmatched filters across sessions).
+%
+% Input 'md' is a MultiDay instance created by 'create_merge_md'.
 %
 % For matched cell index k, 'res_list' indicates:
 %   res_list(k,1): Selected rec index
@@ -71,8 +73,10 @@ h_time = plot(-1*[1 1], [0 Inf], 'k', 'ButtonDownFcn', @start_drag); % Time indi
 hold off;
 set(h_trace_sp, 'ButtonDownFcn', @click_handler);
 
+% Auxiliary display parameters
 [height, width] = size(md.day(1).cell_map_ref_img);
 zoom_half_width = min([height width])/20;
+trace_zoom_half_width = num_frames/20;
 
 % For convenience, if a filter only shows up on one rec,
 % then assign it automatically
@@ -86,13 +90,21 @@ for j = 1:md.num_cells
     end
 end
 
+
 cell_idx = 1;
+last_drawn_idx = 0;
+
 while (1)
-    draw_match(cell_idx);
+    if (last_drawn_idx ~= cell_idx)
+        draw_match(cell_idx);
+        state.zoomed = false;
+        last_drawn_idx = cell_idx;
+    end
     
     % Ask user for command
+    %------------------------------------------------------------
     if (res_list(cell_idx) ~= 0)
-        assign_str = sprintf('Rec %d', res_list(cell_idx,1));
+        assign_str = rec_names{res_list(cell_idx,1)};
     else
         assign_str = 'unassigned';
     end
@@ -122,9 +134,6 @@ while (1)
         end
         
         switch resp(1)
-            case 'f'
-                cell_idx = 1;
-
             case 'c' % Jump to a cell
                 val = str2double(resp(2:end));
                 if ~isnan(val)
@@ -144,6 +153,16 @@ while (1)
                 else
                     fprintf('  Already at first md cell!\n');
                 end
+                
+            case 'z'
+                if state.zoomed
+                    xlim(h_trace_sp, [1 num_frames]);
+                else
+                    % Get the current frame from the time indicator
+                    cf = get(h_time, 'XData'); cf = cf(1);
+                    xlim(h_trace_sp, cf + trace_zoom_half_width * [-1 +1]);
+                end
+                state.zoomed = ~state.zoomed;
                 
             case 'q' % Exit
                 close(h_fig);
