@@ -1,4 +1,4 @@
-function zscore_movie(movie_in, movie_out, varargin)
+function [A, S] = zscore_movie(movie_in, movie_out, varargin)
 % Compute pixel-wise z-scored movie from HDF5 file ('movie_in') to 
 % file ('movie_out').
 %
