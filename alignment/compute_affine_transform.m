@@ -31,7 +31,7 @@ title('Dataset 2');
 
 % Allow the user to select the ICs used in matching
 %------------------------------------------------------------
-sel_colors = 'ybmc';
+sel_colors = jet(num_alignment_points);
 fprintf('compute_affine_transform: Please select %d cells from each dataset (in order)\n',...
     num_alignment_points);
 
@@ -53,9 +53,7 @@ while (~all(num_selected == num_alignment_points))
         sel_idx = num_selected(source_idx) + 1;
         if (sel_idx <= num_alignment_points)
             boundary = ds{source_idx}.cells(ic_idx).boundary;
-            fill(boundary(:,1),...
-                 boundary(:,2),...
-                 sel_colors(mod(sel_idx,length(sel_colors))+1));
+            fill(boundary(:,1), boundary(:,2), sel_colors(sel_idx,:));
 
             selected_center = mean(boundary,1);
             fprintf('  Dataset%d: Cell %d selected (at [%.1f %.1f])!\n',...
