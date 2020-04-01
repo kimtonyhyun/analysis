@@ -93,9 +93,14 @@ classdef DaySummary < handle
             
             % Check that the length of traces is consistent with the table
             % of trial indices.
+            % FIXME: It doesn't _always_ makes sense to call the end of the
+            % trial table the "full_num_frames"
             obj.full_num_frames = trial_indices(end,end);
-            assert(trace_num_frames == obj.full_num_frames,...
-                'Error: Length of traces does not match trial index table!');
+            if (trace_num_frames ~= obj.full_num_frames)
+                cprintf('blue',...
+                    '  Warning: Length of traces (%d) does not match end of trial index table (%d)!\n',...
+                    trace_num_frames, trial_indices(end,end));
+            end
             
             % Optional exclusion of probe trials. Effectively, we are
             % "deleting" the lines of the plus maze text file that
