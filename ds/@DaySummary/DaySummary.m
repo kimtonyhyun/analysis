@@ -370,7 +370,6 @@ classdef DaySummary < handle
         
         function [trace, frame_indices, selected_trials] = get_trace(obj, cell_idx, varargin)
             % For a cell, return traces over selected sets of trials.
-            use_orig_frames = false;
             normalize_trace = false;
             selected_trials = 1:obj.num_trials;
             fill_type = 'traces';
@@ -381,11 +380,6 @@ classdef DaySummary < handle
                     selected_trials = vararg;
                 elseif ischar(vararg)
                     switch lower(vararg)
-                        % One day, we will refactor 'DaySummary' so that
-                        % the custom logic for the prefrontal experiment
-                        % can be removed...
-                        case 'use_orig_frames'
-                            use_orig_frames = true;
                         % TODO: Explore complications (if any) between
                         % normalization and trace fill type
                         case 'norm'
@@ -429,15 +423,9 @@ classdef DaySummary < handle
                             error('Fill type "%s" not recognized', fill_type);
                     end
                 end
-                if ~use_orig_frames
-                    trace = [trace trf]; %#ok<*AGROW>
-                    frame_indices = [frame_indices obj.trial_indices(k,1):obj.trial_indices(k,end)];
-                else
-                    % NaN is used to break contiguous lines when plotting.
-                    % TODO: This should likely be an option
-                    trace = [trace NaN trf];
-                    frame_indices = [frame_indices NaN obj.orig_trial_indices(k,1):obj.orig_trial_indices(k,end)];
-                end
+                
+                trace = [trace trf]; %#ok<*AGROW>
+                frame_indices = [frame_indices obj.trial_indices(k,1):obj.trial_indices(k,end)];
             end
             
             if normalize_trace
