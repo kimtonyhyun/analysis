@@ -21,20 +21,20 @@ num_colors = length(colors);
 ind = 1;
 for k = 1:ds.num_cells
     if show_all_cells || ds.is_cell(k)
-        tr = ds.get_trace(k);
+        [tr, frame_inds] = ds.get_trace(k, 'use_orig_frames');
         tr_min = min(tr);
         tr_max = max(tr);
         tr = amp*(tr-tr_min)/(tr_max-tr_min);
         
         color = colors(mod(ind,num_colors)+1);
-        plot(tr+ind, color);
+        plot(frame_inds, tr+ind, color);
         hold on;
         
         ind = ind + 1;
     end
 end
 
-num_frames = length(tr);
+num_frames = max(frame_inds);
 xlim([1 num_frames]);
 xlabel(sprintf('Frames (%d total)', num_frames));
 ylim([0.5 (ind-1)+amp+0.5]);
