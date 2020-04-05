@@ -6,7 +6,8 @@ function res_list = resolve_merged_recs(md, varargin)
 % Input 'md' is a MultiDay instance created by 'create_merge_md'.
 %
 % For matched cell index k, 'res_list' indicates:
-%   res_list(k,1): Selected rec index
+%   res_list(k,1): Selected rec index.
+%                  Special flags: 0 (unassigned), -1 (omit)
 %   res_list(k,2): Cell index within that rec
 
 res_list = zeros(md.num_cells, 2);
@@ -105,10 +106,13 @@ while (1)
     
     % Ask user for command
     %------------------------------------------------------------
-    if (res_list(cell_idx) ~= 0)
-        assign_str = rec_names{res_list(cell_idx,1)};
-    else
-        assign_str = 'unassigned';
+    switch res_list(cell_idx,1)
+        case 0
+            assign_str = 'unassigned';
+        case -1
+            assign_str = 'omit';
+        otherwise
+            assign_str = rec_names{res_list(cell_idx,1)};
     end
     prompt = sprintf('Resolve recs (ID %d of %d: %s) >> ',...
         cell_idx, md.num_cells, assign_str);
@@ -131,73 +135,74 @@ while (1)
         end
     else
         resp = lower(resp);
-        if isempty(resp) % Empty string gets mapped to "n"
-            resp = 'n';
-        end
-        
-        switch resp(1)
-            case 'c' % Jump to a cell
-                val = str2double(resp(2:end));
-                if ~isnan(val)
-                    if ((1 <= val) && (val <= md.num_cells))
-                        cell_idx = val;
+        if isempty(resp)
+            go_to_next_cell();
+        else
+            switch resp(1)
+                case 'c' % Jump to a cell
+                    val = str2double(resp(2:end));
+                    if ~isnan(val)
+                        if ((1 <= val) && (val <= md.num_cells))
+                            cell_idx = val;
+                        else
+                            fprintf('  Sorry, %d is not a valid cell on Day %d\n', val, md.sort_day);
+                        end
+                    end
+
+                case 'f' % "filter"
+                    % Force redraw of the GUI, which re-displays the filter
+                    last_drawn_idx = 0;
+
+                case {'h', 'l'} % "higher/lower contrast"
+                    c_range = diff(state.clim);
+                    if (strcmp(resp, 'h'))
+                        new_clim = state.clim + c_range*[0.1 -0.1];
+                        fprintf('  Increased contrast (new CLim=[%.3f %.3f])\n',...
+                            new_clim(1), new_clim(2));
                     else
-                        fprintf('  Sorry, %d is not a valid cell on Day %d\n', val, md.sort_day);
+                        new_clim = state.clim + c_range*[-0.1 0.1];
+                        fprintf('  Decreased contrast (new CLim=[%.3f %.3f])\n',...
+                            new_clim(1), new_clim(2));
                     end
-                end
 
-            case 'f' % "filter"
-                % Force redraw of the GUI, which re-displays the filter
-                last_drawn_idx = 0;
-
-            case {'h', 'l'} % "higher/lower contrast"
-                c_range = diff(state.clim);
-                if (strcmp(resp, 'h'))
-                    new_clim = state.clim + c_range*[0.1 -0.1];
-                    fprintf('  Increased contrast (new CLim=[%.3f %.3f])\n',...
-                        new_clim(1), new_clim(2));
-                else
-                    new_clim = state.clim + c_range*[-0.1 0.1];
-                    fprintf('  Decreased contrast (new CLim=[%.3f %.3f])\n',...
-                        new_clim(1), new_clim(2));
-                end
-                
-                for i = 1:md.num_days
-                    h_sp = h_recs{i};
-                    if ~isempty(h_sp)
-                        set(h_sp, 'CLim', new_clim);
+                    for i = 1:md.num_days
+                        h_sp = h_recs{i};
+                        if ~isempty(h_sp)
+                            set(h_sp, 'CLim', new_clim);
+                        end
                     end
-                end
-                state.clim = new_clim;
-                
-            case 'n'
-                go_to_next_cell();
-                
-            case 'p' % Previous cell
-                if (cell_idx > 1)
-                    cell_idx = cell_idx - 1;
-                else
-                    fprintf('  Already at first md cell!\n');
-                end
-                
-            case 'z'
-                if state.zoomed
-                    xlim(h_trace_sp, [1 num_frames]);
-                else
-                    % Get the current frame from the time indicator
-                    cf = get(h_time, 'XData'); cf = cf(1);
-                    xlim(h_trace_sp, cf + trace_zoom_half_width * [-1 +1]);
-                end
-                state.zoomed = ~state.zoomed;
-                
-            case 'q' % Exit
-                close(h_fig);
-                break;
-                
-            otherwise
-                fprintf('  Could not parse "%s"\n', resp);
+                    state.clim = new_clim;
+
+                case {'n', 'x'} % Mark cell to be omitted
+                    res_list(cell_idx,1) = -1;
+                    go_to_next_cell();
+
+                case 'p' % Previous cell
+                    if (cell_idx > 1)
+                        cell_idx = cell_idx - 1;
+                    else
+                        fprintf('  Already at first md cell!\n');
+                    end
+
+                case 'z'
+                    if state.zoomed
+                        xlim(h_trace_sp, [1 num_frames]);
+                    else
+                        % Get the current frame from the time indicator
+                        cf = get(h_time, 'XData'); cf = cf(1);
+                        xlim(h_trace_sp, cf + trace_zoom_half_width * [-1 +1]);
+                    end
+                    state.zoomed = ~state.zoomed;
+
+                case 'q' % Exit
+                    close(h_fig);
+                    break;
+
+                otherwise
+                    fprintf('  Could not parse "%s"\n', resp);
+            end
         end
-    end    
+    end 
 end
 
     function go_to_next_cell()
