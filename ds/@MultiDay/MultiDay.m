@@ -226,7 +226,18 @@ classdef MultiDay < handle
         %------------------------------------------------------------
         function sort_inds = sort_matches_by_day(obj, day_idx)
             sort_col = obj.full_to_sparse(day_idx);
-            [obj.matched_indices, sort_inds] = sortrows(obj.matched_indices, sort_col);
+            [mi, sort_inds] = sortrows(obj.matched_indices, sort_col);
+            
+            % Special handling of "0", which is a flag for a lack of match.
+            % For certain applications, it is useful to stack these at the
+            % end of the list.
+            unmatched_rows = (mi(:,sort_col) == 0);
+            matched_rows = ~unmatched_rows;
+            
+            obj.matched_indices = [mi(matched_rows,:);
+                                   mi(unmatched_rows,:)];
+            sort_inds = [sort_inds(matched_rows);
+                         sort_inds(unmatched_rows)];
             obj.sort_day = day_idx;
         end
         
