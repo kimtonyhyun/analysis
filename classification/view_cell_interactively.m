@@ -288,7 +288,11 @@ end
         t_g = plot(time(1)*[1 1], y_range, 'k', 'ButtonDownFcn', @start_drag); % Time indicator
         xlabel('Time [s]');
         ylabel('Signal [a.u.]');
-        title(sprintf('Source %d of %d', cell_idx, ds.num_cells));
+        if state.baseline_removed            
+            title(sprintf('Source %d of %d (baseline removed)', cell_idx, ds.num_cells));
+        else
+            title(sprintf('Source %d of %d', cell_idx, ds.num_cells));
+        end
         hold off;
         
         % Prepare running trace

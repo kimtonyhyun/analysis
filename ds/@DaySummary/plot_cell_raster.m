@@ -50,13 +50,14 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
     alignment_frames = obj.trial_indices(trial_inds, align_idx);
     [raster, info] = obj.get_aligned_trace(cell_idx, trial_inds, alignment_frames);
     
+    % TODO: 'align_str' should be more flexibly assigned
     switch align_idx
         case 1
             align_str = 'Frames relative to trial start';
         case 2
-            align_str = 'Frames relative to gate open';
+            align_str = 'Frames relative to CS';
         case 3
-            align_str = 'Frames relative to gate close';
+            align_str = 'Frames relative to US';
         case 4
             align_str = 'Frames relative to trial end';
     end
