@@ -13,6 +13,7 @@ res_list = zeros(md.num_cells, 2);
 
 % Defaults
 M = [];
+state.clim = [0 1];
 normalize_traces = false;
 rec_names = cell(md.num_days, 1);
 for i = 1:md.num_days
@@ -26,6 +27,7 @@ for i = 1:length(varargin)
         switch lower(vararg)
             case {'m', 'movie'}
                 M = varargin{i+1};
+                state.clim = compute_movie_scale(M);
             case {'norm_traces', 'normalize_traces'}
                 normalize_traces = true;
             case 'names'
@@ -143,6 +145,30 @@ while (1)
                         fprintf('  Sorry, %d is not a valid cell on Day %d\n', val, md.sort_day);
                     end
                 end
+
+            case 'f' % "filter"
+                % Force redraw of the GUI, which re-displays the filter
+                last_drawn_idx = 0;
+
+            case {'h', 'l'} % "higher/lower contrast"
+                c_range = diff(state.clim);
+                if (strcmp(resp, 'h'))
+                    new_clim = state.clim + c_range*[0.1 -0.1];
+                    fprintf('  Increased contrast (new CLim=[%.3f %.3f])\n',...
+                        new_clim(1), new_clim(2));
+                else
+                    new_clim = state.clim + c_range*[-0.1 0.1];
+                    fprintf('  Decreased contrast (new CLim=[%.3f %.3f])\n',...
+                        new_clim(1), new_clim(2));
+                end
+                
+                for i = 1:md.num_days
+                    h_sp = h_recs{i};
+                    if ~isempty(h_sp)
+                        set(h_sp, 'CLim', new_clim);
+                    end
+                end
+                state.clim = new_clim;
                 
             case 'n'
                 go_to_next_cell();
@@ -205,7 +231,7 @@ end
                 boundary = ds_cell.boundary;
 
                 subplot(h_recs{k});
-                h_rec_ims{k} = imagesc(ds_cell.im);
+                h_rec_ims{k} = imagesc(rescale_filter_to_clim(ds_cell.im, state.clim), state.clim);
                 hold on;
                 plot(boundary(:,1), boundary(:,2),...
                      'Color', rec_colors(k,:),...
