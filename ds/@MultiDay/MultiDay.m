@@ -17,6 +17,20 @@ classdef MultiDay < handle
     
     methods
         function obj = MultiDay(ds_list, match_list, varargin)
+            % FIXME: This is a hack to automatically convert the DS
+            % identifiers in 'ds_list' and 'match_list' into numeric
+            for k = 1:size(ds_list,1)
+                if ischar(ds_list{k,1})
+                    ds_list{k,1} = str2double(ds_list{k,1});
+                end
+            end
+            for k = 1:size(match_list,1)
+                if ischar(match_list{k,1})
+                    match_list{k,1} = str2double(match_list{k,1});
+                    match_list{k,2} = str2double(match_list{k,2});
+                end
+            end
+            
             % By default, MultiDay keeps only the cells that show up on
             % ALL days (DaySummary)
             keepall = false;
