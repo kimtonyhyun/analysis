@@ -1,4 +1,4 @@
-function res_list = resolve_merged_recs(md, varargin)
+function res_list = resolve_merged_recs(md, M, varargin)
 % Used to "resolve" duplicate cell filters for a given dataset. Used, for
 % example, during iterative cell sorting or generating "union" filters
 % (i.e. transferring unmatched filters across sessions).
@@ -13,8 +13,11 @@ function res_list = resolve_merged_recs(md, varargin)
 res_list = zeros(md.num_cells, 2);
 
 % Defaults
-M = [];
-state.clim = [0 1];
+if isempty(M)
+    state.clim = [0 1];
+else
+    state.clim = compute_movie_scale(M);
+end
 normalize_traces = false;
 rec_names = cell(md.num_days, 1);
 for i = 1:md.num_days
@@ -26,9 +29,6 @@ for i = 1:length(varargin)
     vararg = varargin{i};
     if ischar(vararg)
         switch lower(vararg)
-            case {'m', 'movie'}
-                M = varargin{i+1};
-                state.clim = compute_movie_scale(M);
             case {'norm_traces', 'normalize_traces'}
                 normalize_traces = true;
             case 'names'

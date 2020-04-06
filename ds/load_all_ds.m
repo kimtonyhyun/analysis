@@ -8,6 +8,14 @@ function [ds_list, num_ds] = load_all_ds(dataset_stem, subpath_to_rec, get_id_fn
 %   - 'get_id_fn': Function (string --> string) to extract the "id" of
 %                each DaySummary
 
+switch nargin
+    case 1
+        subpath_to_rec = '';
+        get_id_fn = @(x) x;
+    case 2
+        get_id_fn = @(x) x;        
+end
+
 path_to_ds = fileparts(dataset_stem);
 
 datasets = dir(sprintf('%s*', dataset_stem));
