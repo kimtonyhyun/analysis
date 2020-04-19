@@ -187,6 +187,7 @@ classdef DaySummary < handle
             tic;
             [height, width] = size(images{1});
             for k = 1:obj.num_cells
+                % TODO: Assert that images{k} is nonzero
                 boundary = compute_ic_boundary(images{k}, 0.3);
                 boundaries{k} = boundary{1}; % Keep only the longest boundary!
                 masks{k} = poly2mask(boundaries{k}(:,1), boundaries{k}(:,2), height, width);
