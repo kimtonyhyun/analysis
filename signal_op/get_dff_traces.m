@@ -64,6 +64,8 @@ if isa(filter_input, 'DaySummary')
         if truncate_filter
             filter = filter .* ds.cells(cell_idx).mask;
         end
+        % NOTE: In principle, we should check if the filter is entirely 0
+        % here, as in the section below.
         filter = filter / sum(filter(:)); % Normalize filter to 1
 
         filters(:,k) = reshape(filter, num_pixels, 1);
