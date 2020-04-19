@@ -57,28 +57,39 @@ traces = zeros(num_frames, num_cells);
 [height, width] = size(ds.cells(1).im);
 filters = zeros(height, width, num_cells);
 
-for k = 1:num_cells
-    cell_idx = cell_indices(k);
-    filters(:,:,k) = ds.cells(cell_idx).im;
+idx = 0;
+for cell_idx = cell_indices
+    filter = ds.cells(cell_idx).im;
     if truncate_filter
-        filters(:,:,k) = ds.cells(cell_idx).mask .* filters(:,:,k);
+        filter = ds.cells(cell_idx).mask .* filter;
     end
     
-    trace = ds.get_trace(cell_idx);
-    if remove_baseline
-        trace = fix_baseline(trace);
+    if (sum(filter(:)) > 0)
+        idx = idx + 1;
+        
+        filters(:,:,idx) = filter;
+        
+        trace = ds.get_trace(cell_idx);
+        if remove_baseline
+            trace = fix_baseline(trace);
+        end
+        if normalize_trace
+            tscale = [min(trace) max(trace)];
+            trace = (trace - tscale(1))/diff(tscale);
+        end
+        traces(:,idx) = trace;
+    else
+        fprintf('Warning: Filter #%d is entirely zero -- skipping!\n', cell_idx);
     end
-    if normalize_trace
-        tscale = [min(trace) max(trace)];
-        trace = (trace - tscale(1))/diff(tscale);
-    end
-    traces(:,k) = trace;
 end
+
+filters = filters(:,:,1:idx);
+traces = traces(:,1:idx);
 
 % Save as Rec file
 %------------------------------------------------------------
 info.type = 'export_rec';
-info.num_pairs = num_cells;
+info.num_pairs = idx;
 
 % Note the parameters used in export
 info.options.truncate_filter = truncate_filter;
