@@ -39,8 +39,11 @@ fprintf('  %s: FPS is %.1f...\n', datestr(now), fps);
 % Load filter/trace pairs to be classified
 num_candidates = ds.num_cells;
 
-assert(size(M,3) == ds.full_num_frames,...
-       'Number of frames in movie does not match that in DaySummary!');
+if ~(size(M,3) == ds.full_num_frames)
+    cprintf('blue',...
+       'Number of frames in movie (%d) does not match trace length (%d) in DaySummary!\n',...
+       size(M,3), ds.full_num_frames);
+end
 
 % Begin classification
 %------------------------------------------------------------
