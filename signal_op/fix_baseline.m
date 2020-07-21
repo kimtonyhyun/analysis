@@ -15,29 +15,25 @@ switch (method_name)
     case {'percentile', 'prctile'}
         % Default parameters
         p = 10; % 10-th percentile
-        fps = 30; % Frames per second
-        moving_window_duration = 30; % s
+        moving_window_num_frames = 1000; % At 30 fps, this is ~33.3 s
         
         for k = 1:length(varargin)
             if ischar(varargin{k})
                 switch lower(varargin{k})
                     case 'p'
                         p = varargin{k+1};
-                    case 'fps'
-                        fps = varargin{k+1};
                     case 'window'
-                        moving_window_duration = varargin{k+1};
+                        moving_window_num_frames = varargin{k+1};
                 end
             end
         end
         
-        baseline = running_percentile(trace_in, fps * moving_window_duration, p);
+        baseline = running_percentile(trace_in, moving_window_num_frames, p);
         trace_out = trace_in - baseline;
         
         method.name = 'percentile';
         method.p = p;
-        method.fps = fps;
-        method.moving_window_duration = moving_window_duration;
+        method.moving_window_num_frames = moving_window_num_frames;
 end
  
 info.method = method;
