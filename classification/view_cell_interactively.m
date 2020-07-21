@@ -5,7 +5,7 @@ function [resp, state] = view_cell_interactively(ds, cell_idx, movie, fps, state
 filter = ds.cells(cell_idx).im;
 
 [trace_orig, frames_to_movie] = ds.get_trace(cell_idx);
-trace_fixed = fix_baseline(trace_orig);
+trace_fixed = fix_baseline(trace_orig, 'percentile');
 time = 1/fps*((1:length(trace_orig))-1);
 
 % Some parameters
