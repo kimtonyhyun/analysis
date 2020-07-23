@@ -18,7 +18,7 @@ use_all_filters = false;
 truncate_filter = false;
 
 % Trace post-extraction processing
-remove_baseline = false;
+fix_baseline_method = [];
 
 for k = 1:length(varargin)
     vararg = varargin{k};
@@ -28,8 +28,8 @@ for k = 1:length(varargin)
                 use_all_filters = true;
             case {'ls', 'leastsquares'}
                 use_ls = true;
-            case {'fix', 'fix_baseline', 'remove_baseline'}
-                remove_baseline = true;
+            case {'fix', 'fix_baseline'}
+                fix_baseline_method = varargin{k+1};
             case 'truncate'
                 fprintf('%s: Filter will be truncated...\n', datestr(now));
                 truncate_filter = true;
@@ -109,12 +109,15 @@ fprintf('Done! (%.1f s)\n', t);
 filters = reshape(filters, height, width, num_filters);
 traces = traces'; % [num_frames x num_cells]
 
-if remove_baseline
-    fprintf('%s: Applying baseline correction to DFF traces...\n', datestr(now));
+if ~isempty(fix_baseline_method)
+    fprintf('%s: Applying baseline correction (%s) to DFF traces... ', datestr(now), fix_baseline_method);
+    tic;
     for k = 1:num_filters
         trace = traces(:,k);
-        traces(:,k) = fix_baseline(trace);
+        traces(:,k) = fix_baseline(trace, fix_baseline_method);
     end
+    t = toc;
+    fprintf('(%.1f s)', t);
 end
 
 % Save as Rec file
@@ -123,7 +126,7 @@ info.type = 'get_dff_traces';
 info.num_pairs = num_filters;
 
 % Note the parameters used in DFF recomputation
-info.options.remove_baseline = remove_baseline;
+info.options.fix_baseline = fix_baseline_method;
 info.options.truncate_filter = truncate_filter;
 info.options.use_ls = use_ls;
 info.options.use_all_filters = use_all_filters;
