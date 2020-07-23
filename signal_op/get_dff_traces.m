@@ -117,7 +117,7 @@ if ~isempty(fix_baseline_method)
         traces(:,k) = fix_baseline(trace, fix_baseline_method);
     end
     t = toc;
-    fprintf('(%.1f s)', t);
+    fprintf('(%.1f s)\n', t);
 end
 
 % Save as Rec file
