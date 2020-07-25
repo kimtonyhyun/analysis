@@ -38,6 +38,8 @@ classdef DaySummary < handle
     properties (SetAccess = private, Hidden=true)
         trace_corrs
         trace_range
+        trace_baselines
+        trace_sigmas
         cell_distances
         behavior_vid
         behavior_ref_img
@@ -166,11 +168,18 @@ classdef DaySummary < handle
                 'events', [],...
                 'centroids', centroids);
             
-            full_traces = cell2mat(traces'); % [num_cells x num_frames]
+            full_traces = cell2mat(traces)'; % [num_frames x num_cells]
             fprintf('  Computing auxiliary trace parameters...');
             tic;
-            obj.trace_corrs = corr(full_traces');
-            obj.trace_range = [min(full_traces,[],2) max(full_traces,[],2)];
+            obj.trace_corrs = corr(full_traces);
+            obj.trace_range = [min(full_traces)' max(full_traces)'];
+            obj.trace_baselines = zeros(obj.num_cells, 1);
+            obj.trace_sigmas = zeros(obj.num_cells, 1);
+            for k = 1:obj.num_cells
+                [baseline, sigma] = estimate_baseline_sigma(full_traces(:,k));
+                obj.trace_baselines(k) = baseline;
+                obj.trace_sigmas(k) = sigma;
+            end
             t = toc;
             fprintf(' Done (%.1f sec)\n', t);
             
@@ -371,7 +380,7 @@ classdef DaySummary < handle
         
         function [trace, frame_indices, selected_trials] = get_trace(obj, cell_idx, varargin)
             % For a cell, return traces over selected sets of trials.
-            normalize_trace = false;
+            normalization_method = [];
             selected_trials = 1:obj.num_trials;
             fill_type = 'traces';
             
@@ -384,7 +393,9 @@ classdef DaySummary < handle
                         % TODO: Explore complications (if any) between
                         % normalization and trace fill type
                         case 'norm'
-                            normalize_trace = true;
+                            normalization_method = 'basic';
+                        case {'zsc', 'zscore'}
+                            normalization_method = 'zscore';
                         case 'fill'
                             fill_type = varargin{k+1};
                     end
@@ -429,10 +440,18 @@ classdef DaySummary < handle
                 frame_indices = [frame_indices obj.trial_indices(k,1):obj.trial_indices(k,end)];
             end
             
-            if normalize_trace
-                trace_min = obj.trace_range(cell_idx,1);
-                trace_max = obj.trace_range(cell_idx,2);
-                trace = (trace - trace_min) / (trace_max - trace_min);
+            if ~isempty(normalization_method)
+                switch normalization_method
+                    case 'basic'
+                        trace_min = obj.trace_range(cell_idx,1);
+                        trace_max = obj.trace_range(cell_idx,2);
+                        trace = (trace - trace_min) / (trace_max - trace_min);
+
+                    case 'zscore'
+                        baseline = obj.trace_baselines(cell_idx);
+                        sigma = obj.trace_sigmas(cell_idx);
+                        trace = (trace - baseline) / sigma;
+                end
             end
         end
         
