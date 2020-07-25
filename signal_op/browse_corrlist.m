@@ -46,7 +46,8 @@ gui = setup_gui();
 
 idx = 1; 
 while (1)
-    update_fig(idx, gui);
+    corrdata = corrlist(idx, :);
+    update_fig(corrdata, gui);
     
     prompt = sprintf('%s (%d of %d) >> ', app_name, idx, num_pairs);
     resp = strtrim(input(prompt, 's'));
@@ -63,6 +64,16 @@ while (1)
             idx = min(num_pairs, idx);
         else
             switch resp(1)
+                case 'c' % "Select cell"
+                    val = str2double(resp(2:end));
+                    if ~isnan(val)
+                        switch val
+                            case 1
+                                ds2.cells(corrdata(2)).label = 'not a cell';
+                            case 2
+                                ds1.cells(corrdata(1)).label = 'not a cell';
+                        end
+                    end
                 case 'p' % Previous
                     idx = idx - 1;
                     idx = max(1, idx);
@@ -107,8 +118,8 @@ end % while (1)
                 gui_data.cellmap2 = subplot(3,3,[5 8]);
                 gui_data.corr_sp = subplot(3,3,[6 9]);
                 gui_data.corr = plot(tr, tr, '.k');
-                xlabel(ds_labels{1});
-                ylabel(ds_labels{2});
+                xlabel(ds_labels{2});
+                ylabel(ds_labels{1});
                 
             case 'same_ds'
                 gui_data.cellmap1 = subplot(3,2,[3 5]);
@@ -121,8 +132,8 @@ end % while (1)
                 gui_data.cellmap1 = subplot(3,2,[3 5]);
                 gui_data.corr_sp = subplot(3,2,[4 6]);
                 gui_data.corr = plot(tr, tr, '.k');
-                xlabel(ds_labels{1});
-                ylabel(ds_labels{2});
+                xlabel(ds_labels{2});
+                ylabel(ds_labels{1});
         end
         
         switch trace_norm_method
@@ -138,20 +149,20 @@ end % while (1)
         
     end % setup_standard_gui
 
-    function update_fig(k, gui_data)
-        i = corrlist(k,1);
-        j = corrlist(k,2);
-        c = corrlist(k,3);
+    function update_fig(corrdata, gui_data)
+        i = corrdata(1);
+        j = corrdata(2);
+        c = corrdata(3);
 
-        tr_i = ds1.get_trace(i, trace_norm_method);
-        tr_j = ds2.get_trace(j, trace_norm_method);
+        tr1_i = ds1.get_trace(i, trace_norm_method);
+        tr2_j = ds2.get_trace(j, trace_norm_method);
 
-        gui_data.trace1.YData = tr_i; 
-        gui_data.trace2.YData = tr_j;
-        xlim([1 length(tr_i)]);
+        gui_data.trace1.YData = tr1_i; 
+        gui_data.trace2.YData = tr2_j;
+        xlim([1 length(tr1_i)]);
         
-        gui_data.corr.XData = tr_i;
-        gui_data.corr.YData = tr_j;
+        gui_data.corr.XData = tr2_j;
+        gui_data.corr.YData = tr1_i;
         axis(gui_data.corr_sp, 'tight');
         
         switch app_mode
@@ -203,8 +214,6 @@ function draw_cellmap(ds, filled_cells, varargin)
     for k = 1:length(varargin)
         if ischar(varargin{k})
             switch lower(varargin{k})
-                case 'alpha'
-                    fill_alpha = varargin{k+1};
                 case 'width'
                     boundary_width = varargin{k+1};
                 case 'color'
