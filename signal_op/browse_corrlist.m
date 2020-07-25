@@ -64,7 +64,7 @@ while (1)
             idx = min(num_pairs, idx);
         else
             switch resp(1)
-                case 'c' % "Select cell"
+                case 'a' % "Assign" cell. To be used with "overlay" mode
                     val = str2double(resp(2:end));
                     if ~isnan(val)
                         switch val
@@ -74,6 +74,11 @@ while (1)
                                 ds1.cells(corrdata(1)).label = 'not a cell';
                         end
                     end
+                    
+                    % Increment
+                    idx = idx + 1;
+                    idx = min(num_pairs, idx);
+
                 case 'p' % Previous
                     idx = idx - 1;
                     idx = max(1, idx);
