@@ -32,14 +32,14 @@ for k = cells_to_show(:)' % Force row vector
     tr = amp*(tr-tr_min)/(tr_max-tr_min);
 
     color = colors(mod(ind,num_colors)+1);
-    plot(tr+ind, color);
+    plot(tr+ind-0.5, color);
     hold on;
 
     ind = ind + 1;
 end
 
 num_frames = length(tr);
-y_range = [0.5 (ind-1)+amp+0.5];
+y_range = [0 (ind-1)+amp];
 
 if (ds.num_trials > 1) % DaySummary contains trial structure
     trial_start_frames = ds.trial_indices(:,1);
@@ -60,5 +60,6 @@ hold off;
 
 xlim([1 num_frames]);
 ylim(y_range);
+yticks(1:length(cells_to_show));
 ylabel(sprintf('Cell index (%d total)', ind-1));
 set(gca, 'TickLength', [0 0]);
