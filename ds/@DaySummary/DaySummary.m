@@ -50,6 +50,9 @@ classdef DaySummary < handle
         
     methods
         function obj = DaySummary(ds_source, rec_dir, varargin)
+            % Defaults
+            boundary_threshold = 0.3;
+            
             % Handle optional input
             exclude_probe_trials = 0;
             for k = 1:length(varargin)
@@ -57,6 +60,8 @@ classdef DaySummary < handle
                     switch lower(varargin{k})
                         case {'excludeprobe', 'noprobe'}
                             exclude_probe_trials = 1;
+                        case 'boundary'
+                            boundary_threshold = varargin{k+1};
                     end
                 end
             end
@@ -197,7 +202,7 @@ classdef DaySummary < handle
             [height, width] = size(images{1});
             for k = 1:obj.num_cells
                 % TODO: Assert that images{k} is nonzero
-                boundary = compute_ic_boundary(images{k}, 0.3);
+                boundary = compute_ic_boundary(images{k}, boundary_threshold);
                 boundaries{k} = boundary{1}; % Keep only the longest boundary!
                 masks{k} = poly2mask(boundaries{k}(:,1), boundaries{k}(:,2), height, width);
                 
