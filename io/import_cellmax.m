@@ -37,6 +37,7 @@ if old_cellmax_format
 else
     info.cellmax.version = cellmax_struct.versionCellmax;
     info.cellmax.movie_source = cellmax_struct.movieFilename;
+    info.cellmax.options = cellmax_struct.options;
 
     filters = cellmax_struct.cellImages; %#ok<*NASGU>
     traces = cellmax_struct.cellTraces';
