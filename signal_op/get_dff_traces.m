@@ -77,6 +77,7 @@ else
     filters = zeros(num_pixels, num_filters);
     
     idx = 0;
+    num_skipped = 0;
     for k = 1:num_filters
         filter = filter_input(:,:,k);
         if (sum(filter(:)) > 0)
@@ -86,7 +87,11 @@ else
             filters(:,idx) = reshape(filter, num_pixels, 1);
         else
             fprintf('Warning: Filter #%d is entirely zero -- skipping!\n', k);
+            num_skipped = num_skipped + 1;
         end
+    end
+    if (num_skipped > 0)
+        fprintf('Total number of skipped filters: %d\n', num_skipped);
     end
 
     num_filters = idx;
