@@ -35,8 +35,8 @@ if old_cellmax_format
     filters = cellmax_struct.cellImages;
     traces = cellmax_struct.dsCellTraces';
 else
+    info.cellmax.version = cellmax_struct.versionCellmax;
     info.cellmax.movie_source = cellmax_struct.movieFilename;
-    info.cellmax.runtime = cellmax_struct.runtime; % Fingerprinting
 
     filters = cellmax_struct.cellImages; %#ok<*NASGU>
     traces = cellmax_struct.cellTraces';
