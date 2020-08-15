@@ -8,7 +8,7 @@ function md = create_merge_md(ds_array)
 %
 % Usage:
 %   md = create_merge_md([ds1 ds2 ds3]);
-%   res_list = resolve_recs(md);
+%   res_list = resolve_merged_recs(md, M); % 'M' is the fluorescence movie
 %   save_resolved_recs(res_list, md);
 %
 if iscell(ds_array)
