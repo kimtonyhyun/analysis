@@ -1,4 +1,4 @@
-function save_resolved_recs(res_list, md)
+function rec_savename = save_resolved_recs(res_list, md)
 
 info.type = 'resolved';
 info.num_pairs = md.num_cells;

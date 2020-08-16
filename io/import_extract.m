@@ -1,4 +1,4 @@
-function import_extract(extract_struct)
+function rec_savename = import_extract(extract_struct)
 
 filters = extract_struct.spatial_weights;
 traces = extract_struct.temporal_weights;
@@ -8,4 +8,4 @@ info.type = 'extract';
 info.extract.info = extract_struct.info;
 info.extract.config = extract_struct.config;
 
-save_rec(info, filters, traces);
+rec_savename = save_rec(info, filters, traces);

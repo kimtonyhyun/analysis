@@ -1,4 +1,4 @@
-function import_cellmax(cellmax_struct, varargin)
+function rec_savename = import_cellmax(cellmax_struct, varargin)
 % Converts the CellMax output into a format that can be directly read by
 % `classify_cells`, and saves it into a `rec_*.mat` file.
 %
@@ -45,8 +45,4 @@ end
 
 info.num_pairs = size(filters, 3); %#ok<STRNU>
 
-% Save the CellMax traces & filters to a mat file
-timestamp = datestr(now, 'yymmdd-HHMMSS');
-rec_savename = sprintf('rec_%s.mat', timestamp);
-
-save(rec_savename, 'info', 'filters', 'traces', '-v7.3');
+rec_savename = save_rec(info, filters, traces);
