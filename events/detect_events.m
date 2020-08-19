@@ -37,14 +37,16 @@ trace_orig = ds.get_trace(cell_idx);
 trace = filter_trace(ds, cell_idx, fps, cutoff_freq);
 num_frames = length(trace);
 
-% Default threshold values
+% Set default threshold values.
+% TODO: Think about whether it makes more sense to compute trace properties
+% (baseline and sigma) from the unfiltered trace.
 [baseline, sigma, stats] = estimate_baseline_sigma(trace);
 
 init_info = struct('num_frames', num_frames,...
                    'baseline', baseline,...
                    'sigma', sigma,...
                    'threshold', baseline + 5*sigma,...
-                   'merge_threshold', 0.1,...
+                   'merge_threshold', 0.05,...
                    'amp_threshold', 0.1);
 events = struct('info', init_info, 'data', []);
 compute_events(); % Fills in 'events.data'
@@ -64,7 +66,7 @@ gui = setup_gui(hfig, num_frames, compute_display_range(trace), stats, trace_ori
 
 % GUI state
 state.x_anchor = 1;
-state.x_range = min(500, num_frames);
+state.x_range = min(20*fps, num_frames); % By default, show 20 s windows
 state.show_orig = true;
 state.show_dots = false;
 state.show_trials = (ds.num_trials > 1);
@@ -144,7 +146,7 @@ end % Main interaction loop
         
         % Setup the GLOBAL trace plot
         %------------------------------------------------------------
-        gui.global = subplot(2,4,1:3);
+        gui.global = subplot(2,8,1:5);
         gui.global_rect = rectangle('Position',[-1 trace_display_range(1) 1 diff(trace_display_range)],...
                   'EdgeColor', 'none',...
                   'FaceColor', 'c', 'HitTest', 'off');
@@ -162,7 +164,7 @@ end % Main interaction loop
         
         % Setup the HISTOGRAM plot
         %------------------------------------------------------------
-        gui.histogram = subplot(6,4,4);
+        gui.histogram = subplot(2,8,6);
         semilogy(stats.hist_centers, stats.hist_counts, 'k.', 'HitTest', 'off');
         xlim(trace_display_range);
         hold on;
@@ -173,14 +175,14 @@ end % Main interaction loop
             f = stats.percentiles(k,2);
             plot(f*[1 1], count_range, 'Color', 0.5*[1 1 1], 'HitTest', 'off');
         end
-        gui.histogram_thresh = plot(-Inf*[1 1], count_range, 'm', 'HitTest', 'off');
+        gui.histogram_thresh = plot(-Inf*[1 1], count_range, 'm--', 'HitTest', 'off');
         hold off;
-        xlabel('Fluorescence');
         ylabel('Trace histogram');
+        view(-90, 90); % Rotate plot to match the global trace plot
 
         % Setup the post-trough height CDF
         %------------------------------------------------------------
-        gui.post_amps = subplot(6,4,8);
+        gui.post_amps = subplot(4,4,4);
         gui.post_cdf = plot(-1, -1, 'm.-', 'HitTest', 'off');
         hold on;
         gui.post_cdf_sel_event = plot(-1, -1, 'mo', 'HitTest', 'off');
@@ -191,11 +193,12 @@ end % Main interaction loop
         xticks(0:0.1:0.5);
         yticks(0:0.1:1);
         grid on;
+        xlabel('Post-amp / (max(trace) - baseline)');
         ylabel('Post-amp CDF');
         
         % Setup the pre-trough height CDF (i.e. event amplitude)
         %------------------------------------------------------------
-        gui.pre_amps = subplot(6,4,12);
+        gui.pre_amps = subplot(4,4,8);
         gui.pre_cdf = plot(-1, -1, 'm.-', 'HitTest', 'off');
         hold on;
         gui.pre_cdf_sel_event = plot(-1, -1, 'mo', 'HitTest', 'off');
@@ -206,7 +209,7 @@ end % Main interaction loop
         xticks(0:0.1:1);
         yticks(0:0.1:1);
         grid on;
-        xlabel('Norm event amplitude');
+        xlabel('Pre-amp / max(pre-amps)');
         ylabel('Pre-amp CDF');
         
         % Setup the LOCAL trace plot
