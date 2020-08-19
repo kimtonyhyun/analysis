@@ -44,7 +44,7 @@ init_info = struct('num_frames', num_frames,...
                    'baseline', baseline,...
                    'sigma', sigma,...
                    'threshold', baseline + 5*sigma,...
-                   'merge_threshold', 0.05,...
+                   'merge_threshold', 0.1,...
                    'amp_threshold', 0.1);
 events = struct('info', init_info, 'data', []);
 compute_events(); % Fills in 'events.data'
@@ -361,19 +361,6 @@ end % Main interaction loop
     function post_cdf_handler(~, e, gui)
         switch e.Button
             case 1 % Left click
-                x = e.IntersectionPoint(1);
-                
-                % Find the event with the nearest POST amplitude
-                post_event_amps = events.data(:,4);
-                delta_amp = abs(post_event_amps - max(trace)*x);
-                [~, se] = min(delta_amp);
-                
-                show_event(se, gui);
-                
-                % Move the local window
-                sel_frame = events.data(se,2);
-                state.x_anchor = sel_frame - 1/2 * state.x_range;             
-                redraw_local_window(gui, state);
                 
             case 3 % Right click -- Set the merge threshold
                 x = e.IntersectionPoint(1);
@@ -387,16 +374,18 @@ end % Main interaction loop
                 x = e.IntersectionPoint(1);
                 
                 % Find the event with the nearest PRE amplitude
-                pre_event_amps = events.data(:,3);
-                delta_amp = abs(pre_event_amps - max(pre_event_amps)*x);
-                [~, se] = min(delta_amp);
-                
-                show_event(se, gui);
-                
-                % Move the local window
-                sel_frame = events.data(se,2);
-                state.x_anchor = sel_frame - 1/2 * state.x_range;             
-                redraw_local_window(gui, state);
+                if ~isempty(events.data)
+                    pre_event_amps = events.data(:,3);
+                    delta_amp = abs(pre_event_amps - max(pre_event_amps)*x);
+                    [~, se] = min(delta_amp);
+
+                    show_event(se, gui);
+
+                    % Move the local window
+                    sel_frame = events.data(se,2);
+                    state.x_anchor = sel_frame - 1/2 * state.x_range;             
+                    redraw_local_window(gui, state);
+                end
             case 3 % Right click -- Set the amplitude threshold
                 x = e.IntersectionPoint(1);
                 set_thresholds([], [], x, gui);

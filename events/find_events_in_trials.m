@@ -46,6 +46,11 @@ end
 peaks = cell2mat(peaks);
 num_peaks = size(peaks, 1);
 
+if isempty(peaks)
+    events = [];
+    return;
+end
+
 % Next, process the list of all peaks
 %------------------------------------------------------------
 max_trace_amplitude = max(peaks(:,4)) - baseline;
