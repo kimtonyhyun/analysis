@@ -175,6 +175,8 @@ end % Main interaction loop
             f = stats.percentiles(k,2);
             plot(f*[1 1], count_range, 'Color', 0.5*[1 1 1], 'HitTest', 'off');
         end
+        % stats.mode is the baseline
+        plot(stats.mode*[1 1], count_range, '--', 'Color', 0.5*[1 1 1], 'HitTest', 'off');
         gui.histogram_thresh = plot(-Inf*[1 1], count_range, 'm--', 'HitTest', 'off');
         hold off;
         ylabel('Trace histogram');
