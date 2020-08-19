@@ -6,7 +6,8 @@ function events = find_events_in_trials(trace, trial_indices, threshold, baselin
 %   events: [num_events x 3] where
 %       events(k,1): Frame of the trough preceding the k-th event.
 %       events(k,2): Frame of the peak of the k-th event.
-%       events(k,3): Amplitude of the k-th event.
+%       events(k,3): Peak height relative to preceding trough ("Event amplitude")
+%       events(k,4): Peak height relative to subsequent trough
 %
 % Basic usage:
 %   trace = filter_trace(ds, cell_idx, fps, cutoff_freq);
@@ -86,14 +87,15 @@ end
 merged_peaks(idx,:) = peak_to_be_written;
 merged_peaks = merged_peaks(1:idx,:);
 
-% FIXME: Convert to "classic" event output format
+% Output format
+% TODO: Consider named fields (e.g. struct)?
 events(:,1) = merged_peaks(:,1); % Pre-trough frame
 events(:,2) = merged_peaks(:,3); % Peak frame
-events(:,3) = merged_peaks(:,4) - merged_peaks(:,2); % Pre-trough amplitude
+events(:,3) = merged_peaks(:,4) - merged_peaks(:,2); % Peak height relative to pre-trough
+events(:,4) = merged_peaks(:,4) - merged_peaks(:,6); % Peak height relative to post-trough
 
 % Filter for amplitude heights
 if ~isempty(events)
-    % Note that 
     max_event_amplitude = max(events(:,3));
     filtered_events = events(:,3) > amp_threshold * max_event_amplitude;
     events = events(filtered_events,:);
