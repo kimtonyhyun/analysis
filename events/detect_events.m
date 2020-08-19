@@ -1,4 +1,4 @@
-function events = detect_events(ds, cell_idx, varargin)
+function events = detect_events(ds, cell_idx, fps, varargin)
 % Detect calcium events in the fluorescence trace interactively. Core
 % computations are:
 %   - Determine default thresholds (via 'estimate_baseline_sigma.m'),
@@ -9,7 +9,6 @@ function events = detect_events(ds, cell_idx, varargin)
 
 use_prompt = true;
 M = [];
-fps = 30;
 cutoff_freq = 4; % Hz. From Wagner et al. 2019
 
 for j = 1:length(varargin)
@@ -18,8 +17,6 @@ for j = 1:length(varargin)
         switch lower(vararg)
             case 'noprompt'
                 use_prompt = false;
-            case 'fps'
-                fps = varargin{j+1};
             case 'cutoff'
                 cutoff_freq = varargin{j+1};
             case {'m', 'movie'}
@@ -85,7 +82,7 @@ while (use_prompt)
     resp = lower(strtrim(input(prompt, 's')));
     val = str2double(resp);
 
-    if (~isnan(val)) % Is a number
+    if (~isnan(val) && isreal(val)) % Is a number
         if (1 <= val) && (val <= ds.num_trials)
             show_trial(val, gui);
         end
@@ -125,6 +122,7 @@ while (use_prompt)
                 end
                 
             case 't' % reset threshold
+                fprintf('  Reset event detection thresholds to default values\n');
                 events.info = init_info;
                 compute_events();
                 draw_thresholds(gui);
@@ -466,10 +464,12 @@ end % Main interaction loop
         
         % HISTOGRAM subplot
         set(gui.histogram_thresh, 'XData', events.info.threshold*[1 1]);
+        title(gui.histogram, sprintf('threshold=%.1f', events.info.threshold));
         
         % CDF subplot
         set(gui.cdf_amp_threshold, 'XData', events.info.amp_threshold*[1 1]);
         set(gui.cdf, 'XData', cdf_x, 'YData', cdf_y);
+        title(gui.event_amp_cdf, sprintf('amp\\_threshold=%.1f', events.info.amp_threshold));
         
         % LOCAL subplot
         set(gui.local_thresh, 'YData', events.info.threshold*[1 1]);
@@ -496,7 +496,12 @@ end % Main interaction loop
         num_events = size(events.data,1);
         
         subplot(gui.global);
-        title(sprintf('Cell %d: %d events', cell_idx, num_events));
+        if num_events == 1
+            event_str = 'event';
+        else
+            event_str = 'events';
+        end
+        title(sprintf('Cell %d: %d %s', cell_idx, num_events, event_str));
     end % update_event_tally
 
     function show_trial(trial_idx, gui)
