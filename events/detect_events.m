@@ -226,16 +226,29 @@ end % Main interaction loop
             com = ds.cells(cell_idx).com;
             plot(com(1), com(2), 'b.');
             num_neighbors = min(10, ds.num_classified_cells-1);
+            
+            % Draw nearby cells with fluorescence correlation values.
+            % Similar to behavior in 'classify_cells'
+            corr_colors = redblue(201);
+            
             neighbor_inds = ds.get_nearest_sources(cell_idx, num_neighbors);
             for n = neighbor_inds
                 boundary = ds.cells(n).boundary;
-                plot(boundary(:,1), boundary(:,2), 'w');
-                
                 ncom = ds.cells(n).com;
-                text(ncom(1), ncom(2), num2str(n),...
+                ncorr = ds.trace_corrs(cell_idx, n);
+                neighbor_desc = sprintf('%d\n(%.4f)', n, ncorr);
+                
+                % Convert color to redblue
+                ncorr = round(ncorr*100) + 101;
+                color = corr_colors(ncorr,:);
+                plot(boundary(:,1), boundary(:,2),...
+                     'Color', color,...
+                     'LineWidth',2);
+                
+                text(ncom(1), ncom(2), neighbor_desc,...
                      'Color', 'w',...
                      'HorizontalAlignment', 'center',...
-                     'HitTest', 'off', 'Clipping', 'on');
+                     'FontWeight', 'bold', 'Clipping', 'on');
             end
             hold off;
             
