@@ -272,6 +272,10 @@ end % Main interaction loop
             gui.local = subplot(2,4,5:7);
         else
             gui.local = subplot(2,1,2);
+            
+            gui.movie = [];
+            gui.movie_frame = [];
+            gui.neighbor_handles = [];
         end
         gui.local_orig = plot(trace_orig, 'Color', 0.6*[1 1 1], 'HitTest', 'off');
         hold on;
