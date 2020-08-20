@@ -173,9 +173,11 @@ classdef DaySummary < handle
                 'events', [],...
                 'centroids', centroids);
             
-            full_traces = cell2mat(traces)'; % [num_frames x num_cells]
+            % NOTE: Trace parameters are computed from the original traces,
+            % not just from the extracted trials.
             fprintf('  Computing auxiliary trace parameters...');
             tic;
+            full_traces = data.traces; % [num_frames x num_cells]
             obj.trace_corrs = corr(full_traces);
             obj.trace_range = [min(full_traces)' max(full_traces)'];
             obj.trace_baselines = zeros(obj.num_cells, 1);
