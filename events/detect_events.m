@@ -70,6 +70,7 @@ state.x_range = min(20*fps, num_frames); % By default, show 20 s windows
 state.show_orig = true;
 state.show_dots = false;
 state.show_trials = (ds.num_trials > 1);
+state.show_neighbors = false;
 state.sel_event = 0;
 state.last_requested_trial = 0;
 update_gui_state(gui, state);
@@ -117,6 +118,10 @@ while (use_prompt)
                 
             case 'b' % show trials
                 state.show_trials = ~state.show_trials;
+                update_gui_state(gui, state);
+                
+            case 'x' % show neighbor correlations
+                state.show_neighbors = ~state.show_neighbors;
                 update_gui_state(gui, state);
                 
             case {'', 'n'} % next trial
@@ -227,27 +232,32 @@ end % Main interaction loop
             plot(boundary(:,1), boundary(:,2), 'c', 'LineWidth', 2, 'HitTest', 'off');
             com = ds.cells(cell_idx).com;
             plot(com(1), com(2), 'b.');
-            num_neighbors = min(10, ds.num_classified_cells-1);
             
             % Draw nearby cells with fluorescence correlation values.
             % Similar to behavior in 'classify_cells'
-            corr_colors = redblue(201);
+            num_neighbors = min(10, ds.num_classified_cells-1);
+            gui.neighbor_handles = zeros(num_neighbors, 2); % [Boundary Text]
             
+            corr_colors = redblue(201);
             neighbor_inds = ds.get_nearest_sources(cell_idx, num_neighbors);
-            for n = neighbor_inds
-                boundary = ds.cells(n).boundary;
+            for k = 1:num_neighbors
+                n = neighbor_inds(k);
+                nboundary = ds.cells(n).boundary;
                 ncom = ds.cells(n).com;
                 ncorr = ds.trace_corrs(cell_idx, n);
-                neighbor_desc = sprintf('%d\n(%.4f)', n, ncorr);
                 
-                % Convert color to redblue
+                % By default, show a thin white boundary of nearby cells
+                plot(nboundary(:,1), nboundary(:,2), 'w');
+                
+                % "Correlation" overlay -- can be toggled
+                neighbor_desc = sprintf('%d\n(%.4f)', n, ncorr);
                 ncorr = round(ncorr*100) + 101;
-                color = corr_colors(ncorr,:);
-                plot(boundary(:,1), boundary(:,2),...
+                color = corr_colors(ncorr,:); % Convert color to redblue
+                gui.neighbor_handles(k,1) = plot(nboundary(:,1), nboundary(:,2),...
                      'Color', color,...
                      'LineWidth',2);
                 
-                text(ncom(1), ncom(2), neighbor_desc,...
+                gui.neighbor_handles(k,2) = text(ncom(1), ncom(2), neighbor_desc,...
                      'Color', 'w',...
                      'HorizontalAlignment', 'center',...
                      'FontWeight', 'bold', 'Clipping', 'on');
@@ -445,13 +455,24 @@ end % Main interaction loop
         end
         
         if state.show_trials
-            trials_vis = 'on';
+            vis_val = 'on';
         else
-            trials_vis = 'off';
+            vis_val = 'off';
         end
-        set(gui.local_trials, 'Visible', trials_vis);
+        set(gui.local_trials, 'Visible', vis_val);
         for k = 1:ds.num_trials
-            set(gui.local_trials_text{k}, 'Visible', trials_vis);
+            set(gui.local_trials_text{k}, 'Visible', vis_val);
+        end
+        
+        if state.show_neighbors
+            vis_val = 'on';
+        else
+            vis_val = 'off';
+        end
+        num_neighbors = size(gui.neighbor_handles, 1);
+        for k = 1:num_neighbors
+            set(gui.neighbor_handles(k,1), 'Visible', vis_val);
+            set(gui.neighbor_handles(k,2), 'Visible', vis_val);
         end
     end
 
