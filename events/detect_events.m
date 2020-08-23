@@ -41,9 +41,6 @@ events.info = struct('cutoff_freq', [],...
                      'merge_threshold', 0.05,...
                      'amp_threshold', 0.1);
 
-trace_orig = ds.get_trace(cell_idx);
-num_frames = length(trace_orig);
-
 % We look for events in a smoothed version of the trace
 [trace, stats] = preprocess_trace(fps, cutoff_freq); % Fills in 'events.info'
 init_info = events.info;
@@ -60,7 +57,7 @@ if ~isempty(M) && isempty(movie_clim)
 end
 
 hfig = figure;
-gui = setup_gui(hfig, stats, trace_orig);
+gui = setup_gui(hfig, stats);
 
 % GUI state
 state.x_anchor = 1;
@@ -81,7 +78,7 @@ end
 %------------------------------------------------------------
 prompt = 'Detector >> ';
 while (use_prompt)
-    resp = lower(strtrim(input(prompt, 's')));
+    resp = strtrim(input(prompt, 's'));
     val = str2double(resp);
 
     if (~isnan(val) && isreal(val)) % Is a number
@@ -89,7 +86,8 @@ while (use_prompt)
             show_trial(val, gui);
         end
     else % Not a number
-        switch (resp)
+        resp = lower(resp);
+        switch (resp(1))
             case 'q' % "quit"
                 close(hfig);
                 break;
@@ -98,13 +96,13 @@ while (use_prompt)
                 x_center = state.x_anchor + 1/2 * state.x_range;
                 state.x_range = 0.5*state.x_range;
                 state.x_anchor = x_center - 1/2 * state.x_range;
-                redraw_local_window(gui, state);
+                draw_local_window(gui, state);
                 
             case 'o' % zoom out
                 x_center = state.x_anchor + 1/2 * state.x_range;
                 state.x_range = 2*state.x_range;
                 state.x_anchor = x_center - 1/2 * state.x_range;
-                redraw_local_window(gui, state);
+                draw_local_window(gui, state);
                 
             case 'r' % toggle "raw"/original trace
                 state.show_orig = ~state.show_orig;
@@ -127,8 +125,21 @@ while (use_prompt)
                     show_trial(state.last_requested_trial+1, gui);
                 end
                 
+            case 'f' % Set lowpass filter cutoff frequency
+                cf = str2double(resp(2:end));
+                if cf > 0
+                    fprintf('Setting cutoff frequency to %.1f\n', cf);
+                    [trace, stats] = preprocess_trace(fps, cf);
+                    
+                    update_traces(gui);
+                    draw_histogram(gui, stats);
+                    set_thresholds([], [], [], gui); % Recomputes events
+                else
+                    fprintf('Invalid cutoff frequency request "%s"\n', resp);
+                end
+                
             case 't' % reset threshold
-                fprintf('  Reset event detection thresholds to default values\n');
+                fprintf('  Reset event processing parameters to initial values\n');
                 events.info = init_info;
                 compute_events();
                 draw_thresholds(gui);
@@ -141,12 +152,14 @@ end % Main interaction loop
 
     % Supplementary functions
     %------------------------------------------------------------
-    function gui = setup_gui(hf, stats, trace_orig)
+    function gui = setup_gui(hfig, stats)
+        trace_orig = ds.get_trace(cell_idx);
+        
         num_frames = length(trace_orig);
         trace_display_range = compute_display_range(trace_orig);
-        
+                
         % Display parameters kept around for convenience
-        gui.hfig = hf;
+        gui.hfig = hfig;
         gui.num_frames = num_frames;
         gui.trace_display_range = trace_display_range;
         
@@ -157,7 +170,7 @@ end % Main interaction loop
                   'EdgeColor', 'none',...
                   'FaceColor', 'c', 'HitTest', 'off');
         hold on;
-        plot(trace, 'k', 'HitTest', 'off');
+        gui.global_trace = plot(trace, 'k', 'HitTest', 'off');
         gui.global_thresh = plot([1 num_frames], -Inf*[1 1], 'm--', 'HitTest', 'off');
         gui.global_auto = plot(-Inf, -1, 'm.', 'HitTest', 'off');
         gui.global_manual = plot(-Inf, -1, 'r.', 'HitTest', 'off');
@@ -171,19 +184,11 @@ end % Main interaction loop
         % Setup the HISTOGRAM plot
         %------------------------------------------------------------
         gui.histogram = subplot(2,8,6);
-        semilogy(stats.hist_centers, stats.hist_counts, 'k.', 'HitTest', 'off');
+        gui.histogram_data = semilogy(1, 1, 'k.', 'HitTest', 'off');
         xlim(trace_display_range);
         hold on;
-        % First power of 10 that exceeds the maximum count
-        count_range = [1 10^ceil(log10(max(stats.hist_counts)))];
-        ylim(count_range);
-        for k = 1:size(stats.percentiles,1)
-            f = stats.percentiles(k,2);
-            plot(f*[1 1], count_range, 'Color', 0.5*[1 1 1], 'HitTest', 'off');
-        end
-        % stats.mode is the baseline
-        plot(stats.mode*[1 1], count_range, '--', 'Color', 0.5*[1 1 1], 'HitTest', 'off');
-        gui.histogram_thresh = plot(-Inf*[1 1], count_range, 'm--', 'HitTest', 'off');
+        gui.histogram_mode = plot(-Inf*[1 1], [0 1], '--', 'Color', 0.5*[1 1 1], 'HitTest', 'off');
+        gui.histogram_thresh = plot(-Inf*[1 1], [0 1], 'm--', 'HitTest', 'off');
         hold off;
         ylabel('Trace histogram');
         view(-90, 90); % Rotate plot to match the global trace plot
@@ -280,7 +285,7 @@ end % Main interaction loop
         end
         gui.local_orig = plot(trace_orig, 'Color', 0.6*[1 1 1], 'HitTest', 'off');
         hold on;
-        plot(trace, 'k', 'HitTest', 'off');
+        gui.local_trace = plot(trace, 'k', 'HitTest', 'off');
         gui.local_dots = plot(trace, 'k.', 'HitTest', 'off');
         trial_starts = ds.trial_indices(:,1);
         gui.local_trials = plot(trial_starts, trace(trial_starts), 'ko', 'HitTest', 'off');
@@ -311,6 +316,9 @@ end % Main interaction loop
         xlabel('Frame');
         ylabel('Fluorescence');
         
+        % Render data
+        %------------------------------------------------------------
+        draw_histogram(gui, stats);
         draw_thresholds(gui);
         
         % Add GUI event listeners
@@ -319,8 +327,8 @@ end % Main interaction loop
         set(gui.post_amps, 'ButtonDownFcn', {@post_cdf_handler, gui});
         set(gui.pre_amps, 'ButtonDownFcn', {@pre_cdf_handler, gui});
         set(gui.local, 'ButtonDownFcn', {@local_plot_handler, gui});
-        set(hf, 'WindowButtonMotionFcn', {@track_cursor, gui});
-        set(hf, 'WindowScrollWheelFcn', {@scroll_plot, gui});
+        set(hfig, 'WindowButtonMotionFcn', {@track_cursor, gui});
+        set(hfig, 'WindowScrollWheelFcn', {@scroll_plot, gui});
         
         function track_cursor(~, e, gui)
             x = round(e.IntersectionPoint(1));
@@ -369,7 +377,7 @@ end % Main interaction loop
                         show_trial(t, gui);
                     else
                         state.x_anchor = x - state.x_range/2;
-                        redraw_local_window(gui, state);
+                        draw_local_window(gui, state);
                     end
                 else
                     fprintf('\n  Not a valid frame for this trace!\n');
@@ -412,12 +420,12 @@ end % Main interaction loop
                     delta_amp = abs(pre_event_amps - max(pre_event_amps)*x);
                     [~, se] = min(delta_amp);
 
-                    show_event(se, gui);
+                    select_event(se, gui);
 
                     % Move the local window
                     sel_frame = events.data(se,2);
                     state.x_anchor = sel_frame - 1/2 * state.x_range;             
-                    redraw_local_window(gui, state);
+                    draw_local_window(gui, state);
                 end
             case 3 % Right click -- Set the amplitude threshold
                 x = e.IntersectionPoint(1);
@@ -435,7 +443,7 @@ end % Main interaction loop
                 delta_times = abs(event_times - x);
                 [~, se] = min(delta_times);
 
-                show_event(se, gui);
+                select_event(se, gui);
                     
             case 3 % Right click
                 
@@ -445,7 +453,7 @@ end % Main interaction loop
     % GUI
     %------------------------------------------------------------   
     function update_gui_state(gui, state)
-        redraw_local_window(gui, state);
+        draw_local_window(gui, state);
         
         if state.show_orig
             set(gui.local_orig, 'Visible', 'on');
@@ -490,16 +498,16 @@ end % Main interaction loop
         end
 
         state.x_anchor = new_anchor;
-        redraw_local_window(gui, state);
+        draw_local_window(gui, state);
     end % get_next_page
 
     function get_prev_page(gui)
         new_anchor = state.x_anchor - (0.1*state.x_range + 1);
         state.x_anchor = max(1, new_anchor);
-        redraw_local_window(gui, state);
+        draw_local_window(gui, state);
     end % get_prev_page
 
-    function redraw_local_window(gui, state)
+    function draw_local_window(gui, state)
         figure(gui.hfig);
         
         rect_pos = get(gui.global_rect, 'Position');
@@ -510,10 +518,33 @@ end % Main interaction loop
         subplot(gui.local);
         xlim([state.x_anchor, state.x_anchor+state.x_range-1]);
     end
+
+    function update_traces(gui)
+        set(gui.global_trace, 'YData', trace);
+        set(gui.local_trace, 'YData', trace);
+        set(gui.local_dots, 'YData', trace);
+        set(gui.local_trials, 'YData', trace);
+    end
+
+    function draw_histogram(gui, stats)
+        subplot(gui.histogram);
+        
+        set(gui.histogram_data, 'XData', stats.hist_centers,...
+                                'YData', stats.hist_counts);
+
+        % First power of 10 that exceeds the maximum count
+        count_range = [1 10^ceil(log10(max(stats.hist_counts)))];
+        ylim(count_range);
+        
+        set(gui.histogram_mode, 'XData', stats.mode*[1 1],...
+                                'YData', count_range);
+        set(gui.histogram_thresh, 'XData', events.info.threshold*[1 1],...
+                                  'YData', count_range);
+    end
     
     function draw_thresholds(gui)
         % Clear previously selected events
-        clear_event(gui);
+        deselect_event(gui);
         
         if ~isempty(events.data)
             event_peak_times = events.data(:,2);
@@ -596,10 +627,10 @@ end % Main interaction loop
         state.last_requested_trial = trial_idx;
         state.x_anchor = trial_start - 0.25 * trial_range;
         state.x_range = 1.5 * trial_range;
-        redraw_local_window(gui, state);
+        draw_local_window(gui, state);
     end % show_trial
 
-    function show_event(event_idx, gui)
+    function select_event(event_idx, gui)
         % Event index refers to the row of 'events.data'.
         % An index of "0" corresponds to not selecting any event.
         num_events = size(events.data, 1);
@@ -630,10 +661,10 @@ end % Main interaction loop
             set(gui.local_sel_event, 'Position', rect_pos);
             set(gui.local_sel_event_peak', 'Xdata', sel_event_peak_frame*[1 1]);
         end
-    end % show_event
+    end % select_event
 
-    function clear_event(gui)
-        show_event(0, gui);
+    function deselect_event(gui)
+        select_event(0, gui);
     end
 
     % Data processing
