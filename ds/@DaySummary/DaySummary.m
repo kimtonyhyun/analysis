@@ -25,7 +25,6 @@ classdef DaySummary < handle
     properties
         cells
         trials
-        switchdata
         
         num_cells
         num_trials
@@ -44,7 +43,7 @@ classdef DaySummary < handle
         behavior_vid
         behavior_ref_img
         is_tracking_loaded
-        is_eventdata_loaded
+        are_events_loaded
         orig_trial_indices
     end
         
@@ -122,6 +121,9 @@ classdef DaySummary < handle
             end
             
             % Parse by TRIAL
+            % 2020 Aug 23: My retrospective assessment is that we should
+            % have parsed fluorescence traces into the CELL organization,
+            % rather than TRIAL organization.
             %------------------------------------------------------------
             num_trials = size(trial_indices, 1);
             turns = cell(num_trials, 1);
@@ -170,7 +172,6 @@ classdef DaySummary < handle
                 'turn',  turns,...
                 'time',  num2cell(trial_durations),...
                 'traces', traces,...
-                'events', [],...
                 'centroids', centroids);
             
             % NOTE: Trace parameters are computed from the original traces,
@@ -224,6 +225,7 @@ classdef DaySummary < handle
                 'boundary', boundaries,...
                 'mask', masks,...
                 'com', coms,...
+                'events', [],...
                 'label', class);
             
             % Compute distances among all sources
@@ -272,19 +274,12 @@ classdef DaySummary < handle
             end
             
             % Event data
-            obj.is_eventdata_loaded = false;
+            obj.are_events_loaded = false;
             event_source = get_most_recent_file(rec_dir, 'events_*.mat');
             if ~isempty(event_source)
                 obj.load_events(event_source);
             end
             
-            % Fill in switch data
-            obj.switchdata = struct(...
-                'pre_switch_trials', [],...
-                'post_switch_trials', [],...
-                'changing_path_start', '',...
-                'constant_path_start', '',...
-                'changing_path_cutoff', []);
         end
         
         % Helper functions
@@ -415,7 +410,7 @@ classdef DaySummary < handle
             frame_indices = [];
             for k = selected_trials
                 tr = obj.trials(k).traces(cell_idx,:);
-                if ~obj.is_eventdata_loaded
+                if ~obj.are_events_loaded
                     % If eventdata is not available, then the only fill
                     % type (currently) allowed is 'traces'
                     trf = tr;
@@ -736,64 +731,7 @@ classdef DaySummary < handle
             
             fprintf('%s: Loaded events from "%s"\n',...
                 datestr(now), event_source);
-            obj.is_eventdata_loaded = true;
-        end
-        
-        % Inspect switch data
-        %------------------------------------------------------------
-        function loaded = is_switchdata_loaded(obj)
-            valid_starts = {'east', 'west'};
-            loaded = ~isempty(obj.switchdata.pre_switch_trials) &&...
-                     ~isempty(obj.switchdata.post_switch_trials) &&...
-                     any(strcmp(obj.switchdata.changing_path_start, valid_starts)) &&...
-                     any(strcmp(obj.switchdata.constant_path_start, valid_starts));
-        end
-        
-        function st = get_switch_trials(obj)
-            % Provide trial indices for switch analysis. Note that we only
-            % examine correct trials.
-            %
-            % NOTE: Consider setting once when switchdata is loaded
-            st = struct('constant_pre', [],...
-                        'constant_post', [],...
-                        'changing_pre', [],...
-                        'changing_post', []);
-                    
-            if obj.is_switchdata_loaded
-                sd = obj.switchdata;
-                st.constant_pre = find(obj.filter_trials(...
-                    'range', sd.pre_switch_trials,...
-                    'start', sd.constant_path_start,...
-                    'correct'));
-                st.constant_post = find(obj.filter_trials(...
-                    'range', sd.post_switch_trials,...
-                    'start', sd.constant_path_start,...
-                    'correct'));
-                st.changing_pre = find(obj.filter_trials(...
-                    'range', sd.pre_switch_trials,...
-                    'start', sd.changing_path_start,...
-                    'correct'));
-                st.changing_post = find(obj.filter_trials(...
-                    'range', sd.post_switch_trials,...
-                    'start', sd.changing_path_start,...
-                    'correct'));
-            end
-        end
-        
-        function trial_inds = get_constant_path_trials(obj)
-            trial_inds = find(obj.filter_trials('start', obj.switchdata.constant_path_start));
-        end
-        
-        function trial_inds = get_changing_path_trials(obj)
-            trial_inds = find(obj.filter_trials('start', obj.switchdata.changing_path_start));
-        end
-        
-        function reset_switchdata(obj)
-            obj.switchdata.pre_switch_trials = [];
-            obj.switchdata.post_switch_trials = [];
-            obj.switchdata.changing_path_start = '';
-            obj.switchdata.constant_path_start = '';
-            obj.switchdata.changing_path_cutoff = [];
+            obj.are_events_loaded = true;
         end
             
     end % public methods
