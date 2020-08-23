@@ -7,9 +7,11 @@ function events = detect_events(ds, cell_idx, fps, varargin)
 % The application allows for real-time visualization of detected events as
 % a function of the algorithmic parameters.
 
+cutoff_freq = 4; % Hz. From Wagner et al. 2019
+
 use_prompt = true;
 M = [];
-cutoff_freq = 4; % Hz. From Wagner et al. 2019
+movie_clim = [];
 
 for j = 1:length(varargin)
     vararg = varargin{j};
@@ -29,26 +31,22 @@ for j = 1:length(varargin)
     end
 end
 
-% Default event processing
+% Compute events
 %------------------------------------------------------------
+events = struct('info', [], 'data', []);
+events.info = struct('cutoff_freq', [],...
+                     'baseline', [],...
+                     'sigma', [],...
+                     'threshold', [],...
+                     'merge_threshold', 0.05,...
+                     'amp_threshold', 0.1);
+
+trace_orig = ds.get_trace(cell_idx);
+num_frames = length(trace_orig);
 
 % We look for events in a smoothed version of the trace
-trace_orig = ds.get_trace(cell_idx);
-trace = filter_trace(ds, cell_idx, fps, cutoff_freq);
-num_frames = length(trace);
-
-% Set default threshold values.
-% TODO: Think about whether it makes more sense to compute trace properties
-% (baseline and sigma) from the unfiltered trace.
-[baseline, sigma, stats] = estimate_baseline_sigma(trace);
-
-init_info = struct('num_frames', num_frames,...
-                   'baseline', baseline,...
-                   'sigma', sigma,...
-                   'threshold', baseline + 5*sigma,...
-                   'merge_threshold', 0.05,...
-                   'amp_threshold', 0.1);
-events = struct('info', init_info, 'data', []);
+[trace, stats] = preprocess_trace(fps, cutoff_freq); % Fills in 'events.info'
+init_info = events.info;
 compute_events(); % Fills in 'events.data'
 
 % Set up GUI
@@ -62,11 +60,11 @@ if ~isempty(M) && isempty(movie_clim)
 end
 
 hfig = figure;
-gui = setup_gui(hfig, num_frames, compute_display_range(trace), stats, trace_orig);
+gui = setup_gui(hfig, stats, trace_orig);
 
 % GUI state
 state.x_anchor = 1;
-state.x_range = min(20*fps, num_frames); % By default, show 20 s windows
+state.x_range = min(20*fps, gui.num_frames); % By default, show 20 s windows
 state.show_orig = true;
 state.show_dots = false;
 state.show_trials = (ds.num_trials > 1);
@@ -143,7 +141,10 @@ end % Main interaction loop
 
     % Supplementary functions
     %------------------------------------------------------------
-    function gui = setup_gui(hf, num_frames, trace_display_range, stats, trace_orig)
+    function gui = setup_gui(hf, stats, trace_orig)
+        num_frames = length(trace_orig);
+        trace_display_range = compute_display_range(trace_orig);
+        
         % Display parameters kept around for convenience
         gui.hfig = hf;
         gui.num_frames = num_frames;
@@ -537,7 +538,7 @@ end % Main interaction loop
         % GLOBAL subplot
         set(gui.global_thresh, 'YData', events.info.threshold*[1 1]);
         set(gui.global_auto, 'XData', event_peak_times, 'YData', trace(event_peak_times));
-        update_event_tally(gui);
+        update_global_title(gui);
         
         % HISTOGRAM subplot
         set(gui.histogram_thresh, 'XData', events.info.threshold*[1 1]);
@@ -574,7 +575,7 @@ end % Main interaction loop
         set(gui.local_auto_amps, 'XData', X, 'YData', Y);
     end % draw_thresholds
 
-    function update_event_tally(gui)
+    function update_global_title(gui)
         num_events = size(events.data,1);
         
         subplot(gui.global);
@@ -583,7 +584,8 @@ end % Main interaction loop
         else
             event_str = 'events';
         end
-        title(sprintf('Cell %d: %d %s', cell_idx, num_events, event_str));
+        title(sprintf('Cell %d, Cutoff freq = %.1f Hz\n%d %s',...
+            cell_idx, events.info.cutoff_freq, num_events, event_str));
     end % update_event_tally
 
     function show_trial(trial_idx, gui)
@@ -636,6 +638,16 @@ end % Main interaction loop
 
     % Data processing
     %------------------------------------------------------------
+    function [tr, stats] = preprocess_trace(fps, cutoff_freq)
+        tr = filter_trace(ds, cell_idx, fps, cutoff_freq);
+        [baseline, sigma, stats] = estimate_baseline_sigma(tr); % [baseline, sigma, stats]
+        
+        events.info.cutoff_freq = cutoff_freq;
+        events.info.baseline = baseline;
+        events.info.sigma = sigma;
+        events.info.threshold = baseline + 5*sigma;
+    end
+    
     function compute_events()
         % Core event computation. Uses the parameters in events.info, and
         % fills out events.data

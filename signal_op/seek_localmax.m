@@ -1,7 +1,7 @@
 function x = seek_localmax(trace, x)
 
 iter = 0;
-while (iter < 100) % Hard brake to prevent long/infinite loops
+while (iter < 1000) % Hard brake to prevent long/infinite loops
     if x == 1
         delta_left = -Inf;
     else

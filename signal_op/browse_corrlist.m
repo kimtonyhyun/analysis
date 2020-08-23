@@ -145,7 +145,7 @@ end % while (1)
             case 'norm'
                 ticks = 0:0.1:1;
             case 'zsc'
-                ticks = -50:5:50; % FIXME: Hard-coded   
+                ticks = -50:5:100; % FIXME: Hard-coded   
         end
         set(gui_data.corr_sp, 'XTick', ticks);
         set(gui_data.corr_sp, 'YTick', ticks);
