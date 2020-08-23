@@ -125,6 +125,25 @@ while (use_prompt)
                     show_trial(state.last_requested_trial+1, gui);
                 end
                 
+            case 'e' % "Exclude": Increase the 'amp_threshold' to exclude currently selected event
+                if state.sel_event == 0
+                    fprintf('  Please first select an event to exclude\n');
+                else
+                    normamps = events.data(:,3) / max(events.data(:,3)); % amp_threshold is normalized
+                    selected_amp = normamps(state.sel_event);
+                    
+                    normamps = sort(normamps, 'ascend');
+                    ind = find(normamps>selected_amp, 1, 'first');
+                    next_largest_amp = normamps(ind);
+                    if isempty(next_largest_amp)
+                        fprintf('  There are no events with a larger amplitude\n');
+                    else
+                        new_amp_threshold = 1/2*(selected_amp + next_largest_amp);
+                        set_thresholds([], [], new_amp_threshold, gui);
+                    end
+                end
+                
+                
             case 'f' % Set lowpass filter cutoff frequency
                 cf = str2double(resp(2:end));
                 if cf > 0
@@ -439,11 +458,13 @@ end % Main interaction loop
                 x = round(e.IntersectionPoint(1));
 
                 % Find the nearest event
-                event_times = events.data(:,2);
-                delta_times = abs(event_times - x);
-                [~, se] = min(delta_times);
+                if ~isempty(events.data)
+                    event_times = events.data(:,2);
+                    delta_times = abs(event_times - x);
+                    [~, se] = min(delta_times);
 
-                select_event(se, gui);
+                    select_event(se, gui);
+                end
                     
             case 3 % Right click
                 
@@ -664,6 +685,7 @@ end % Main interaction loop
     end % select_event
 
     function deselect_event(gui)
+        state.sel_event = 0;
         select_event(0, gui);
     end
 
