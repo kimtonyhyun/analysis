@@ -48,7 +48,7 @@ title(changing_path_title);
         xlabel('');
         
         % Binary indicator on whether an event was detected for the trial
-        if ds.is_eventdata_loaded
+        if ds.are_events_loaded
             eind_width = 0.05*length(aligned_time);
             for k = 1:length(trial_inds)
                 trial_idx = trial_inds(k);
