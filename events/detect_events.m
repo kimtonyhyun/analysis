@@ -10,6 +10,7 @@ function events = detect_events(ds, cell_idx, fps, varargin)
 cutoff_freq = 4; % Hz. From Wagner et al. 2019
 
 use_prompt = true;
+hfig = [];
 M = [];
 movie_clim = [];
 
@@ -17,6 +18,8 @@ for j = 1:length(varargin)
     vararg = varargin{j};
     if ischar(vararg)
         switch lower(vararg)
+            case 'h' % Figure handle
+                hfig = varargin{j+1};
             case 'noprompt'
                 use_prompt = false;
             case 'cutoff'
@@ -68,7 +71,9 @@ if ~isempty(M) && isempty(movie_clim)
     movie_clim = compute_movie_scale(M);
 end
 
-hfig = figure;
+if isempty(hfig)
+    hfig = figure;
+end
 gui = setup_gui(hfig, stats, trace_orig);
 
 % GUI state
@@ -99,6 +104,9 @@ while (use_prompt)
         end
     else % Not a number
         resp = lower(resp);
+        if isempty(resp)
+            resp = 'n';
+        end
         switch (resp(1))
             case 'q' % "quit"
                 ds_events = ds.cells(cell_idx).events;
@@ -113,7 +121,6 @@ while (use_prompt)
                         end
                     end
                 end
-                close(hfig);
                 break;
                 
             case {'s', 'w'} % Save event detection parameters and results to DaySummary
@@ -150,8 +157,8 @@ while (use_prompt)
                 state.show_neighbors = ~state.show_neighbors;
                 update_gui_state(gui, state);
                 
-            case {'', 'n'} % next trial
-                if state.last_requested_trial < ds.num_trials
+            case 'n' % next trial
+                if (ds.num_trials > 1) && (state.last_requested_trial < ds.num_trials)
                     show_trial(state.last_requested_trial+1, gui);
                 end
                 
@@ -215,6 +222,8 @@ end % Main interaction loop
     % Supplementary functions
     %------------------------------------------------------------
     function gui = setup_gui(hfig, stats, trace_orig)
+        figure(hfig);
+        clf(hfig);
         
         num_frames = length(trace_orig);
         trace_display_range = compute_display_range(trace_orig);
