@@ -1,4 +1,4 @@
-function events = detect_events(ds, cell_idx, fps, varargin)
+function events = detect_events_interactively(ds, cell_idx, fps, varargin)
 % Detect calcium events in the fluorescence trace interactively. Core
 % computations are:
 %   - Determine default thresholds (via 'estimate_baseline_sigma.m'),
