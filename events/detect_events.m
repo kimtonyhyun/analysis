@@ -31,20 +31,32 @@ for j = 1:length(varargin)
     end
 end
 
-% Compute events
+% See if DaySummary already has events computed for this cell, or compute
+% events from scratch.
 %------------------------------------------------------------
-events = struct('info', [], 'data', []);
-events.info = struct('cutoff_freq', [],...
-                     'baseline', [],...
-                     'sigma', [],...
-                     'threshold', [],...
-                     'merge_threshold', 0.05,...
-                     'amp_threshold', 0.1);
+trace_orig = ds.get_trace(cell_idx);
 
-% We look for events in a smoothed version of the trace
-[trace, stats] = preprocess_trace(fps, cutoff_freq); % Fills in 'events.info'
+events = ds.cells(cell_idx).events;
+if ~isempty(events)
+    fprintf('  Using existing event detection results from DaySummary\n');
+    [trace, stats] = preprocess_trace(fps, events.info.cutoff_freq);
+else
+    % No event data found in DaySummary
+    events = struct('info', [], 'data', []);
+    events.info = struct('num_frames', length(trace_orig),...
+                         'cutoff_freq', [],...
+                         'baseline', [],...
+                         'sigma', [],...
+                         'threshold', [],...
+                         'merge_threshold', 0.05,...
+                         'amp_threshold', 0.1);
+
+    [trace, stats] = preprocess_trace(fps, cutoff_freq);
+    events.info.threshold = events.info.baseline + 5*events.info.sigma;
+    compute_events();
+end
+
 init_info = events.info;
-compute_events(); % Fills in 'events.data'
 
 % Set up GUI
 %------------------------------------------------------------
@@ -57,7 +69,7 @@ if ~isempty(M) && isempty(movie_clim)
 end
 
 hfig = figure;
-gui = setup_gui(hfig, stats);
+gui = setup_gui(hfig, stats, trace_orig);
 
 % GUI state
 state.x_anchor = 1;
@@ -91,6 +103,10 @@ while (use_prompt)
             case 'q' % "quit"
                 close(hfig);
                 break;
+                
+            case 's' % Save event detection parameters and results to DaySummary
+                ds.cells(cell_idx).events = events;
+                fprintf('  Events saved to DaySummary\n');
 
             case {'i', 'z'} % zoom in
                 x_center = state.x_anchor + 1/2 * state.x_range;
@@ -157,11 +173,13 @@ while (use_prompt)
                     fprintf('Invalid cutoff frequency request "%s"\n', resp);
                 end
                 
-            case 't' % reset threshold
+            case 't' % reset parameters
                 fprintf('  Reset event processing parameters to initial values\n');
                 events.info = init_info;
-                compute_events();
-                draw_thresholds(gui);
+                [trace, stats] = preprocess_trace(fps, events.info.cutoff_freq);
+                update_traces(gui);
+                draw_histogram(gui, stats);
+                set_thresholds([], [], [], gui);
 
             otherwise
                 fprintf('  Sorry, could not parse "%s"\n', resp);
@@ -171,8 +189,7 @@ end % Main interaction loop
 
     % Supplementary functions
     %------------------------------------------------------------
-    function gui = setup_gui(hfig, stats)
-        trace_orig = ds.get_trace(cell_idx);
+    function gui = setup_gui(hfig, stats, trace_orig)
         
         num_frames = length(trace_orig);
         trace_display_range = compute_display_range(trace_orig);
@@ -557,7 +574,7 @@ end % Main interaction loop
         count_range = [1 10^ceil(log10(max(stats.hist_counts)))];
         ylim(count_range);
         
-        set(gui.histogram_mode, 'XData', stats.mode*[1 1],...
+        set(gui.histogram_mode, 'XData', events.info.baseline*[1 1],...
                                 'YData', count_range);
         set(gui.histogram_thresh, 'XData', events.info.threshold*[1 1],...
                                   'YData', count_range);
@@ -693,14 +710,13 @@ end % Main interaction loop
     %------------------------------------------------------------
     function [tr, stats] = preprocess_trace(fps, cutoff_freq)
         tr = filter_trace(ds, cell_idx, fps, cutoff_freq);
-        [baseline, sigma, stats] = estimate_baseline_sigma(tr); % [baseline, sigma, stats]
+        [baseline, sigma, stats] = estimate_baseline_sigma(tr);
         
         events.info.cutoff_freq = cutoff_freq;
         events.info.baseline = baseline;
         events.info.sigma = sigma;
-        events.info.threshold = baseline + 5*sigma;
     end
-    
+
     function compute_events()
         % Core event computation. Uses the parameters in events.info, and
         % fills out events.data

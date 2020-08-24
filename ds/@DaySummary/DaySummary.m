@@ -43,7 +43,6 @@ classdef DaySummary < handle
         behavior_vid
         behavior_ref_img
         is_tracking_loaded
-        are_events_loaded
         orig_trial_indices
     end
         
@@ -274,12 +273,10 @@ classdef DaySummary < handle
             end
             
             % Event data
-            obj.are_events_loaded = false;
             event_source = get_most_recent_file(rec_dir, 'events_*.mat');
             if ~isempty(event_source)
                 obj.load_events(event_source);
             end
-            
         end
         
         % Helper functions
@@ -382,9 +379,9 @@ classdef DaySummary < handle
         
         function [trace, frame_indices, selected_trials] = get_trace(obj, cell_idx, varargin)
             % For a cell, return traces over selected sets of trials.
+            % TODO: Re-introduce event-based "fill" options.
             normalization_method = [];
             selected_trials = 1:obj.num_trials;
-            fill_type = 'traces';
             
             for k = 1:length(varargin)
                 vararg = varargin{k};
@@ -392,14 +389,10 @@ classdef DaySummary < handle
                     selected_trials = vararg;
                 elseif ischar(vararg)
                     switch lower(vararg)
-                        % TODO: Explore complications (if any) between
-                        % normalization and trace fill type
                         case 'norm'
                             normalization_method = 'basic';
                         case {'zsc', 'zscore'}
                             normalization_method = 'zscore';
-                        case 'fill'
-                            fill_type = varargin{k+1};
                     end
                 end
             end
@@ -410,35 +403,8 @@ classdef DaySummary < handle
             frame_indices = [];
             for k = selected_trials
                 tr = obj.trials(k).traces(cell_idx,:);
-                if ~obj.are_events_loaded
-                    % If eventdata is not available, then the only fill
-                    % type (currently) allowed is 'traces'
-                    trf = tr;
-                else
-                    ed = obj.trials(k).events{cell_idx};
-                    trf = zeros(size(tr));
-                    switch fill_type
-                        case {'trace', 'traces'}
-                            trf = tr;
-
-                        case 'copy'                       
-                            for m = 1:size(ed,1)
-                                ef = ed(m,1):ed(m,2); % event frames (trough to peak)
-                                trf(ef) = tr(ef);
-                            end
-
-                        case {'copyamp', 'copyzero'}
-                            for m = 1:size(ed,1)
-                                ef = ed(m,1):ed(m,2);
-                                trf(ef) = tr(ef) - tr(ef(1));
-                            end
-
-                        otherwise
-                            error('Fill type "%s" not recognized', fill_type);
-                    end
-                end
                 
-                trace = [trace trf]; %#ok<*AGROW>
+                trace = [trace tr]; %#ok<*AGROW>
                 frame_indices = [frame_indices obj.trial_indices(k,1):obj.trial_indices(k,end)];
             end
             
@@ -674,7 +640,7 @@ classdef DaySummary < handle
             obj.is_tracking_loaded = true;
         end
         
-        % Load event data
+        % Load/save events
         %------------------------------------------------------------
         function load_events(obj, event_source)
             data = load(event_source);
@@ -683,18 +649,25 @@ classdef DaySummary < handle
             
             % Note: We are expecting that event detection has been run on
             % _all_ trials, including probes.
-            assert(data.events(1).info.num_frames == obj.full_num_frames,...
-                'Error: Number of frames in event file does not match full number of frames in DaySummary!');
-            
-            events_per_trial = compute_events_per_trial({data.events.data},...
-                obj.orig_trial_indices, obj.full_num_frames);
-            for k = 1:obj.num_trials
-                obj.trials(k).events = events_per_trial{k};
+            for k = 1:obj.num_cells
+                events_k = data.events{k};
+                if ~isempty(events_k)
+                    assert(events_k.info.num_frames == obj.full_num_frames,...
+                        'Error: Number of frames used in event detection does not match full number of frames in DaySummary!');
+                    obj.cells(k).events = data.events{k};
+                end
             end
             
             fprintf('%s: Loaded events from "%s"\n',...
                 datestr(now), event_source);
-            obj.are_events_loaded = true;
+        end
+        
+        function save_events(obj)
+            events = {obj.cells.events}; %#ok<NASGU>
+            
+            timestamp = datestr(now, 'yymmdd-HHMMSS');
+            event_savename = sprintf('events_%s.mat', timestamp);
+            save(event_savename, 'events', '-v7.3');
         end
             
     end % public methods
