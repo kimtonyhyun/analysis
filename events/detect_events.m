@@ -101,13 +101,27 @@ while (use_prompt)
         resp = lower(resp);
         switch (resp(1))
             case 'q' % "quit"
+                ds_events = ds.cells(cell_idx).events;
+                if isempty(ds_events)
+                    ds.cells(cell_idx).events = events;
+                else
+                    if ~isequal(ds_events.info, events.info)
+                        resp2 = strtrim(input('  Overwrite existing event results in DaySummary? (y/N) >> ', 's'));
+                        switch lower(resp2)
+                            case 'y'
+                                ds.cells(cell_idx).events = events;
+                        end
+                    end
+                end
                 close(hfig);
                 break;
                 
-            case 's' % Save event detection parameters and results to DaySummary
+            case {'s', 'w'} % Save event detection parameters and results to DaySummary
                 ds.cells(cell_idx).events = events;
                 fprintf('  Events saved to DaySummary\n');
 
+            % Visualization
+            %------------------------------------------------------------
             case {'i', 'z'} % zoom in
                 x_center = state.x_anchor + 1/2 * state.x_range;
                 state.x_range = 0.5*state.x_range;
@@ -141,6 +155,18 @@ while (use_prompt)
                     show_trial(state.last_requested_trial+1, gui);
                 end
                 
+            case 'm' % show even with minimum amplitude
+                if ~isempty(events.data)
+                    [~, ind] = min(events.data(:,3));
+                    select_event(ind, gui);
+                    
+                    event_time = events.data(ind,2);
+                    state.x_anchor = event_time - 1/2*state.x_range;
+                    draw_local_window(gui, state);
+                end
+                
+            % Modify processing parameters    
+            %------------------------------------------------------------
             case 'e' % "Exclude": Increase the 'amp_threshold' to exclude currently selected event
                 if state.sel_event == 0
                     fprintf('  Please first select an event to exclude\n');
@@ -159,18 +185,17 @@ while (use_prompt)
                     end
                 end
                 
-                
             case 'f' % Set lowpass filter cutoff frequency
                 cf = str2double(resp(2:end));
                 if cf > 0
-                    fprintf('Setting cutoff frequency to %.1f\n', cf);
+                    fprintf('  Set cutoff frequency to %.1f\n', cf);
                     [trace, stats] = preprocess_trace(fps, cf);
                     
                     update_traces(gui);
                     draw_histogram(gui, stats);
                     set_thresholds([], [], [], gui); % Recomputes events
                 else
-                    fprintf('Invalid cutoff frequency request "%s"\n', resp);
+                    fprintf('  Invalid cutoff frequency request "%s"\n', resp);
                 end
                 
             case 't' % reset parameters
