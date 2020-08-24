@@ -1,4 +1,4 @@
-function events = detect_all_events(ds)
+function events = detect_events(ds)
 
 save_to_file = true;
 if ds.full_num_frames ~= ds.trial_indices(end,end)
