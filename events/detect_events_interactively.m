@@ -7,8 +7,6 @@ function events = detect_events_interactively(ds, cell_idx, fps, varargin)
 % The application allows for real-time visualization of detected events as
 % a function of the algorithmic parameters.
 
-cutoff_freq = 4; % Hz. From Wagner et al. 2019
-
 use_prompt = true;
 hfig = [];
 M = [];
@@ -22,8 +20,6 @@ for j = 1:length(varargin)
                 hfig = varargin{j+1};
             case 'noprompt'
                 use_prompt = false;
-            case 'cutoff'
-                cutoff_freq = varargin{j+1};
             case {'m', 'movie'}
                 M = varargin{j+1};
             case {'clim', 'movie_clim'}
@@ -34,32 +30,30 @@ for j = 1:length(varargin)
     end
 end
 
-% See if DaySummary already has events computed for this cell, or compute
-% events from scratch.
+% Set up default event detection parameters. Overwrite from that in
+% DaySummary, if available
 %------------------------------------------------------------
 trace_orig = ds.get_trace(cell_idx);
+[b, s] = estimate_baseline_sigma(trace_orig);
 
-events = ds.cells(cell_idx).events;
-if ~isempty(events)
+events = struct('info', [], 'data', []);
+events.info = struct('num_frames', length(trace_orig),...
+                     'cutoff_freq', 4,... % Hz. Wagner et al. 2019
+                     'baseline', b,...
+                     'sigma', s,...
+                     'threshold', b + 2.5*s,...
+                     'merge_threshold', 0.0,...
+                     'amp_threshold', 0.1);
+
+ds_events = ds.cells(cell_idx).events;
+if ~isempty(ds_events)
     fprintf('  Using existing event detection results from DaySummary\n');
-    [trace, stats] = preprocess_trace(fps, events.info.cutoff_freq);
-else
-    % No event data found in DaySummary
-    events = struct('info', [], 'data', []);
-    events.info = struct('num_frames', length(trace_orig),...
-                         'cutoff_freq', [],...
-                         'baseline', [],...
-                         'sigma', [],...
-                         'threshold', [],...
-                         'merge_threshold', 0.05,...
-                         'amp_threshold', 0.1);
-
-    [trace, stats] = preprocess_trace(fps, cutoff_freq);
-    events.info.threshold = events.info.baseline + 5*events.info.sigma;
-    compute_events();
+    events = ds_events;
 end
-
 init_info = events.info;
+
+[trace, stats] = preprocess_trace(fps, events.info.cutoff_freq);
+compute_events();
 
 % Set up GUI
 %------------------------------------------------------------
@@ -160,6 +154,8 @@ while (use_prompt)
             case 'n' % next trial
                 if (ds.num_trials > 1) && (state.last_requested_trial < ds.num_trials)
                     show_trial(state.last_requested_trial+1, gui);
+                else
+                    get_next_page(gui);
                 end
                 
             case 'm' % show even with minimum amplitude

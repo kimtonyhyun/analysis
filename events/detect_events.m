@@ -1,27 +1,10 @@
-function events = detect_events(ds)
+function detect_events(ds, M, fps, varargin)
+% A convenience wrapper around 'detect_events_interactively.m'. Mirrors the
+% design of 'classify_cells.m'
 
-save_to_file = true;
-if ds.full_num_frames ~= ds.trial_indices(end,end)
-    fprintf('Warning: Event detection should be performed for all trials, including probes!\n');
-    fprintf('  Current results will not be saved to file.\n');
-    save_to_file = false;
-end
+state = struct('fig_handle', [],...
+               'movie_clim', []);
 
-events = cell(ds.num_cells, 1);
-for k = 1:ds.num_cells
-    if (k==1) || (mod(k,50)==0)
-        fprintf('%s: At cell %d of %d...\n', datestr(now), k, ds.num_cells);
-    end
-    events{k} = detect_events(ds, k, 'noprompt');
-end
+state.movie_clim = compute_movie_scale(M);
 
-events = cell2mat(events); % Convert cell to array of structs
-
-% Save to file
-if save_to_file
-    timestamp = datestr(now, 'yymmdd-HHMMSS');
-    event_savename = sprintf('events_%s.mat', timestamp);
-    save(event_savename, 'events', '-v7.3');
-    
-    ds.load_events(event_savename);
-end
+end % detect_events
