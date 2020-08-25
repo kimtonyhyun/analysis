@@ -20,6 +20,8 @@ end
 
 cell_idx = 1;
 while (1)
+    display_trace();
+    
     if isempty(ds.cells(cell_idx).events)
         event_str = 'unprocessed';
     else
@@ -45,32 +47,41 @@ while (1)
     else % Not a number
         resp = lower(resp);
         if isempty(resp)
-            resp = 'n';
-        end
-        
-        switch (resp(1))
-            case 'q' % "quit"
-                break;
-                
-            case {'d', 'c'} % Detect events
-                detect_events_interactively(ds, cell_idx, fps, 'hfig', hfig);
-                
-            case 'm' % Detect events with movie
-                if ~isempty(M)
-                    detect_events_interactively(ds, cell_idx, fps, 'hfig', hfig,...
-                        'movie', M, 'movie_clim', movie_clim);
-                else
-                    fprintf('  Movie not loaded!\n');
-                end
-                
-            case 'n' % Next cell
-                go_to_next_cell();
-                
-            otherwise
-                fprintf('  Sorry, could not parse "%s"\n', resp);
+            go_to_next_cell()
+        else
+            switch (resp(1))
+                case 'q' % "quit"
+                    close(hfig);
+                    break;
+
+                case {'d', 'c'} % Detect events
+                    detect_events_interactively(ds, cell_idx, fps, 'hfig', hfig);
+
+                case 'm' % Detect events with movie
+                    if ~isempty(M)
+                        detect_events_interactively(ds, cell_idx, fps, 'hfig', hfig,...
+                            'movie', M, 'movie_clim', movie_clim);
+                    else
+                        fprintf('  Movie not provided!\n');
+                    end
+
+                case 'n' % Next cell
+                    go_to_next_cell();
+
+                otherwise
+                    fprintf('  Sorry, could not parse "%s"\n', resp);
+            end
         end
     end
 end % Main interaction loop
+
+    function display_trace()
+        clf(hfig, 'reset');
+        subplot(121);
+        ds.plot_trace(cell_idx);
+        title(sprintf('Cell %d of %d', cell_idx, ds.num_cells));
+        subplot(122);
+    end % display_trace
 
     function go_to_next_cell()
         no_events = cellfun(@isempty, {ds.cells.events});

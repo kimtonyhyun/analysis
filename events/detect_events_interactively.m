@@ -50,7 +50,7 @@ events.info = struct('method', 'detect_events_interactively',...
 
 ds_events = ds.cells(cell_idx).events;
 if ~isempty(ds_events)
-    fprintf('  Using existing event detection results from DaySummary\n');
+    cprintf('blue', '  Using existing event detection results\n');
     events = ds_events;
 end
 init_info = events.info;
@@ -90,7 +90,7 @@ end
 
 % Interaction loop
 %------------------------------------------------------------
-prompt = '  Detector >> ';
+prompt = '  >> ';
 while (use_prompt)
     resp = strtrim(input(prompt, 's'));
     val = str2double(resp);
@@ -119,7 +119,8 @@ while (use_prompt)
                     ds.cells(cell_idx).events = events;
                 else
                     if ~isequal(ds_events.info, events.info)
-                        resp2 = strtrim(input('  Overwrite existing event results in DaySummary? (y/N) >> ', 's'));
+                        cprintf('red', '  Overwrite existing event results in DaySummary? (y/N) ');
+                        resp2 = strtrim(input('>> ', 's'));
                         switch lower(resp2)
                             case 'y'
                                 ds.cells(cell_idx).events = events;
