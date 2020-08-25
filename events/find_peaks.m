@@ -1,22 +1,18 @@
-function peakdata = find_peaks(trace, threshold, baseline)
+function peaks = find_peaks(trace, threshold, baseline)
 % For each segment in 'trace' above the specified 'threshold', every local
 % maximum within those segments are identified as peaks.
 %
 % Returns:
-%   events: [num_peaks x 5] where
-%     peak_data(k,1): Frame of the trough preceding the k-th peak. ("Pre" trough)
-%     peak_data(k,2): Trace value at pre-trough.
-%     peak_data(k,3): Frame of the k-th peak.
-%     peak_data(k,4): Trace value at peak.
-%     peak_data(k,5): Frame of the trough following the k-th peak ("Post" trough)
-%     peak_data(k,6): Trace value at post-trough.
+%   peaks: [num_peaks x 3] where
+%     peaks(k,1): Frame of the trough preceding the k-th peak. ("Pre" trough)
+%     peaks(k,2): Frame of the k-th peak.
+%     peaks(k,3): Amplitude of the k-th peak (peak - trough)
 %
 
-num_frames = length(trace);
 above_thresh_frames = find(trace >= threshold);
 
 if ~any(above_thresh_frames)
-    peakdata = [];
+    peaks = [];
     return;
 end
 
@@ -33,7 +29,7 @@ end
 peak_frames = cell2mat(peak_frames);
 
 num_peaks = length(peak_frames);
-peakdata = zeros(num_peaks, 5);
+peaks = zeros(num_peaks, 5);
 for k = 1:num_peaks
     peak_frame = peak_frames(k);
     
@@ -62,34 +58,11 @@ for k = 1:num_peaks
         pre_trough_val = trace(pre_trough_frame); 
     end
     
-    % POST trough
-    %------------------------------------------------------------
-    % Similar consideration as the PRE trough calculations.
-    post_trough_not_found = false;
-    if (peak_frame == num_frames)
-        post_trough_not_found = true;
-    else
-        post_trough_frame = seek_localmin(trace, peak_frame + 1);
-        if (post_trough_frame == num_frames)
-            post_trough_not_found = true;
-        end
-    end
-    
-    if post_trough_not_found
-        post_trough_frame = num_frames;
-        post_trough_val = baseline;
-    else
-        post_trough_val = trace(post_trough_frame);
-    end
-    
     % Format data for output
     %------------------------------------------------------------
-    peakdata(k,1) = pre_trough_frame;
-    peakdata(k,2) = pre_trough_val;
-    peakdata(k,3) = peak_frame;
-    peakdata(k,4) = trace(peak_frame);
-    peakdata(k,5) = post_trough_frame;
-    peakdata(k,6) = post_trough_val;
+    peaks(k,1) = pre_trough_frame;
+    peaks(k,2) = peak_frame;
+    peaks(k,3) = trace(peak_frame) - pre_trough_val;
 end
 
 end % find_events

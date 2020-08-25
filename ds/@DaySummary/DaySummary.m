@@ -647,15 +647,8 @@ classdef DaySummary < handle
             assert(length(data.events) == obj.num_cells,...
                 'Error: Number of cells in event file does not match that in DaySummary!');
             
-            % Note: We are expecting that event detection has been run on
-            % _all_ trials, including probes.
             for k = 1:obj.num_cells
-                events_k = data.events{k};
-                if ~isempty(events_k)
-                    assert(events_k.info.num_frames == obj.full_num_frames,...
-                        'Error: Number of frames used in event detection does not match full number of frames in DaySummary!');
-                    obj.cells(k).events = data.events{k};
-                end
+                obj.cells(k).events = data.events{k};
             end
             
             fprintf('%s: Loaded events from "%s"\n',...

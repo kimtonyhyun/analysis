@@ -485,8 +485,9 @@ end % Main interaction loop
                     select_event(se, gui);
                 end
                     
-            case 3 % Right click
-                
+            case 3 % Right click -- Set threshold
+                t = e.IntersectionPoint(2);
+                set_thresholds(t, [], gui);
         end
     end % local_plot_handler
 
@@ -716,10 +717,19 @@ end % Main interaction loop
     function compute_events()
         % Core event computation. Uses the parameters in events.info, and
         % fills out events.data
-        events.data = find_events_in_trials(trace, ds.trial_indices,...
+        peaks = find_peaks_in_trials(trace, ds.trial_indices,...
             events.info.threshold,...
-            events.info.baseline,...
-            events.info.amp_threshold);
+            events.info.baseline);
+        
+        % Filter based on amplitudes
+        if isempty(peaks)
+            events.data = [];
+        else
+            max_amplitude = max(peaks(:,3));
+
+            filtered_peaks = peaks(:,3) > (events.info.amp_threshold * max_amplitude);
+            events.data = peaks(filtered_peaks,:);
+        end
     end
 
     function set_thresholds(threshold, amp_threshold, gui)
