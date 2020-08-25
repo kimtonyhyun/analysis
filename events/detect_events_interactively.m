@@ -7,6 +7,8 @@ function events = detect_events_interactively(ds, cell_idx, fps, varargin)
 % The application allows for real-time visualization of detected events as
 % a function of the algorithmic parameters.
 
+threshold_num_sigmas = 3;
+
 use_prompt = true;
 hfig = [];
 M = [];
@@ -31,18 +33,15 @@ for j = 1:length(varargin)
 end
 
 % Set up default event detection parameters. Overwrite from that in
-% DaySummary, if available
+% DaySummary, if available.
 %------------------------------------------------------------
 trace_orig = ds.get_trace(cell_idx);
-[b, s] = estimate_baseline_sigma(trace_orig);
 
 events = struct('info', [], 'data', []);
-events.info = struct('num_frames', length(trace_orig),...
-                     'cutoff_freq', 4,... % Hz. Wagner et al. 2019
-                     'baseline', b,...
-                     'sigma', s,...
-                     'threshold', b + 2.5*s,...
-                     'merge_threshold', 0.0,...
+events.info = struct('cutoff_freq', 4,... % Hz. As in Wagner et al. 2019
+                     'baseline', [],...
+                     'sigma', [],...
+                     'threshold', [],...
                      'amp_threshold', 0.1);
 
 ds_events = ds.cells(cell_idx).events;
@@ -72,7 +71,7 @@ gui = setup_gui(hfig, stats, trace_orig);
 
 % GUI state
 state.x_anchor = 1;
-state.x_range = min(20*fps, gui.num_frames); % By default, show 20 s windows
+state.x_range = min(30*fps, gui.num_frames);
 state.show_orig = true;
 state.show_dots = false;
 state.show_trials = (ds.num_trials > 1);
@@ -184,7 +183,7 @@ while (use_prompt)
                         fprintf('  There are no events with a larger amplitude\n');
                     else
                         new_amp_threshold = 1/2*(selected_amp + next_largest_amp);
-                        set_thresholds([], [], new_amp_threshold, gui);
+                        set_thresholds([], new_amp_threshold, gui);
                     end
                 end
                 
@@ -196,7 +195,7 @@ while (use_prompt)
                     
                     update_traces(gui);
                     draw_histogram(gui, stats);
-                    set_thresholds([], [], [], gui); % Recomputes events
+                    set_thresholds([], [], gui); % Recomputes events
                 else
                     fprintf('  Invalid cutoff frequency request "%s"\n', resp);
                 end
@@ -207,7 +206,7 @@ while (use_prompt)
                 [trace, stats] = preprocess_trace(fps, events.info.cutoff_freq);
                 update_traces(gui);
                 draw_histogram(gui, stats);
-                set_thresholds([], [], [], gui);
+                set_thresholds([], [], gui);
 
             otherwise
                 fprintf('  Sorry, could not parse "%s"\n', resp);
@@ -258,26 +257,10 @@ end % Main interaction loop
         hold off;
         ylabel('Trace histogram');
         view(-90, 90); % Rotate plot to match the global trace plot
-
-        % Setup the post-trough height CDF
-        %------------------------------------------------------------
-        gui.post_amps = subplot(4,4,4);
-        gui.post_cdf = plot(-1, -1, 'm.-', 'HitTest', 'off');
-        hold on;
-        gui.post_cdf_sel_event = plot(-1, -1, 'mo', 'HitTest', 'off');
-        gui.post_cdf_amp_threshold = plot(-1*[1 1], [0 1], 'k', 'HitTest', 'off');
-        hold off;
-        xlim([0 0.5]);
-        ylim([0 1]);
-        xticks(0:0.1:0.5);
-        yticks(0:0.1:1);
-        grid on;
-        xlabel('Post-amp / (max(trace) - baseline)');
-        ylabel('Post-amp CDF');
         
         % Setup the pre-trough height CDF (i.e. event amplitude)
         %------------------------------------------------------------
-        gui.pre_amps = subplot(4,4,8);
+        gui.pre_amps = subplot(2,4,4);
         gui.pre_cdf = plot(-1, -1, 'm.-', 'HitTest', 'off');
         hold on;
         gui.pre_cdf_sel_event = plot(-1, -1, 'mo', 'HitTest', 'off');
@@ -288,8 +271,8 @@ end % Main interaction loop
         xticks(0:0.1:1);
         yticks(0:0.1:1);
         grid on;
-        xlabel('Pre-amp / max(pre-amps)');
-        ylabel('Pre-amp CDF');
+        xlabel('Normalized event amplitude');
+        ylabel('CDF');
         
         % Setup the LOCAL trace plot
         %------------------------------------------------------------
@@ -390,7 +373,6 @@ end % Main interaction loop
         % Add GUI event listeners
         set(gui.global, 'ButtonDownFcn', {@global_plot_handler, gui});
         set(gui.histogram, 'ButtonDownFcn', {@histogram_handler, gui});
-        set(gui.post_amps, 'ButtonDownFcn', {@post_cdf_handler, gui});
         set(gui.pre_amps, 'ButtonDownFcn', {@pre_cdf_handler, gui});
         set(gui.local, 'ButtonDownFcn', {@local_plot_handler, gui});
         set(hfig, 'WindowButtonMotionFcn', {@track_cursor, gui});
@@ -451,7 +433,7 @@ end % Main interaction loop
                 
             case 3 % Right click -- Set threshold
                 t = e.IntersectionPoint(2);
-                set_thresholds(t, [], [], gui);
+                set_thresholds(t, [], gui);
         end
     end % global_plot_handler
 
@@ -461,20 +443,10 @@ end % Main interaction loop
                 
             case 3 % Right click -- Set threshold
                 t = e.IntersectionPoint(1);
-                set_thresholds(t, [], [], gui);
+                set_thresholds(t, [], gui);
         end
     end % histogram_handler
-
-    function post_cdf_handler(~, e, gui)
-        switch e.Button
-            case 1 % Left click
-                
-            case 3 % Right click -- Set the merge threshold
-                x = e.IntersectionPoint(1);
-                set_thresholds([], x, [], gui);
-        end
-    end % post_cdf_handler
-    
+   
     function pre_cdf_handler(~, e, gui)
         switch e.Button
             case 1 % Left click -- Select a particular event
@@ -495,7 +467,7 @@ end % Main interaction loop
                 end
             case 3 % Right click -- Set the amplitude threshold
                 x = e.IntersectionPoint(1);
-                set_thresholds([], [], x, gui);
+                set_thresholds([], x, gui);
         end
     end % pre_cdf_handler
 
@@ -617,19 +589,13 @@ end % Main interaction loop
         if ~isempty(events.data)
             event_peak_times = events.data(:,2);
             num_events = length(event_peak_times);
-            
-            post_amps = sort(events.data(:,4));
-            post_cdf_x = post_amps / (max(trace) - events.info.baseline);
-            post_cdf_y = (1:num_events)/num_events;
-            
+                        
             event_amps = sort(events.data(:,3));
             pre_cdf_x = event_amps / event_amps(end);
             pre_cdf_y = (1:num_events)/num_events;
         else
             event_peak_times = [];
             num_events = 0;
-            post_cdf_x = [];
-            post_cdf_y = [];
             pre_cdf_x = [];
             pre_cdf_y = [];
         end
@@ -642,12 +608,7 @@ end % Main interaction loop
         % HISTOGRAM subplot
         set(gui.histogram_thresh, 'XData', events.info.threshold*[1 1]);
         title(gui.histogram, sprintf('threshold=%.1f', events.info.threshold));
-        
-        % POST-trough amplitudes CDF subplot
-        set(gui.post_cdf_amp_threshold, 'XData', events.info.merge_threshold*[1 1]);
-        set(gui.post_cdf, 'XData', post_cdf_x, 'YData', post_cdf_y);
-        title(gui.post_amps, sprintf('merge\\_threshold=%.3f', events.info.merge_threshold));
-                
+                        
         % PRE-trough amplitudes CDF subplot
         set(gui.pre_cdf_amp_threshold, 'XData', events.info.amp_threshold*[1 1]);
         set(gui.pre_cdf, 'XData', pre_cdf_x, 'YData', pre_cdf_y);
@@ -745,6 +706,11 @@ end % Main interaction loop
         events.info.cutoff_freq = cutoff_freq;
         events.info.baseline = baseline;
         events.info.sigma = sigma;
+        
+        % Recompute the threhsold using the baseline and sigma of the
+        % filtered trace, otherwise there may be biases as a function of
+        % the cutoff filter
+        events.info.threshold = baseline + threshold_num_sigmas * sigma;
     end
 
     function compute_events()
@@ -753,18 +719,12 @@ end % Main interaction loop
         events.data = find_events_in_trials(trace, ds.trial_indices,...
             events.info.threshold,...
             events.info.baseline,...
-            events.info.merge_threshold,...
             events.info.amp_threshold);
     end
 
-    function set_thresholds(threshold, merge_threshold, amp_threshold, gui)
+    function set_thresholds(threshold, amp_threshold, gui)
         if ~isempty(threshold)
             events.info.threshold = threshold;
-        end
-        if ~isempty(merge_threshold)
-            merge_threshold = max(0, merge_threshold);
-            merge_threshold = min(merge_threshold, 1);
-            events.info.merge_threshold = merge_threshold;
         end
         if ~isempty(amp_threshold)
             amp_threshold = max(0, amp_threshold);
