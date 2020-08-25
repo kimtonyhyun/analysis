@@ -38,7 +38,8 @@ end
 trace_orig = ds.get_trace(cell_idx);
 
 events = struct('info', [], 'data', []);
-events.info = struct('cutoff_freq', 4,... % Hz. As in Wagner et al. 2019
+events.info = struct('method', 'kimth',...
+                     'cutoff_freq', 4,... % Hz. As in Wagner et al. 2019
                      'baseline', [],...
                      'sigma', [],...
                      'threshold', [],...
@@ -92,8 +93,16 @@ while (use_prompt)
     val = str2double(resp);
 
     if (~isnan(val) && isreal(val)) % Is a number
-        if (1 <= val) && (val <= ds.num_trials)
-            show_trial(val, gui);
+        if (ds.num_trials > 1)
+            if (1 <= val) && (val <= ds.num_trials)
+                show_trial(val, gui);
+            end
+        else
+            switch val
+                case 1
+                    state.x_anchor = 1;
+            end
+            update_gui_state(gui, state);
         end
     else % Not a number
         resp = lower(resp);
@@ -154,8 +163,15 @@ while (use_prompt)
                 if (ds.num_trials > 1) && (state.last_requested_trial < ds.num_trials)
                     show_trial(state.last_requested_trial+1, gui);
                 else
-                    get_next_page(gui);
+                    get_next_page(gui, 1);
                 end
+                
+            case 'p' % previous trial
+                if (ds.num_trials > 1) && (state.last_requested_trial > 1)
+                    show_trial(state.last_requested_trial-1, gui);
+                else
+                    get_prev_page(gui, 1);
+                end                
                 
             case 'm' % show even with minimum amplitude
                 if ~isempty(events.data)
@@ -530,20 +546,27 @@ end % Main interaction loop
         end
     end
 
-    function get_next_page(gui)
+    function get_next_page(gui, step_fraction)
+        if ~exist('step_fraction', 'var')
+            step_fraction = 0.1;
+        end
+        
         current_end = state.x_anchor + state.x_range;
         if (current_end >= gui.num_frames)
             new_anchor = gui.num_frames - state.x_range + 1;
         else
-            new_anchor = state.x_anchor + 0.1*state.x_range + 1;
+            new_anchor = state.x_anchor + step_fraction*state.x_range + 1;
         end
 
         state.x_anchor = new_anchor;
         draw_local_window(gui, state);
     end % get_next_page
 
-    function get_prev_page(gui)
-        new_anchor = state.x_anchor - (0.1*state.x_range + 1);
+    function get_prev_page(gui, step_fraction)
+        if ~exist('step_fraction', 'var')
+            step_fraction = 0.1;
+        end
+        new_anchor = state.x_anchor - (step_fraction*state.x_range + 1);
         state.x_anchor = max(1, new_anchor);
         draw_local_window(gui, state);
     end % get_prev_page
@@ -608,7 +631,8 @@ end % Main interaction loop
         
         % HISTOGRAM subplot
         set(gui.histogram_thresh, 'XData', events.info.threshold*[1 1]);
-        title(gui.histogram, sprintf('threshold=%.1f', events.info.threshold));
+        title(gui.histogram, sprintf('threshold = %.4f\\sigma',...
+            (events.info.threshold - events.info.baseline)/events.info.sigma));
                         
         % PRE-trough amplitudes CDF subplot
         set(gui.pre_cdf_amp_threshold, 'XData', events.info.amp_threshold*[1 1]);
