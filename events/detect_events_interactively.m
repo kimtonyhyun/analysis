@@ -1,11 +1,14 @@
 function events = detect_events_interactively(ds, cell_idx, fps, varargin)
 % Detect calcium events in the fluorescence trace interactively. Core
 % computations are:
-%   - Determine default thresholds (via 'estimate_baseline_sigma.m'),
-%   - Compute events (via 'find_events_in_trials.m').
+%   1) Low-pass filter the fluorescence trace,
+%   2) Determine default thresholds (via 'estimate_baseline_sigma.m'),
+%   3) Compute peaks (via 'find_peaks_in_trials.m').
+%   4) Filter peaks based on their amplitude.
 %
-% The application allows for real-time visualization of detected events as
-% a function of the algorithmic parameters.
+% This script allows for real-time visualization of detected events as
+% a function of the algorithmic parameters. The interaction can be switched
+% off via the 'noprompt' flag.
 
 threshold_num_sigmas = 3;
 
@@ -18,7 +21,7 @@ for j = 1:length(varargin)
     vararg = varargin{j};
     if ischar(vararg)
         switch lower(vararg)
-            case 'h' % Figure handle
+            case 'hfig' % Figure handle
                 hfig = varargin{j+1};
             case 'noprompt'
                 use_prompt = false;
@@ -38,7 +41,7 @@ end
 trace_orig = ds.get_trace(cell_idx);
 
 events = struct('info', [], 'data', []);
-events.info = struct('method', 'kimth',...
+events.info = struct('method', 'detect_events_interactively',...
                      'cutoff_freq', 4,... % Hz. As in Wagner et al. 2019
                      'baseline', [],...
                      'sigma', [],...
@@ -87,7 +90,7 @@ end
 
 % Interaction loop
 %------------------------------------------------------------
-prompt = 'Detector >> ';
+prompt = '  Detector >> ';
 while (use_prompt)
     resp = strtrim(input(prompt, 's'));
     val = str2double(resp);
@@ -163,14 +166,14 @@ while (use_prompt)
                 if (ds.num_trials > 1) && (state.last_requested_trial < ds.num_trials)
                     show_trial(state.last_requested_trial+1, gui);
                 else
-                    get_next_page(gui, 1);
+                    get_next_page(gui, 0.5);
                 end
                 
             case 'p' % previous trial
                 if (ds.num_trials > 1) && (state.last_requested_trial > 1)
                     show_trial(state.last_requested_trial-1, gui);
                 else
-                    get_prev_page(gui, 1);
+                    get_prev_page(gui, 0.5);
                 end                
                 
             case 'm' % show even with minimum amplitude
@@ -669,7 +672,7 @@ end % Main interaction loop
         else
             event_str = 'events';
         end
-        title(sprintf('Cell %d, Cutoff freq = %.1f Hz\n%d %s',...
+        title(sprintf('Cell %d, LPF freq = %.1f Hz\n%d %s',...
             cell_idx, events.info.cutoff_freq, num_events, event_str));
     end % update_event_tally
 
