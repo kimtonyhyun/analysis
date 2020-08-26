@@ -92,23 +92,9 @@ end % Main interaction loop
         title(sprintf('Cell %d of %d', cell_idx, ds.num_cells));
         
         subplot(3,2,[3 5]);
-        to_be_processed = [];
-        processed_cells = [];
-        processed_counts = [];
-        for k = find(ds.is_cell)
-            ek = ds.cells(k).events;
-            if isempty(ek)
-                to_be_processed = [to_be_processed k]; %#ok<*AGROW>
-            else
-                if ~strcmp(ek.info.method, 'rejected')
-                    processed_cells = [processed_cells k];
-                    processed_counts = [processed_counts size(ek.data, 1)];
-                end
-            end
-        end
-        
-        ds.plot_cell_map_redblue(processed_cells, processed_counts);
+        ds.plot_event_map;
         hold on;
+        to_be_processed = find(ds.is_cell & cellfun(@isempty, {ds.cells.events}));
         for ind = to_be_processed
             bd = ds.cells(ind).boundary;
             plot(bd(:,1), bd(:,2), 'w:');
