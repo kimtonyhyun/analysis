@@ -18,18 +18,27 @@ if ~isempty(M)
     movie_clim = compute_movie_scale(M);
 end
 
+events_rejected = struct('info', [], 'data', []);
+events_rejected.info = struct('method', 'rejected');
+
 cell_idx = 1;
 while (1)
     display_trace();
     
-    if isempty(ds.cells(cell_idx).events)
+    e = ds.cells(cell_idx).events;
+    if isempty(e)
         event_str = 'unprocessed';
     else
-        num_events = size(ds.cells(cell_idx).events.data, 1);
-        if num_events == 1
-            event_str = '1 event';
-        else
-            event_str = sprintf('%d events', num_events);
+        switch e.info.method
+            case 'rejected'
+                event_str = 'rejected';
+            otherwise
+                num_events = size(e.data, 1);
+                if num_events == 1
+                    event_str = '1 event';
+                else
+                    event_str = sprintf('%d events', num_events);
+                end
         end
     end
     prompt = sprintf('Detector (%d/%d, %s, %s) >> ',...
@@ -65,7 +74,8 @@ while (1)
                         fprintf('  Movie not provided!\n');
                     end
 
-                case 'n' % Next cell
+                case {'n', 'r'} % Reject cell for event detection (e.g. if too noisy)
+                    ds.cells(cell_idx).events = events_rejected;
                     go_to_next_cell();
 
                 otherwise
@@ -77,10 +87,35 @@ end % Main interaction loop
 
     function display_trace()
         clf(hfig, 'reset');
-        subplot(121);
+        subplot(311);
         ds.plot_trace(cell_idx);
         title(sprintf('Cell %d of %d', cell_idx, ds.num_cells));
-        subplot(122);
+        
+        subplot(3,2,[3 5]);
+        to_be_processed = [];
+        processed_cells = [];
+        processed_counts = [];
+        for k = find(ds.is_cell)
+            ek = ds.cells(k).events;
+            if isempty(ek)
+                to_be_processed = [to_be_processed k]; %#ok<*AGROW>
+            else
+                if ~strcmp(ek.info.method, 'rejected')
+                    processed_cells = [processed_cells k];
+                    processed_counts = [processed_counts size(ek.data, 1)];
+                end
+            end
+        end
+        
+        ds.plot_cell_map_redblue(processed_cells, processed_counts);
+        hold on;
+        for ind = to_be_processed
+            bd = ds.cells(ind).boundary;
+            plot(bd(:,1), bd(:,2), 'w:');
+        end
+        com = ds.cells(cell_idx).com;
+        plot(com(1), com(2), 'c.', 'MarkerSize', 24);
+        hold off;
     end % display_trace
 
     function go_to_next_cell()

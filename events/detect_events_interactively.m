@@ -100,12 +100,13 @@ while (use_prompt)
             if (1 <= val) && (val <= ds.num_trials)
                 show_trial(val, gui);
             end
-        else
-            switch val
-                case 1
-                    state.x_anchor = 1;
+        else % No trials, navigate by event index
+            if (val == 0) % Go to first frame
+                state.x_anchor = 1;
+                update_gui_state(gui, state);
+            else
+                select_event(val, gui);
             end
-            update_gui_state(gui, state);
         end
     else % Not a number
         resp = lower(resp);
@@ -391,6 +392,7 @@ end % Main interaction loop
         draw_thresholds(gui);
         
         % Add GUI event listeners
+        datacursormode off; % Interferes with event handlers
         set(gui.global, 'ButtonDownFcn', {@global_plot_handler, gui});
         set(gui.histogram, 'ButtonDownFcn', {@histogram_handler, gui});
         set(gui.pre_amps, 'ButtonDownFcn', {@pre_cdf_handler, gui});
@@ -479,11 +481,6 @@ end % Main interaction loop
                     [~, se] = min(delta_amp);
 
                     select_event(se, gui);
-
-                    % Move the local window
-                    sel_frame = events.data(se,2);
-                    state.x_anchor = sel_frame - 1/2 * state.x_range;             
-                    draw_local_window(gui, state);
                 end
             case 3 % Right click -- Set the amplitude threshold
                 x = e.IntersectionPoint(1);
@@ -704,6 +701,10 @@ end % Main interaction loop
                                
                 sel_event_pre_normamp = event_pre_amp/max(event_pre_amps);
                 sel_event_pre_cdf = sum(event_pre_amp>=event_pre_amps) / num_events;
+                
+                % Move the local window
+                state.x_anchor = events.data(event_idx,2) - 1/2 * state.x_range;
+                draw_local_window(gui, state);
             else % event_idx == 0
                 sel_event_onset_frame = -1;
                 sel_event_peak_frame = -Inf;
