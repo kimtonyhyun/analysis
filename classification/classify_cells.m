@@ -120,7 +120,7 @@ while (cell_idx <= num_candidates)
                 ds.save_class(output_name);
                 fprintf('  Saved classification result to %s\n', output_name);
             case 'l' % Load previous classification
-                [file, path] = uigetfile('*.txt', 'Select existing classification');
+                [file, path] = uigetfile('class_*.txt', 'Select existing classification');
                 if (file)
                     full_file = fullfile(path, file);
                     ds.load_class(full_file);

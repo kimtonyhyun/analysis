@@ -60,11 +60,19 @@ while (1)
         else
             switch (resp(1))
                 case 'q' % "quit"
+                    ds.save_events;
                     close(hfig);
                     break;
 
                 case 's' % save
                     ds.save_events;
+                    
+                case 'l' % Load previous classification
+                    [file, path] = uigetfile('events_*.mat', 'Select existing events file');
+                    if (file)
+                        full_file = fullfile(path, file);
+                        ds.load_events(full_file);
+                    end
                     
                 case {'d', 'c'} % Detect events
                     detect_events_interactively(ds, cell_idx, fps, 'hfig', hfig);
@@ -79,6 +87,7 @@ while (1)
 
                 case {'n', 'r'} % Reject cell for event detection (e.g. if too noisy)
                     ds.cells(cell_idx).events = events_rejected;
+                    fprintf('  Cell %d rejected for event detection\n', cell_idx);
                     go_to_next_cell();
 
                 otherwise

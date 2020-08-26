@@ -640,7 +640,7 @@ classdef DaySummary < handle
             obj.is_tracking_loaded = true;
         end
         
-        % Load/save events
+        % Events
         %------------------------------------------------------------
         function load_events(obj, event_source)
             data = load(event_source);
@@ -661,6 +661,21 @@ classdef DaySummary < handle
             timestamp = datestr(now, 'yymmdd-HHMMSS');
             event_savename = sprintf('events_%s.mat', timestamp);
             save(event_savename, 'events', '-v7.3');
+        end
+        
+        function [event_counts, cell_inds] = get_event_counts(obj)
+            event_counts = [];
+            cell_inds = [];
+            
+            for k = find(obj.is_cell)
+                ek = obj.cells(k).events;
+                if ~isempty(ek)
+                    if ~strcmp(ek.info.method, 'rejected')
+                        cell_inds = [cell_inds k]; %#ok<*AGROW>
+                        event_counts = [event_counts size(ek.data, 1)];
+                    end
+                end
+            end
         end
             
     end % public methods

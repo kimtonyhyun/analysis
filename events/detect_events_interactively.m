@@ -116,20 +116,22 @@ while (use_prompt)
         switch (resp(1))
             case 'q' % "quit"
                 ds_events = ds.cells(cell_idx).events;
-                if isempty(ds_events)
-                    fprintf('  Save event results to DaySummary? (Y/n) ');
-                    default = 'y';
-                elseif ~isequal(ds_events, events)
-                    cprintf('red', '  Overwrite existing event results in DaySummary? (y/N) ');
-                    default = 'n';
-                end
-                resp2 = strtrim(input('>> ', 's'));
-                if isempty(resp2)
-                    resp2 = default;
-                end
-                switch lower(resp2)
-                    case 'y'
-                        ds.cells(cell_idx).events = events;
+                if ~isequal(ds_events, events)
+                    if isempty(ds_events)
+                        fprintf('  Save event results to DaySummary? (Y/n) ');
+                        default = 'y';
+                    else
+                        cprintf('red', '  Overwrite existing event results in DaySummary? (y/N) ');
+                        default = 'n';
+                    end
+                    resp2 = strtrim(input('>> ', 's'));
+                    if isempty(resp2)
+                        resp2 = default;
+                    end
+                    switch lower(resp2)
+                        case 'y'
+                            ds.cells(cell_idx).events = events;
+                    end
                 end
                 break;
                 
