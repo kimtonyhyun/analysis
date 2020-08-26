@@ -105,7 +105,11 @@ while (use_prompt)
                 state.x_anchor = 1;
                 update_gui_state(gui, state);
             else
-                select_event(val, gui);
+                if (val <= size(events.data, 1))
+                    select_event(val, gui);
+                    state.x_anchor = events.data(val,2) - 1/2 * state.x_range;
+                    draw_local_window(gui, state);
+                end
             end
         end
     else % Not a number
@@ -486,6 +490,10 @@ end % Main interaction loop
                     [~, se] = min(delta_amp);
 
                     select_event(se, gui);
+                    
+                    % Move the local window
+                    state.x_anchor = events.data(se,2) - 1/2 * state.x_range;
+                    draw_local_window(gui, state);
                 end
             case 3 % Right click -- Set the amplitude threshold
                 x = e.IntersectionPoint(1);
@@ -593,7 +601,8 @@ end % Main interaction loop
         set(gui.global_trace, 'YData', trace);
         set(gui.local_trace, 'YData', trace);
         set(gui.local_dots, 'YData', trace);
-        set(gui.local_trials, 'YData', trace);
+        trial_starts = ds.trial_indices(:,1);
+        set(gui.local_trials, 'YData', trace(trial_starts));
     end
 
     function draw_histogram(gui, stats)
@@ -706,10 +715,6 @@ end % Main interaction loop
                                
                 sel_event_pre_normamp = event_pre_amp/max(event_pre_amps);
                 sel_event_pre_cdf = sum(event_pre_amp>=event_pre_amps) / num_events;
-                
-                % Move the local window
-                state.x_anchor = events.data(event_idx,2) - 1/2 * state.x_range;
-                draw_local_window(gui, state);
             else % event_idx == 0
                 sel_event_onset_frame = -1;
                 sel_event_peak_frame = -Inf;
