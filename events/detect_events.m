@@ -63,6 +63,9 @@ while (1)
                     close(hfig);
                     break;
 
+                case 's' % save
+                    ds.save_events;
+                    
                 case {'d', 'c'} % Detect events
                     detect_events_interactively(ds, cell_idx, fps, 'hfig', hfig);
 
