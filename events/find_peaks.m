@@ -29,7 +29,7 @@ end
 peak_frames = cell2mat(peak_frames);
 
 num_peaks = length(peak_frames);
-peaks = zeros(num_peaks, 5);
+peaks = zeros(num_peaks, 3);
 for k = 1:num_peaks
     peak_frame = peak_frames(k);
     

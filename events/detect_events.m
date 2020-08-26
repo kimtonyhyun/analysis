@@ -89,6 +89,11 @@ while (1)
                     ds.cells(cell_idx).events = events_rejected;
                     fprintf('  Cell %d rejected for event detection\n', cell_idx);
                     go_to_next_cell();
+                    
+                case 'p'
+                    if cell_idx > 1
+                        cell_idx = cell_idx - 1;
+                    end
 
                 otherwise
                     fprintf('  Sorry, could not parse "%s"\n', resp);

@@ -219,7 +219,7 @@ while (use_prompt)
                 
             case 'f' % Set lowpass filter cutoff frequency
                 cf = str2double(resp(2:end));
-                if cf > 0
+                if (0 < cf) && (cf < fps/2)
                     fprintf('  Set cutoff frequency to %.1f\n', cf);
                     [trace, stats] = preprocess_trace(fps, cf);
                     
