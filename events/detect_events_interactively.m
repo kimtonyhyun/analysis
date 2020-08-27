@@ -50,8 +50,10 @@ events.info = struct('method', 'detect_events_interactively',...
 
 ds_events = ds.cells(cell_idx).events;
 if ~isempty(ds_events)
-    cprintf('blue', '  Using existing event detection results\n');
-    events = ds_events;
+    if ~strcmp(ds_events.info.method, 'rejected')
+        cprintf('blue', '  Using existing event detection results\n');
+        events = ds_events;
+    end
 end
 init_info = events.info;
 
