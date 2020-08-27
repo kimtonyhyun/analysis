@@ -114,7 +114,9 @@ end % Main interaction loop
         to_be_processed = find(ds.is_cell & cellfun(@isempty, {ds.cells.events}));
         for ind = to_be_processed
             bd = ds.cells(ind).boundary;
-            plot(bd(:,1), bd(:,2), 'w:');
+            plot3(bd(:,1), bd(:,2),...
+                  ind*ones(size(bd,1),1),... % Allows display of cell number by clicking boundary (as in plot_cell_map)
+                  'w:');
         end
         com = ds.cells(cell_idx).com;
         plot(com(1), com(2), 'c.', 'MarkerSize', 24);
