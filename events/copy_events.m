@@ -14,9 +14,12 @@ ds_target.reset_labels();
 for k = 1:ds_source.num_cells
     m = match{k};
     if ~isempty(m)
-        k2 = m(1,1);
-        ds_target.cells(k2).events = ds_source.cells(k).events;
-        num_events_copied = num_events_copied + 1;
+        source_events = ds_source.cells(k).events;
+        if ~isempty(source_events)
+            k2 = m(1,1);
+            ds_target.cells(k2).events = ds_source.cells(k).events;
+            num_events_copied = num_events_copied + 1;
+        end
     end
 end
 fprintf('  %s: Copied %d events from "%s" to "%s"\n',...
