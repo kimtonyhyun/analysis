@@ -18,6 +18,10 @@ if ~isempty(M)
     movie_clim = compute_movie_scale(M);
 end
 
+% At the end of 'detect_events', will save the new event data to file if it
+% has changed from its initial values.
+initial_ds_events = {ds.cells.events};
+
 events_rejected = struct('info', [], 'data', []);
 events_rejected.info = struct('method', 'rejected');
 
@@ -60,12 +64,18 @@ while (1)
         else
             switch (resp(1))
                 case 'q' % "quit"
-                    ds.save_events;
+                    if ~isequal(initial_ds_events, {ds.cells.events})
+                        savename = ds.save_events;
+                        fprintf('  Saved events data to "%s"\n', savename);
+                    else
+                        fprintf('  No changes to events data\n');
+                    end
                     close(hfig);
                     break;
 
                 case 's' % save
-                    ds.save_events;
+                    savename = ds.save_events;
+                    fprintf('  Saved events data to "%s"\n', savename);
                     
                 case 'l' % Load previous classification
                     [file, path] = uigetfile('events_*.mat', 'Select existing events file');
@@ -75,7 +85,27 @@ while (1)
                     end
                     
                 case {'d', 'c'} % Detect events
-                    detect_events_interactively(ds, cell_idx, fps, 'hfig', hfig);
+                    events = detect_events_interactively(ds, cell_idx, fps, 'hfig', hfig);
+                    
+                    % Write latest events to DaySummary?
+                    ds_events = ds.cells(cell_idx).events;
+                    if ~isequal(ds_events, events)
+                        if isempty(ds_events)
+                            fprintf('  Save event results to DaySummary? (Y/n) ');
+                            default = 'y';
+                        else
+                            cprintf('red', '  Overwrite existing event results in DaySummary? (y/N) ');
+                            default = 'n';
+                        end
+                        resp = strtrim(input('>> ', 's'));
+                        if isempty(resp)
+                            resp = default;
+                        end
+                        switch lower(resp)
+                            case 'y'
+                                ds.cells(cell_idx).events = events;
+                        end
+                    end
 
                 case 'm' % Detect events with movie
                     if ~isempty(M)

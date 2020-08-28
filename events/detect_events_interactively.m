@@ -51,7 +51,7 @@ events.info = struct('method', 'detect_events_interactively',...
 ds_events = ds.cells(cell_idx).events;
 if ~isempty(ds_events)
     if ~strcmp(ds_events.info.method, 'rejected')
-        cprintf('blue', '  Using existing event detection results\n');
+        cprintf('blue', '  Using existing event detection parameters\n');
         events = ds_events;
     end
 end
@@ -121,29 +121,7 @@ while (use_prompt)
         end
         switch (resp(1))
             case 'q' % "quit"
-                ds_events = ds.cells(cell_idx).events;
-                if ~isequal(ds_events, events)
-                    if isempty(ds_events)
-                        fprintf('  Save event results to DaySummary? (Y/n) ');
-                        default = 'y';
-                    else
-                        cprintf('red', '  Overwrite existing event results in DaySummary? (y/N) ');
-                        default = 'n';
-                    end
-                    resp2 = strtrim(input('>> ', 's'));
-                    if isempty(resp2)
-                        resp2 = default;
-                    end
-                    switch lower(resp2)
-                        case 'y'
-                            ds.cells(cell_idx).events = events;
-                    end
-                end
                 break;
-                
-            case {'s', 'w'} % Save event detection parameters and results to DaySummary
-                ds.cells(cell_idx).events = events;
-                fprintf('  Events saved to DaySummary\n');
 
             % Visualization
             %------------------------------------------------------------

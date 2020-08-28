@@ -655,7 +655,7 @@ classdef DaySummary < handle
                 datestr(now), event_source);
         end
         
-        function save_events(obj)
+        function event_savename = save_events(obj)
             events = {obj.cells.events}; %#ok<NASGU>
             
             timestamp = datestr(now, 'yymmdd-HHMMSS');
