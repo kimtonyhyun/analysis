@@ -85,27 +85,7 @@ while (1)
                     end
                     
                 case {'d', 'c'} % Detect events
-                    events = detect_events_interactively(ds, cell_idx, fps, 'hfig', hfig);
-                    
-                    % Write latest events to DaySummary?
-                    ds_events = ds.cells(cell_idx).events;
-                    if ~isequal(ds_events, events)
-                        if isempty(ds_events)
-                            fprintf('  Save event results to DaySummary? (Y/n) ');
-                            default = 'y';
-                        else
-                            cprintf('red', '  Overwrite existing event results in DaySummary? (y/N) ');
-                            default = 'n';
-                        end
-                        resp = strtrim(input('>> ', 's'));
-                        if isempty(resp)
-                            resp = default;
-                        end
-                        switch lower(resp)
-                            case 'y'
-                                ds.cells(cell_idx).events = events;
-                        end
-                    end
+                    detect_events_interactively(ds, cell_idx, fps, 'hfig', hfig);
 
                 case 'm' % Detect events with movie
                     if ~isempty(M)
