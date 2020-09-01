@@ -75,11 +75,11 @@ while (num_playbacks <= num_repeats)
     for k = 1:num_frames
         try
             set(h, 'CData', get_frame(k));
+            title(sprintf('Frame %d of %d', k, num_frames));
         catch
             cprintf('blue', 'view_movie terminated by user\n');
             return;
         end
-        title(sprintf('Frame %d of %d', k, num_frames));
         drawnow;
     end
     num_playbacks = num_playbacks + 1;
