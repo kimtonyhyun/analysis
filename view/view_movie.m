@@ -37,6 +37,7 @@ if isempty(movie_clim)
 end
 
 nd = ndims(M);
+figure;
 switch nd
     case 3 % [height x width x num_frames]       
         get_frame = @(k) M(:,:,k);
@@ -72,9 +73,16 @@ end
 num_playbacks = 1;
 while (num_playbacks <= num_repeats) 
     for k = 1:num_frames
+        try
+            set(h, 'CData', get_frame(k));
+        catch
+            cprintf('blue', 'view_movie terminated by user\n');
+            return;
+        end
         title(sprintf('Frame %d of %d', k, num_frames));
-        set(h, 'CData', get_frame(k));
         drawnow;
     end
     num_playbacks = num_playbacks + 1;
 end
+
+fprintf('test');
