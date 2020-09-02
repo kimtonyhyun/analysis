@@ -43,6 +43,6 @@ else
     traces = cellmax_struct.cellTraces';
 end
 
-info.num_pairs = size(filters, 3); %#ok<STRNU>
+info.num_pairs = size(filters, 3);
 
 rec_savename = save_rec(info, filters, traces);
