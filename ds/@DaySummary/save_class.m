@@ -1,4 +1,4 @@
-function save_class(obj, outfile)
+function outfile = save_class(obj, outfile)
 
 if ~exist('outfile', 'var')
     outfile = sprintf('class_%s.txt', datestr(now, 'yymmdd-HHMMSS'));
