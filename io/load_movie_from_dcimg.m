@@ -9,8 +9,13 @@ M = zeros(height, width, num_frames, 'uint16');
 for k = 1:num_frames
     if (mod(k,1000)==0)
         fprintf('  %s: Frames %d / %d loaded\n', datestr(now), k, num_frames);
+        
+        % DCIMG MEX accumulates in memory. Need to clear it out
+        clear mex; %#ok<*CLMEX>
     end
     
     M(:,:,k) = dcimgmatlab(int32(k-1), source); % Note 0-based indexing
 end
+
+clear mex;
 fprintf('  %s: Done!\n', datestr(now));
