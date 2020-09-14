@@ -14,6 +14,7 @@ if isempty(ext)
     else
         % TODO: What to do if more than 1 match?
         source = files(1).name;
+        fprintf('Loading "%s"...\n', source);
         [~, ~, ext] = fileparts(source);
         ext = ext(2:end);
     end
