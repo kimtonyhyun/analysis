@@ -5,9 +5,21 @@ function M = load_movie(source)
 % 2015 01 28 Tony Hyun Kim
 
 [~, ~, ext] = fileparts(source);
-ext = lower(ext(2:end)); % Remove the leading dot
+ext = ext(2:end); % Remove the leading dot
 
-switch ext
+if isempty(ext)
+    files = dir(strcat(source, '.*'));
+    if isempty(files)
+        error('File not found!');
+    else
+        % TODO: What to do if more than 1 match?
+        source = files(1).name;
+        [~, ~, ext] = fileparts(source);
+        ext = ext(2:end);
+    end
+end
+
+switch lower(ext)
     case {'tif', 'tiff'}
         M = load_movie_from_tif(source);
     case {'h5', 'hdf5'}
