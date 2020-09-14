@@ -12,6 +12,8 @@ switch ext
         M = load_movie_from_tif(source);
     case {'h5', 'hdf5'}
         M = load_movie_from_hdf5(source);
+    case {'dcimg'}
+        M = load_movie_from_dcimg(source);
     otherwise
-        % TODO: Handle error!
+        error('Unrecognized file type!');
 end
