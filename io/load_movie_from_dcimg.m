@@ -14,7 +14,10 @@ for k = 1:num_frames
         clear mex; %#ok<*CLMEX>
     end
     
-    M(:,:,k) = dcimgmatlab(int32(k-1), source); % Note 0-based indexing
+    % Note:
+    %   - 0-based indexing
+    %   - Transpose of image
+    M(:,:,k) = dcimgmatlab(int32(k-1), source)';
 end
 
 clear mex;

@@ -12,7 +12,7 @@ fprintf('convert_dcimg: Output movie will be saved as "%s"\n', movie_out);
 % Analyze DCIMG file
 %------------------------------------------------------------
 data_type = 'uint16';
-[A, num_frames] = dcimgmatlab(int32(0), source);
+[A, num_frames] = dcimgmatlab(int32(0), movie_in);
 [height, width] = size(A);
 
 height = double(height);
@@ -35,7 +35,10 @@ for k = 1:num_frames
         clear mex; %#ok<*CLMEX>
     end
     
-    A = dcimgmatlab(int32(k-1), source); % 0-based indexing
+    % Note:
+    %   - 0-based indexing
+    %   - Transpose of image
+    A = dcimgmatlab(int32(k-1), movie_in)';
     h5write(movie_out, dataset_name, A, [1 1 k], [height width 1]);
 end
 
