@@ -121,7 +121,7 @@ hold off;
 
 % Start off zoomed
 [height, width, ~] = size(movie);
-zoom_half_width = min([width, height])/10;
+zoom_half_width = 50;
 xlim(COM(1)+zoom_half_width*[-1 1]);
 ylim(COM(2)+zoom_half_width*[-1 1]);
 

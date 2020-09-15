@@ -226,8 +226,7 @@ end
         end
         hold off;
         
-        [height, width, ~] = size(M);
-        zoom_half_width = min([width, height])/10;
+        zoom_half_width = 50;
         x_range = COM(1)+zoom_half_width*[-1 1];
         y_range = COM(2)+zoom_half_width*[-1 1];
         xlim(x_range);
