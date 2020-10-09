@@ -7,6 +7,9 @@ function rec_savename = save_rec(info, filters, traces) %#ok<*INUSD>
 %
 % TODO: Sanity checks on rec file structure!
 
+filters = single(filters); %#ok<*NASGU>
+traces = single(traces);
+
 % Save to file
 timestamp = datestr(now, 'yymmdd-HHMMSS');
 rec_savename = sprintf('rec_%s.mat', timestamp);

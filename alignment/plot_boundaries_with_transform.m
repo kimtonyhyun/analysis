@@ -38,5 +38,6 @@ function plot_boundaries_with_transform(ds, linecolor, linewidth, filled_cells, 
         hold on;
     end
     axis equal tight;
+    hold off;
     set(gca, 'YDir', 'Reverse');
 end
