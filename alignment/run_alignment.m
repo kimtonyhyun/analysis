@@ -78,7 +78,9 @@ else
     
     figure;
     plot_boundaries_with_transform(ds1, 'b', 2, [], []);
+    hold on;
     plot_boundaries_with_transform(ds2, 'r', 1, [], []);
+    hold off;
     title('Dataset1 (blue) vs. Dataset2 (red)');
 end
 
