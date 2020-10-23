@@ -47,8 +47,10 @@ switch trace_norm_method
     case 'norm'
         y_lims = [0 1];
     case 'zsc'
+        min_tr_val = min([min(tr1) min(tr2)]);
         max_tr_val = max([max(tr1) max(tr2)]);
-        y_lims = [-1/10 11/10]*max_tr_val;
+        y_lims = [min_tr_val max_tr_val];
+        y_lims = y_lims + 1/10*diff(y_lims)*[-1 1];
 end
 
 subplot(311);
@@ -111,7 +113,7 @@ switch trace_norm_method
         hold on;
         plot(info.fit.x, info.fit.y, 'r');
         hold off;
-        title(sprintf('Slope=%.3f at x_0=%.3f', slope, info.xd));
+        title(sprintf('Slope=%.3f', slope));
 end
 
 grid on;
