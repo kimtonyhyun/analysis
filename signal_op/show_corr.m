@@ -43,6 +43,14 @@ end
 
 % Show traces
 %------------------------------------------------------------
+switch trace_norm_method
+    case 'norm'
+        y_lims = [0 1];
+    case 'zsc'
+        max_tr_val = max([max(tr1) max(tr2)]);
+        y_lims = [-1/10 11/10]*max_tr_val;
+end
+
 subplot(311);
 plot(tr1, 'Color', color1);
 hold on;
@@ -57,11 +65,13 @@ hold off;
 legend(ds_labels, 'Location', 'NorthWest');
 xlim([1 length(tr1)]);
 xlabel('Frames');
+ylim(y_lims);
 set(gca, 'TickLength', [0 0]);
-
 title(sprintf('%s cell=%d\n%s cell=%d\ncorr=%.4f',...
       ds_labels{1}, idx1, ds_labels{2}, idx2, corr_val));
 
+% Show cell maps
+%------------------------------------------------------------
 switch display_mode
     case 'standard'
         subplot(3,3,[4 7]); % Cellmap for ds1
@@ -83,17 +93,30 @@ switch display_mode
         corr_sp = subplot(3,2,[4 6]); % Correlation plot
 end
 
+% Show trace correlation
+%------------------------------------------------------------
 plot(tr2, tr1, '.k');
-
 switch trace_norm_method
     case 'norm'
         ticks = 0:0.1:1;
+        set(corr_sp, 'XTick', ticks);
+        set(corr_sp, 'YTick', ticks);
+        
     case 'zsc'
-        ticks = -50:5:100; % FIXME: Hard-coded   
+        set(corr_sp, 'XTick', 0:5:max(tr2));
+        set(corr_sp, 'YTick', 0:5:max(tr1));
+        
+        % In zsc mode, fit a scaling factor between the two traces
+        [slope, info] = fit_1p2p_slope(tr2, tr1);
+        hold on;
+        plot(info.fit.x, info.fit.y, 'r');
+        hold off;
+        title(sprintf('Slope=%.3f at x_0=%.3f', slope, info.xd));
 end
-set(corr_sp, 'XTick', ticks);
-set(corr_sp, 'YTick', ticks);
+
 grid on;
 axis equal tight;
 xlabel(sprintf('%s (%s)', ds_labels{2}, trace_norm_method));
 ylabel(sprintf('%s (%s)', ds_labels{1}, trace_norm_method));
+
+end % show_corr
