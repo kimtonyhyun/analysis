@@ -54,6 +54,13 @@ truesize;
 xlabel('x [px]');
 ylabel('y [px]');
 
+% Toolbar implementation in Matlab 2018b+ is broken
+if ~verLessThan('matlab', '9.5')
+    addToolbarExplorationButtons(gcf);
+    ax = gca;
+    set(ax.Toolbar, 'Visible', 'off');
+end
+
 if use_outline
     hold on;
     cell_indices = find(ds.is_cell);
