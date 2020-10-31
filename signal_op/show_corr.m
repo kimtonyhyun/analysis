@@ -77,20 +77,27 @@ title(sprintf('%s cell=%d\n%s cell=%d\ncorr=%.4f',...
 switch display_mode
     case 'standard'
         subplot(3,3,[4 7]); % Cellmap for ds1
-        plot_boundaries_with_transform(ds1, color1, 1, idx1, []);
+        plot_boundaries(ds1, 'Color', color1, 'LineWidth', 1, 'Fill', idx1);
         title(ds_labels{1});
         
         subplot(3,3,[5 8]); % Cellmap for ds2
-        plot_boundaries_with_transform(ds2, color2, 1, idx2, []);
+        plot_boundaries(ds2, 'Color', color2, 'LineWidth', 1, 'Fill', idx2);
         title(ds_labels{2});
         
     	corr_sp = subplot(3,3,[6 9]); % Correlation plot
         
     case 'overlay'
         subplot(3,2,[3 5]); % Cellmap overlay
-        plot_boundaries_with_transform(ds1, color1, 2, idx1, []);
+        
+        % For performance reasons, only show boundaries in the vicinity of
+        % the 2P cell under consideration
+        com2 = transformPointsForward(tform, ds2.cells(idx2).com')';       
+        plot_boundaries(ds1, 'Color', color1, 'LineWidth', 2, 'Fill', idx1, 'display_center', com2);
         hold on;
-        plot_boundaries_with_transform(ds2, color2, 1, idx2, tform);
+        plot_boundaries(ds2, 'Color', color2, 'LineWidth', 1, 'Fill', idx2, 'Transform', tform, 'display_center', com2);
+        
+        xlim(com2(1) + [-50 50]);
+        ylim(com2(2) + [-50 50]);
         
         corr_sp = subplot(3,2,[4 6]); % Correlation plot
 end
@@ -110,10 +117,14 @@ switch trace_norm_method
         
         % In zsc mode, fit a scaling factor between the two traces
         [slope, info] = fit_1p2p_slope(tr2, tr1);
-        hold on;
-        plot(info.fit.x, info.fit.y, 'r');
-        hold off;
-        title(sprintf('Slope=%.3f', slope));
+        if isempty(slope)
+            cprintf('red', 'Unable to perform 1P:2P SNR fit!\n');
+        else
+            hold on;
+            plot(info.fit.x, info.fit.y, 'r');
+            hold off;
+            title(sprintf('Slope=%.3f', slope));
+        end
 end
 
 grid on;
