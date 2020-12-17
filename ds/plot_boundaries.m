@@ -4,8 +4,10 @@ function plot_boundaries(ds, varargin)
 
 line_color = 'b';
 line_width = 1;
+fill_all = false;
 filled_cells = [];
 tform = [];
+z = [];
 
 % If 'show_all_cells' is false, we will show a limited number of boundaries
 % sorted by their distance to 'center'. This is for performance reasons,
@@ -20,6 +22,8 @@ for k = 1:length(varargin)
                 line_color = varargin{k+1};
             case {'linewidth', 'width'}
                 line_width = varargin{k+1};
+            case 'fill_all'
+                fill_all = true;
             case {'fill', 'filled_cells'}
                 filled_cells = varargin{k+1};
             case {'transform', 'tform'}
@@ -28,6 +32,8 @@ for k = 1:length(varargin)
                 show_all_cells = false;
                 center = varargin{k+1};
                 center = center(:); % Force column vector
+            case 'z' % Plot the boundaries at a specified z depth
+                z = varargin{k+1};
         end
     end
 end
@@ -51,15 +57,24 @@ for k = cell_inds
     if ~isempty(tform) % Optional spatial transform
         boundary = transformPointsForward(tform, boundary);
     end
-    if ismember(k, filled_cells)
-        fill(boundary(:,1), boundary(:,2), line_color,...
+    
+    if isempty(z)
+        zvec = zeros(size(boundary,1),1);
+    else
+        zvec = z*ones(size(boundary,1),1);
+    end
+    
+    if fill_all || ismember(k, filled_cells)
+        fill3(boundary(:,1), boundary(:,2), zvec, line_color,...
              'LineWidth', line_width,...
              'FaceAlpha', 0.4);
     else
-        plot(boundary(:,1), boundary(:,2), 'Color', line_color, 'LineWidth', line_width, 'HitTest', 'off');
+        plot3(boundary(:,1), boundary(:,2), zvec, 'Color', line_color, 'LineWidth', line_width, 'HitTest', 'off');
     end
     hold on;
 end
 axis equal tight;
 hold off;
 set(gca, 'YDir', 'Reverse');
+set(gca, 'ZDir', 'Reverse');
+view(2);
