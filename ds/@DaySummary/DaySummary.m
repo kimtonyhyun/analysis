@@ -25,7 +25,6 @@ classdef DaySummary < handle
     properties
         cells
         trials
-        switchdata
         
         num_cells
         num_trials
@@ -44,7 +43,6 @@ classdef DaySummary < handle
         behavior_vid
         behavior_ref_img
         is_tracking_loaded
-        is_eventdata_loaded
         orig_trial_indices
     end
         
@@ -122,6 +120,9 @@ classdef DaySummary < handle
             end
             
             % Parse by TRIAL
+            % 2020 Aug 23: My retrospective assessment is that we should
+            % have parsed fluorescence traces into the CELL organization,
+            % rather than TRIAL organization.
             %------------------------------------------------------------
             num_trials = size(trial_indices, 1);
             turns = cell(num_trials, 1);
@@ -170,12 +171,13 @@ classdef DaySummary < handle
                 'turn',  turns,...
                 'time',  num2cell(trial_durations),...
                 'traces', traces,...
-                'events', [],...
                 'centroids', centroids);
             
-            full_traces = cell2mat(traces)'; % [num_frames x num_cells]
+            % NOTE: Trace parameters are computed from the original traces,
+            % not just from the extracted trials.
             fprintf('  Computing auxiliary trace parameters...');
             tic;
+            full_traces = data.traces; % [num_frames x num_cells]
             obj.trace_corrs = corr(full_traces);
             obj.trace_range = [min(full_traces)' max(full_traces)'];
             obj.trace_baselines = zeros(obj.num_cells, 1);
@@ -222,6 +224,7 @@ classdef DaySummary < handle
                 'boundary', boundaries,...
                 'mask', masks,...
                 'com', coms,...
+                'events', [],...
                 'label', class);
             
             % Compute distances among all sources
@@ -270,19 +273,10 @@ classdef DaySummary < handle
             end
             
             % Event data
-            obj.is_eventdata_loaded = false;
             event_source = get_most_recent_file(rec_dir, 'events_*.mat');
             if ~isempty(event_source)
                 obj.load_events(event_source);
             end
-            
-            % Fill in switch data
-            obj.switchdata = struct(...
-                'pre_switch_trials', [],...
-                'post_switch_trials', [],...
-                'changing_path_start', '',...
-                'constant_path_start', '',...
-                'changing_path_cutoff', []);
         end
         
         % Helper functions
@@ -385,9 +379,9 @@ classdef DaySummary < handle
         
         function [trace, frame_indices, selected_trials] = get_trace(obj, cell_idx, varargin)
             % For a cell, return traces over selected sets of trials.
+            % TODO: Re-introduce event-based "fill" options.
             normalization_method = [];
             selected_trials = 1:obj.num_trials;
-            fill_type = 'traces';
             
             for k = 1:length(varargin)
                 vararg = varargin{k};
@@ -395,14 +389,10 @@ classdef DaySummary < handle
                     selected_trials = vararg;
                 elseif ischar(vararg)
                     switch lower(vararg)
-                        % TODO: Explore complications (if any) between
-                        % normalization and trace fill type
                         case 'norm'
                             normalization_method = 'basic';
                         case {'zsc', 'zscore'}
                             normalization_method = 'zscore';
-                        case 'fill'
-                            fill_type = varargin{k+1};
                     end
                 end
             end
@@ -413,35 +403,8 @@ classdef DaySummary < handle
             frame_indices = [];
             for k = selected_trials
                 tr = obj.trials(k).traces(cell_idx,:);
-                if ~obj.is_eventdata_loaded
-                    % If eventdata is not available, then the only fill
-                    % type (currently) allowed is 'traces'
-                    trf = tr;
-                else
-                    ed = obj.trials(k).events{cell_idx};
-                    trf = zeros(size(tr));
-                    switch fill_type
-                        case {'trace', 'traces'}
-                            trf = tr;
-
-                        case 'copy'                       
-                            for m = 1:size(ed,1)
-                                ef = ed(m,1):ed(m,2); % event frames (trough to peak)
-                                trf(ef) = tr(ef);
-                            end
-
-                        case {'copyamp', 'copyzero'}
-                            for m = 1:size(ed,1)
-                                ef = ed(m,1):ed(m,2);
-                                trf(ef) = tr(ef) - tr(ef(1));
-                            end
-
-                        otherwise
-                            error('Fill type "%s" not recognized', fill_type);
-                    end
-                end
                 
-                trace = [trace trf]; %#ok<*AGROW>
+                trace = [trace tr]; %#ok<*AGROW>
                 frame_indices = [frame_indices obj.trial_indices(k,1):obj.trial_indices(k,end)];
             end
             
@@ -503,43 +466,6 @@ classdef DaySummary < handle
             align_info.trial_inds = trial_inds;
             align_info.alignment_frames = alignment_frames;
             align_info.aligned_time = pre_offset:post_offset;
-        end
-        
-        function es = get_events(obj, cell_idx, trial_idx, varargin)
-            % Default options
-            align_to = 1; % One of 1:4, indicating the frame within trial for alignment
-            
-            if ~isempty(varargin)
-                for k = 1:length(varargin)
-                    vararg = varargin{k};
-                    switch lower(vararg)
-                        case {'align', 'align_to'}
-                            align_to = varargin{k+1};
-                    end
-                end
-            end
-            
-            % Syntactic sugar for the following...
-            es = obj.trials(trial_idx).events{cell_idx};
-            
-            if ~isempty(es)
-                alignment_offset = diff(obj.trial_indices(trial_idx, [1 align_to]));
-                es(:,1:2) = es(:,1:2) - alignment_offset;
-            end
-        end
-        
-        function es = get_events_full(obj, cell_idx)
-            % Retrieves the set of events for all trials, adding in frame
-            % offsets for each trial
-            es = [];
-            for k = 1:obj.num_trials
-                es_k = obj.trials(k).events{cell_idx};
-                if ~isempty(es_k)
-                    trial_offset = obj.trial_indices(k,1) - 1;
-                    es_k(:,1:2) = es_k(:,1:2) + trial_offset;
-                    es = cat(1, es, es_k);
-                end
-            end
         end
         
         function mask = get_mask(obj, cell_indices)
@@ -714,84 +640,42 @@ classdef DaySummary < handle
             obj.is_tracking_loaded = true;
         end
         
-        % Load event data
+        % Events
         %------------------------------------------------------------
         function load_events(obj, event_source)
             data = load(event_source);
             assert(length(data.events) == obj.num_cells,...
                 'Error: Number of cells in event file does not match that in DaySummary!');
             
-            % Note: We are expecting that event detection has been run on
-            % _all_ trials, including probes.
-            assert(data.events(1).info.num_frames == obj.full_num_frames,...
-                'Error: Number of frames in event file does not match full number of frames in DaySummary!');
-            
-            events_per_trial = compute_events_per_trial({data.events.auto},...
-                obj.orig_trial_indices, obj.full_num_frames);
-            for k = 1:obj.num_trials
-                obj.trials(k).events = events_per_trial{k};
+            for k = 1:obj.num_cells
+                obj.cells(k).events = data.events{k};
             end
             
             fprintf('%s: Loaded events from "%s"\n',...
                 datestr(now), event_source);
-            obj.is_eventdata_loaded = true;
         end
         
-        % Inspect switch data
-        %------------------------------------------------------------
-        function loaded = is_switchdata_loaded(obj)
-            valid_starts = {'east', 'west'};
-            loaded = ~isempty(obj.switchdata.pre_switch_trials) &&...
-                     ~isempty(obj.switchdata.post_switch_trials) &&...
-                     any(strcmp(obj.switchdata.changing_path_start, valid_starts)) &&...
-                     any(strcmp(obj.switchdata.constant_path_start, valid_starts));
+        function event_savename = save_events(obj)
+            events = {obj.cells.events}; %#ok<NASGU>
+            
+            timestamp = datestr(now, 'yymmdd-HHMMSS');
+            event_savename = sprintf('events_%s.mat', timestamp);
+            save(event_savename, 'events', '-v7.3');
         end
         
-        function st = get_switch_trials(obj)
-            % Provide trial indices for switch analysis. Note that we only
-            % examine correct trials.
-            %
-            % NOTE: Consider setting once when switchdata is loaded
-            st = struct('constant_pre', [],...
-                        'constant_post', [],...
-                        'changing_pre', [],...
-                        'changing_post', []);
-                    
-            if obj.is_switchdata_loaded
-                sd = obj.switchdata;
-                st.constant_pre = find(obj.filter_trials(...
-                    'range', sd.pre_switch_trials,...
-                    'start', sd.constant_path_start,...
-                    'correct'));
-                st.constant_post = find(obj.filter_trials(...
-                    'range', sd.post_switch_trials,...
-                    'start', sd.constant_path_start,...
-                    'correct'));
-                st.changing_pre = find(obj.filter_trials(...
-                    'range', sd.pre_switch_trials,...
-                    'start', sd.changing_path_start,...
-                    'correct'));
-                st.changing_post = find(obj.filter_trials(...
-                    'range', sd.post_switch_trials,...
-                    'start', sd.changing_path_start,...
-                    'correct'));
+        function [event_counts, cell_inds] = get_event_counts(obj)
+            event_counts = [];
+            cell_inds = [];
+            
+            for k = find(obj.is_cell)
+                ek = obj.cells(k).events;
+                if ~isempty(ek)
+                    if ~strcmp(ek.info.method, 'rejected')
+                        cell_inds = [cell_inds k]; %#ok<*AGROW>
+                        event_counts = [event_counts size(ek.data, 1)];
+                    end
+                end
             end
-        end
-        
-        function trial_inds = get_constant_path_trials(obj)
-            trial_inds = find(obj.filter_trials('start', obj.switchdata.constant_path_start));
-        end
-        
-        function trial_inds = get_changing_path_trials(obj)
-            trial_inds = find(obj.filter_trials('start', obj.switchdata.changing_path_start));
-        end
-        
-        function reset_switchdata(obj)
-            obj.switchdata.pre_switch_trials = [];
-            obj.switchdata.post_switch_trials = [];
-            obj.switchdata.changing_path_start = '';
-            obj.switchdata.constant_path_start = '';
-            obj.switchdata.changing_path_cutoff = [];
         end
             
     end % public methods

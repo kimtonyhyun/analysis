@@ -466,7 +466,9 @@ classdef MultiDay < handle
             
             num_invalid_matches = sum(~is_valid);
             Mf = M(is_valid, :);
-            cprintf('red', '  Removed %d matches inconsistent with provided match_list\n', num_invalid_matches);
+            if num_invalid_matches > 0
+                cprintf('red', '  Removed %d matches inconsistent with provided match_list\n', num_invalid_matches);
+            end
             
         end % verify_match_consistency
 

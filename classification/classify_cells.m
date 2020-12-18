@@ -120,7 +120,7 @@ while (cell_idx <= num_candidates)
                 ds.save_class(output_name);
                 fprintf('  Saved classification result to %s\n', output_name);
             case 'l' % Load previous classification
-                [file, path] = uigetfile('*.txt', 'Select existing classification');
+                [file, path] = uigetfile('class_*.txt', 'Select existing classification');
                 if (file)
                     full_file = fullfile(path, file);
                     ds.load_class(full_file);
@@ -226,8 +226,7 @@ end
         end
         hold off;
         
-        [height, width, ~] = size(M);
-        zoom_half_width = min([width, height])/10;
+        zoom_half_width = 50;
         x_range = COM(1)+zoom_half_width*[-1 1];
         y_range = COM(2)+zoom_half_width*[-1 1];
         xlim(x_range);

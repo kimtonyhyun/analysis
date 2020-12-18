@@ -2,7 +2,7 @@ function plot_boundaries_with_transform(ds, linecolor, linewidth, filled_cells, 
     % Plot boundaries as a single color, with an optional transform. Can
     % subselect cells to be filled in.
     
-    % TODO: Clean up this parameter parsing...
+    % TODO: Deprecate in favor of 'plot_boundaries'
     if (nargin < 3)
         linewidth = 1;
         filled_cells = [];
@@ -38,5 +38,6 @@ function plot_boundaries_with_transform(ds, linecolor, linewidth, filled_cells, 
         hold on;
     end
     axis equal tight;
+    hold off;
     set(gca, 'YDir', 'Reverse');
 end

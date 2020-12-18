@@ -71,7 +71,7 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
     ylabel('Trial index');
     set(gca, 'TickLength', [0 0]);
 
-    if (draw_events && obj.is_eventdata_loaded)
+    if (draw_events && obj.are_events_loaded)
         for k = 1:num_trials
             trial_idx = trial_inds(k);
             eventdata = obj.get_events(cell_idx, trial_idx, 'align_to', align_idx);

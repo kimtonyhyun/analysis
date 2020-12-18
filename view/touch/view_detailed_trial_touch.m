@@ -74,7 +74,7 @@ gui.trace_dot = plot(trial_frames(1), trace(1), 'r.',... % Dot
          'HitTest', 'off');
 
 % Show events, if present
-if ds.is_eventdata_loaded
+if ds.are_events_loaded
     eventdata = ds.get_events(cell_idx, trial_idx);
     num_events = size(eventdata,1);
     if (num_events > 0)

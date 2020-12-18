@@ -82,12 +82,16 @@ tform = fitgeotrans(selected_centers(:,:,2),... % Moving points
 
 figure; % Pre-transform comparison
 plot_boundaries_with_transform(ds1, 'b', 2, selected_cells(:,1));
+hold on;
 plot_boundaries_with_transform(ds2, 'r', 1, selected_cells(:,2));
+hold off;
 title('Pre-transform: Dataset1 (blue) vs. Dataset2 (red)');
 
 figure; % Post-transform comparison
 plot_boundaries_with_transform(ds1, 'b', 2, selected_cells(:,1));
+hold on;
 plot_boundaries_with_transform(ds2, 'r', 1, selected_cells(:,2), tform);
+hold off;
 title('Post-transform: Dataset1 (blue) vs. Dataset2 (red)');
 
 % Prep output

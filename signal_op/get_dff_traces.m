@@ -40,6 +40,10 @@ for k = 1:length(varargin)
     end
 end
 
+if ischar(M_dff)
+    M_dff = load_movie(M_dff);
+end
+
 [height, width, num_frames] = size(M_dff);
 num_pixels = height*width;
 M_dff = reshape(M_dff, num_pixels, num_frames); % Reshape movie as a matrix

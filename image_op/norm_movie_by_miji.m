@@ -60,7 +60,7 @@ h5create(movie_out, '/Norm/MijiFilterSmall', 1, 'Datatype', 'double');
 h5write(movie_out, '/Norm/MijiFilterSmall', filter_small);
 
 % Apply norm
-frame_chunk_size = 1000;
+frame_chunk_size = 500;
 [frame_chunks, num_chunks] = make_frame_chunks(num_frames, frame_chunk_size);
 
 for i = 1:num_chunks

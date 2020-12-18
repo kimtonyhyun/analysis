@@ -37,6 +37,7 @@ if isempty(movie_clim)
 end
 
 nd = ndims(M);
+figure;
 switch nd
     case 3 % [height x width x num_frames]       
         get_frame = @(k) M(:,:,k);
@@ -52,6 +53,13 @@ axis image;
 truesize;
 xlabel('x [px]');
 ylabel('y [px]');
+
+% Toolbar implementation in Matlab 2018b+ is broken
+if ~verLessThan('matlab', '9.5')
+    addToolbarExplorationButtons(gcf);
+    ax = gca;
+    set(ax.Toolbar, 'Visible', 'off');
+end
 
 if use_outline
     hold on;
@@ -72,9 +80,16 @@ end
 num_playbacks = 1;
 while (num_playbacks <= num_repeats) 
     for k = 1:num_frames
-        title(sprintf('Frame %d of %d', k, num_frames));
-        set(h, 'CData', get_frame(k));
+        try
+            set(h, 'CData', get_frame(k));
+            title(sprintf('Frame %d of %d', k, num_frames));
+        catch
+            cprintf('blue', 'view_movie terminated by user\n');
+            return;
+        end
         drawnow;
     end
     num_playbacks = num_playbacks + 1;
 end
+
+fprintf('test');
