@@ -1,4 +1,7 @@
 function show_corr(ds1, idx1, ds2, idx2, corr_val, varargin)
+% A multi-subplot visualization of spatiotemporal correlations between two
+% cells, which is used by multiple "applications" (e.g. "match_1p2p",
+% "resolve_depths").
 
 % Default settings
 display_mode = 'standard';
@@ -7,6 +10,10 @@ trace_norm_method = 'norm';
 ds_labels = {'ds1', 'ds2'};
 frames = [];
 tform = [];
+
+% In "overlay" display mode, we can center the cell map at the COM of the
+% ds1 cell or the ds2 cell. By default, we target ds2.
+zoom_target = 2;
 
 color1 = [0 0.4470 0.7410];
 color2 = [0.85 0.325 0.098];
@@ -19,6 +26,8 @@ for k = 1:length(varargin)
                 % spatial transform 'tform' to the ds2 cellmap
                 display_mode = 'overlay';
                 tform = varargin{k+1};
+            case 'zoom_target'
+                zoom_target = varargin{k+1};
             case 'zsc'
                 trace_norm_method = 'zsc';
             case {'name', 'names', 'ds_name', 'ds_names'}
@@ -89,15 +98,25 @@ switch display_mode
     case 'overlay'
         subplot(3,2,[3 5]); % Cellmap overlay
         
-        % For performance reasons, only show boundaries in the vicinity of
-        % the 2P cell under consideration
-        com2 = transformPointsForward(tform, ds2.cells(idx2).com')';       
-        plot_boundaries(ds1, 'Color', color1, 'LineWidth', 2, 'Fill', idx1, 'display_center', com2);
-        hold on;
-        plot_boundaries(ds2, 'Color', color2, 'LineWidth', 1, 'Fill', idx2, 'Transform', tform, 'display_center', com2);
+        switch zoom_target
+            case 1
+                zoom_com = ds1.cells(idx1).com;
+            case 2
+                if ~isempty(tform)
+                    zoom_com = transformPointsForward(tform, ds2.cells(idx2).com')';
+                else
+                    zoom_com = ds2.cells(idx2).com;
+                end
+        end
         
-        xlim(com2(1) + [-50 50]);
-        ylim(com2(2) + [-50 50]);
+        % For performance reasons, only show boundaries in the vicinity of
+        % the cell under consideration
+        plot_boundaries(ds1, 'Color', color1, 'LineWidth', 2, 'Fill', idx1, 'display_center', zoom_com);
+        hold on;
+        plot_boundaries(ds2, 'Color', color2, 'LineWidth', 1, 'Fill', idx2, 'Transform', tform, 'display_center', zoom_com);
+        
+        xlim(zoom_com(1) + [-50 50]);
+        ylim(zoom_com(2) + [-50 50]);
         
         corr_sp = subplot(3,2,[4 6]); % Correlation plot
 end
