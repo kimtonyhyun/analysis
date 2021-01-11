@@ -6,8 +6,8 @@ function [S, A] = compute_std_image(M)
 
 if ~ischar(M)
     [height, width, num_frames] = size(M);
-    A = zeros(height, width);
-    A2 = zeros(height, width);
+    A = zeros(height, width, 'single');
+    A2 = zeros(height, width, 'single');
 
     for k = 1:num_frames
         A = A + M(:,:,k);
@@ -23,8 +23,8 @@ else % HDF5 filename (string)
     width = movie_size(2);
     num_frames = movie_size(3);
     
-    A = zeros(height, width);
-    A2 = zeros(height, width);
+    A = zeros(height, width, 'single');
+    A2 = zeros(height, width, 'single');
     
     frame_chunk_size = 2500;
     [frame_chunks, num_chunks] = make_frame_chunks(num_frames, frame_chunk_size);
@@ -41,8 +41,8 @@ else % HDF5 filename (string)
                              [height width chunk_count]);
 
         for k = 1:size(movie_chunk,3)
-            A = A + movie_chunk(:,:,k);
-            A2 = A2 + movie_chunk(:,:,k).^2;
+            A = A + single(movie_chunk(:,:,k));
+            A2 = A2 + single(movie_chunk(:,:,k)).^2;
         end
     end
 end
