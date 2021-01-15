@@ -13,7 +13,7 @@ fprintf('convert_dcimg: Output movie will be saved as "%s"\n', movie_out);
 %------------------------------------------------------------
 data_type = 'uint16';
 [A, num_frames] = dcimgmatlab(int32(0), movie_in);
-[height, width] = size(A);
+[height, width] = size(A'); % We'll transpose images as we read them in
 
 height = double(height);
 width = double(width);
