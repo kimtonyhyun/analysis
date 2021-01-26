@@ -144,3 +144,4 @@ rec_savename = [];
 if ~suppress_output
     rec_savename = save_rec(info, filters, traces);
 end
+fprintf('%s: Generated %d traces!\n', datestr(now), num_filters);
