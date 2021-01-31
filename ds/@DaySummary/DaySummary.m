@@ -487,8 +487,11 @@ classdef DaySummary < handle
         end
         
         function selected_idx = get_cell_by_xy(obj, xy, varargin)
-            % Returns the first cell index whose filter boundary encloses
-            % the XY position provided in 'xy'
+            % Returns the cell index whose center of mass is closest to the
+            % the coordinate 'xy'. We additionally require that the filter
+            % boundaries enclose 'xy'.
+            
+            xy = xy(:); % Convert to column vector
             
             % By default all cell candidates can be clicked
             classified_cells_only = 0;
@@ -501,8 +504,12 @@ classdef DaySummary < handle
                 end
             end
             
+            coms = cell2mat({obj.cells.com});
+            dists = vecnorm(coms - xy, 2, 1);
+            [~, sorted_cell_inds] = sort(dists, 'ascend');
+            
             selected_idx = []; % If no hit, then return empty
-            for k = 1:obj.num_cells
+            for k = sorted_cell_inds
                 boundary = obj.cells(k).boundary;
                 if (obj.is_cell(k) || ~classified_cells_only)
                     if inpolygon(xy(1), xy(2), boundary(:,1), boundary(:,2))
