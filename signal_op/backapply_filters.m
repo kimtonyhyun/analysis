@@ -34,7 +34,7 @@ if ischar(movie_in)
     movie_dims = get_movie_info(movie_in);
 
     movie_dataset = '/Data/Images';
-    get_frames = @(x) h5read(movie_in, movie_dataset, [1 1 x(1)], [movie_dims(1) movie_dims(2) x(2)-x(1)+1]);
+    get_frames = @(x) h5read(movie_in, movie_dataset, [1 1 x(1)], [movie_dims(1) movie_dims(2) x(end)-x(1)+1]);
 else
     movie_dims = size(movie_in);
     
