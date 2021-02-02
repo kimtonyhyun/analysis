@@ -28,7 +28,18 @@ for k = 1:length(varargin)
     end
 end
 
-movie_dims = get_movie_info(movie_in);
+% Movie input can be a filename (HDF5) or a 3-D movie matrix
+%------------------------------------------------------------
+if ischar(movie_in)
+    movie_dims = get_movie_info(movie_in);
+
+    movie_dataset = '/Data/Images';
+    get_frames = @(x) h5read(movie_in, movie_dataset, [1 1 x(1)], [movie_dims(1) movie_dims(2) x(2)-x(1)+1]);
+else
+    movie_dims = size(movie_in);
+    
+    get_frames = @(x) movie_in(:,:,x);
+end
 height = movie_dims(1);
 width = movie_dims(2);
 num_pixels = height * width;
@@ -44,7 +55,7 @@ else
     cell_indices = find(ds.is_cell);
 end
 num_filters = length(cell_indices);
-filters = zeros(num_pixels, num_filters);
+filters = zeros(num_pixels, num_filters, 'single');
 
 for k = 1:num_filters
     cell_idx = cell_indices(k);
@@ -63,9 +74,7 @@ fprintf('Done (%.1f sec)\n', t);
 
 % Calculate traces in chunks
 %------------------------------------------------------------
-traces = zeros(num_filters, num_frames);
-
-movie_dataset = '/Data/Images';
+traces = zeros(num_filters, num_frames, 'single');
 
 frame_chunk_size = 1000;
 [frame_chunks, num_chunks] = make_frame_chunks(num_frames, frame_chunk_size);
@@ -77,10 +86,7 @@ for i = 1:num_chunks
     fprintf('%s: Calculating traces for frames %d to %d (out of %d) ',...
         datestr(now), frame_inds(1), frame_inds(end), num_frames);
         
-    movie_chunk = h5read(movie_in, movie_dataset,...
-                         [1 1 frame_inds(1)],...
-                         [height width num_frames_in_chunk]);
-
+    movie_chunk = get_frames(frame_inds);
     movie_chunk = reshape(movie_chunk, num_pixels, num_frames_in_chunk);
     
     if use_ls
@@ -113,7 +119,11 @@ traces = traces'; % [num_frames x num_filters]
 
 % Save as Rec file
 %------------------------------------------------------------
-info.type = 'backapply_filters';
+if ischar(movie_in)
+    info.type = sprintf('backapply_filters:%s', movie_in);
+else
+    info.type = 'backapply_filters';
+end
 info.num_pairs = num_filters;
 
 % Note the parameters used in DFF recomputation
@@ -122,5 +132,7 @@ info.options.truncate_filter = truncate_filter;
 info.options.use_ls = use_ls;
 info.options.use_all_filters = use_all_filters;
 
+tic;
 rec_savename = save_rec(info, filters, traces);
-fprintf('%s: Generated %d traces!\n', datestr(now), num_filters);
+t = toc;
+fprintf('%s: Results saved to "%s" (%.1f sec)\n', datestr(now), rec_savename, t);
