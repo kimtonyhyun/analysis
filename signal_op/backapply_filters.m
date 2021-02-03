@@ -1,12 +1,14 @@
-function rec_savename = backapply_filters(ds, movie_in, varargin)
-% Compute traces by back applying filters from DaySummary to the specified
-% movie file. Originally based on 'get_dff_traces'.
+function rec_savename = backapply_filters(filters_in, movie_in, varargin)
+% Compute traces by back applying filters to the specified movie.
+% Originally based on 'get_dff_traces'.
+%
+% Inputs:
+%   - 'filters_in': Can be a DaySummary instance, or a 3D matrix of filters
+%       where filters_in(:,:,k) is the image of the k-th filter.
+%   - 'movie_in': Can be the name of a HDF5 file (string) or a 3D movie
+%       matrix.
 
 use_ls = false;
-
-% Filter parameters relevant for trace extraction
-use_all_filters = false;
-truncate_filter = false;
 
 % Trace post-extraction processing
 fix_baseline_method = [];
@@ -15,15 +17,10 @@ for k = 1:length(varargin)
     vararg = varargin{k};
     if ischar(vararg)
         switch lower(vararg)
-            case 'keepall'
-                use_all_filters = true;
             case {'ls', 'leastsquares'}
                 use_ls = true;
             case {'fix', 'fix_baseline'}
                 fix_baseline_method = varargin{k+1};
-            case 'truncate'
-                fprintf('%s: Filter will be truncated...\n', datestr(now));
-                truncate_filter = true;
         end
     end
 end
@@ -47,30 +44,38 @@ num_frames = movie_dims(3);
 
 % Build up 'filters'
 %------------------------------------------------------------
-fprintf('%s: Building filters matrix... ', datestr(now));
-tic;
-if use_all_filters
-    cell_indices = 1:ds.num_cells;
-else 
-    cell_indices = find(ds.is_cell);
+fprintf('%s: Building filters matrix...\n', datestr(now));
+if isa(filters_in, 'DaySummary')
+    cell_indices = find(filters_in.is_cell);
+    get_filter = @(x) filters_in.cells(x).im;
+else
+    cell_indices = 1:size(filters_in,3);
+    get_filter = @(x) filters_in(:,:,x);
 end
-num_filters = length(cell_indices);
-filters = zeros(num_pixels, num_filters, 'single');
+max_num_filters = length(cell_indices);
+filters = zeros(num_pixels, max_num_filters, 'single'); % Preallocate
 
-for k = 1:num_filters
+idx = 0;
+num_skipped = 0;
+for k = 1:max_num_filters
     cell_idx = cell_indices(k);
-    filter = ds.cells(cell_idx).im;
-    if truncate_filter
-        filter = filter .* ds.cells(cell_idx).mask;
-    end
-    % NOTE: In principle, we should check if the filter is entirely 0
-    % here, as in the section below.
-    filter = filter / sum(filter(:)); % Normalize filter to 1
+    filter = get_filter(cell_idx);
 
-    filters(:,k) = reshape(filter, num_pixels, 1);
+    filter_sum = sum(filter(:)); % Would it be better to take the absolute value?
+    if (filter_sum > 0)
+        idx = idx + 1;
+        filter = filter / filter_sum; % Normalize
+        filters(:,idx) = reshape(filter, num_pixels, 1);
+    else
+        fprintf('  Warning: Filter #%d is entirely zero -- skipping!\n', k);
+        num_skipped = num_skipped + 1;
+    end
 end
-t = toc;
-fprintf('Done (%.1f sec)\n', t);
+if (num_skipped > 0)
+    fprintf('  Total number of skipped filters: %d\n', num_skipped);
+end
+filters(:,(idx+1):end) = [];
+num_filters = idx;
 
 % Calculate traces in chunks
 %------------------------------------------------------------
@@ -128,9 +133,7 @@ info.num_pairs = num_filters;
 
 % Note the parameters used in DFF recomputation
 info.options.fix_baseline = fix_baseline_method;
-info.options.truncate_filter = truncate_filter;
 info.options.use_ls = use_ls;
-info.options.use_all_filters = use_all_filters;
 
 tic;
 rec_savename = save_rec(info, filters, traces);

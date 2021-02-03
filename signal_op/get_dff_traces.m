@@ -1,4 +1,6 @@
 function [traces, rec_savename] = get_dff_traces(filter_input, M_dff, varargin)
+% DEPRECATED. Use 'backapply_filters' instead.
+%
 % Compute DFF traces associated with classified cells from a DaySummary,
 % and saves the result as a rec file. Assumes that M_dff is a DFF movie (in
 % order for the resulting traces to be interpreted as DFF).
@@ -6,8 +8,6 @@ function [traces, rec_savename] = get_dff_traces(filter_input, M_dff, varargin)
 % Note that the length of traces is derived from the length of the movie.
 % The DaySummary only provides the spatial filters.
 %
-% TODO:
-%   - Load chunks of the movie at a time to reduce memory footprint
 
 use_ls = false;
 suppress_output = false;
