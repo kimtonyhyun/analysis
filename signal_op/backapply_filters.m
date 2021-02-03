@@ -1,4 +1,4 @@
-function rec_savename = backapply_filters(filters_in, movie_in, varargin)
+function [rec_savename, class_savename] = backapply_filters(filters_in, movie_in, varargin)
 % Compute traces by back applying filters to the specified movie.
 % Originally based on 'get_dff_traces'.
 %
@@ -9,9 +9,9 @@ function rec_savename = backapply_filters(filters_in, movie_in, varargin)
 %       matrix.
 
 use_ls = false;
-
-% Trace post-extraction processing
+generate_class = false;
 fix_baseline_method = [];
+class_savename = [];
 
 for k = 1:length(varargin)
     vararg = varargin{k};
@@ -21,6 +21,8 @@ for k = 1:length(varargin)
                 use_ls = true;
             case {'fix', 'fix_baseline'}
                 fix_baseline_method = varargin{k+1};
+            case {'class', 'generate_class'}
+                generate_class = true;
         end
     end
 end
@@ -136,6 +138,9 @@ info.options.fix_baseline = fix_baseline_method;
 info.options.use_ls = use_ls;
 
 tic;
-rec_savename = save_rec(info, filters, traces);
+[rec_savename, timestamp] = save_rec(info, filters, traces);
+if generate_class
+    class_savename = generate_class_file(num_filters, 'timestamp', timestamp);
+end
 t = toc;
 fprintf('%s: Results saved to "%s" (%.1f sec)\n', datestr(now), rec_savename, t);
