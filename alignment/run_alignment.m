@@ -34,6 +34,7 @@ wait_for_prompt = 1;
 use_transform = 1;
 num_alignment_points = 4;
 bijective_matching = 1;
+alignment_cell_inds = [];
 
 for k = 1:length(varargin)
     if ischar(varargin{k})
@@ -51,6 +52,8 @@ for k = 1:length(varargin)
                 wait_for_prompt = 0;
             case 'num_points'
                 num_alignment_points = varargin{k+1};
+            case {'inds', 'alignment_inds', 'alignment_cell_inds'}
+                alignment_cell_inds = varargin{k+1};
         end
     end
 end
@@ -68,11 +71,7 @@ end
 
 % Control point-based registration of two cell maps
 %------------------------------------------------------------
-if use_transform
-    fprintf('run_alignment: Beginning alignment...\n');
-    alignment_cell_inds = select_cells_for_alignment(ds1, ds2, num_alignment_points);
-    [info, masks1, masks2] = compute_affine_transform(ds1, ds2, alignment_cell_inds);
-else
+if ~use_transform
     masks1 = {ds1.cells.mask};
     masks2 = {ds2.cells.mask};
     info.tform = affine2d; % Identity transform
@@ -83,6 +82,12 @@ else
     plot_boundaries_with_transform(ds2, 'r', 1, [], []);
     hold off;
     title('Dataset1 (blue) vs. Dataset2 (red)');
+else
+    if isempty(alignment_cell_inds)
+        fprintf('run_alignment: Beginning alignment...\n');
+        alignment_cell_inds = select_cells_for_alignment(ds1, ds2, num_alignment_points);
+    end
+    [info, masks1, masks2] = compute_affine_transform(ds1, ds2, alignment_cell_inds);
 end
 
 if wait_for_prompt

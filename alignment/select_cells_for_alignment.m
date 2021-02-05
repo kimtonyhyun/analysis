@@ -20,8 +20,7 @@ title('Dataset 2');
 % Allow the user to select the ICs used in matching
 %------------------------------------------------------------
 sel_colors = jet(num_alignment_points);
-fprintf('compute_affine_transform: Please select %d cells from each dataset (in order)\n',...
-    num_alignment_points);
+fprintf('Please select %d cells from each dataset (in order)\n', num_alignment_points);
 
 selected_cell_inds = zeros(num_alignment_points, 2); % List of selected cells
 num_selected = [0 0]; % Number of ICs selected from each dataset
