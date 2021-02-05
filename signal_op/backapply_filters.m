@@ -143,4 +143,4 @@ if generate_class
     class_savename = generate_class_file(num_filters, 'timestamp', timestamp);
 end
 t = toc;
-fprintf('%s: Results saved to "%s" (%.1f sec)\n', datestr(now), rec_savename, t);
+fprintf('%s: %d filter-trace pairs saved to "%s" (%.1f sec)\n', datestr(now), num_filters, rec_savename, t);
