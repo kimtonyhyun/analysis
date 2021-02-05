@@ -66,11 +66,12 @@ if ds2_set_labels
     ds2.set_labels;
 end
 
-% Control point-based registration of two sets of ICs
+% Control point-based registration of two cell maps
 %------------------------------------------------------------
 if use_transform
     fprintf('run_alignment: Beginning alignment...\n');
-    [info, masks1, masks2] = compute_affine_transform(ds1, ds2, num_alignment_points);
+    alignment_cell_inds = select_cells_for_alignment(ds1, ds2, num_alignment_points);
+    [info, masks1, masks2] = compute_affine_transform(ds1, ds2, alignment_cell_inds);
 else
     masks1 = {ds1.cells.mask};
     masks2 = {ds2.cells.mask};

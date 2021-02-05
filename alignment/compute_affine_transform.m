@@ -1,8 +1,10 @@
-function [info, masks1, masks2] = compute_affine_transform(ds1, ds2, num_alignment_points)
+function [info, masks1, masks2] = compute_affine_transform(ds1, ds2, alignment_cell_inds)
 % IC map alignment based on user-defined control points.
 %
 % Inputs:
 %   ds1/2: DaySummary object containing cell maps to be aligned
+%   alignment_cell_inds: [N x 2] matrix containing the indices of matched
+%       cells. Columns map to ds1 and ds2, respectively.
 %
 % Outputs:
 %   info: Struct containing results of the affine transformation fit
@@ -12,85 +14,43 @@ function [info, masks1, masks2] = compute_affine_transform(ds1, ds2, num_alignme
 %           dimensions of source 1 masks!)
 %
 
-% To programmatically address either of the two DaySummary's
-ds = cell(1,2);
-ds{1} = ds1;
-ds{2} = ds2;
+num_alignment_points = size(alignment_cell_inds, 1);
 
-% Display the two sets of ICs
-figure;
-ax1 = subplot(121);
-ds1.plot_cell_boundaries('cells');
-hold on;
-title('Dataset 1');
+% Alignment is based on control _points_ (i.e. XY coordinates)
+alignment_xy_coords = zeros(num_alignment_points, 2, 2); % XY position for each cell
 
-ax2 = subplot(122);
-ds2.plot_cell_boundaries('cells');
-hold on;
-title('Dataset 2');
-
-% Allow the user to select the ICs used in matching
-%------------------------------------------------------------
-sel_colors = jet(num_alignment_points);
-fprintf('compute_affine_transform: Please select %d cells from each dataset (in order)\n',...
-    num_alignment_points);
-
-selected_cells = zeros(num_alignment_points,2); % List of selected ICs
-selected_centers = zeros(num_alignment_points, 2, 2); % XY position of each selected IC
-num_selected = [0 0]; % Number of ICs selected from each dataset
-
-% Loop until required number of ICs have been selected
-while (~all(num_selected == num_alignment_points))
-    click_xy = round(ginput(1)); % Get user click
-    if (gca == ax1) % Axis 1 was clicked
-        source_idx = 1;
-    elseif (gca == ax2)
-        source_idx = 2;
-    end
+% Historically, we used the mean of the boundary as the XY position for
+% eahc cell. We don't use the filter's COM because the COM can deviate from
+% the visual center of the cell's position as indicated by its boundary.
+% The COM computed from the binarized mask may also be worth consideration.
+for k = 1:num_alignment_points
+    idx1 = alignment_cell_inds(k,1);
+    bd1 = ds1.cells(idx1).boundary;
+    alignment_xy_coords(k,:,1) = mean(bd1, 1);
     
-    ic_idx = ds{source_idx}.get_cell_by_xy(click_xy, 'cells');
-    if ~isempty(ic_idx) % Hit
-        sel_idx = num_selected(source_idx) + 1;
-        if (sel_idx <= num_alignment_points)
-            boundary = ds{source_idx}.cells(ic_idx).boundary;
-            fill(boundary(:,1), boundary(:,2), sel_colors(sel_idx,:));
-
-            selected_center = mean(boundary,1);
-            fprintf('  Dataset%d: Cell %d selected (at [%.1f %.1f])!\n',...
-                source_idx, ic_idx,...
-                selected_center(1), selected_center(2));
-            
-            selected_cells(sel_idx, source_idx) = ic_idx;
-            num_selected(source_idx) = sel_idx;
-            selected_centers(sel_idx,:,source_idx) = selected_center;
-        else
-            fprintf('  Dataset%d: No more cells needed!\n',...
-                source_idx);
-        end
-    else % No hit
-        fprintf('  Dataset%d: No cell detected at cursor!\n',...
-            source_idx);
-    end
+    idx2 = alignment_cell_inds(k,2);
+    bd2 = ds2.cells(idx2).boundary;
+    alignment_xy_coords(k,:,2) = mean(bd2, 1);
 end
-fprintf('  All reference cells selected!\n');
+
 
 % Transform Source2 onto Source1
 %------------------------------------------------------------
-tform = fitgeotrans(selected_centers(:,:,2),... % Moving points
-                    selected_centers(:,:,1),... % Fixed points
+tform = fitgeotrans(alignment_xy_coords(:,:,2),... % Moving points
+                    alignment_xy_coords(:,:,1),... % Fixed points
                     'affine');
 
 figure; % Pre-transform comparison
-plot_boundaries_with_transform(ds1, 'b', 2, selected_cells(:,1));
+plot_boundaries_with_transform(ds1, 'b', 2, alignment_cell_inds(:,1));
 hold on;
-plot_boundaries_with_transform(ds2, 'r', 1, selected_cells(:,2));
+plot_boundaries_with_transform(ds2, 'r', 1, alignment_cell_inds(:,2));
 hold off;
 title('Pre-transform: Dataset1 (blue) vs. Dataset2 (red)');
 
 figure; % Post-transform comparison
-plot_boundaries_with_transform(ds1, 'b', 2, selected_cells(:,1));
+plot_boundaries_with_transform(ds1, 'b', 2, alignment_cell_inds(:,1));
 hold on;
-plot_boundaries_with_transform(ds2, 'r', 1, selected_cells(:,2), tform);
+plot_boundaries_with_transform(ds2, 'r', 1, alignment_cell_inds(:,2), tform);
 hold off;
 title('Post-transform: Dataset1 (blue) vs. Dataset2 (red)');
 
@@ -105,8 +65,8 @@ for k = 1:ds2.num_cells
 end
 
 info.alignment.num_points = num_alignment_points;
-info.alignment.selected_cells = selected_cells;
-info.alignment.selected_centers = selected_centers;
+info.alignment.selected_cells = alignment_cell_inds;
+info.alignment.selected_centers = alignment_xy_coords;
 info.tform = tform;
 
 end % compute_affine_transform
