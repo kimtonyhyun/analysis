@@ -40,17 +40,18 @@ tform = fitgeotrans(alignment_xy_coords(:,:,2),... % Moving points
                     alignment_xy_coords(:,:,1),... % Fixed points
                     'affine');
 
-figure; % Pre-transform comparison
-plot_boundaries_with_transform(ds1, 'b', 2, alignment_cell_inds(:,1));
-hold on;
-plot_boundaries_with_transform(ds2, 'r', 1, alignment_cell_inds(:,2));
-hold off;
-title('Pre-transform: Dataset1 (blue) vs. Dataset2 (red)');
+% Pre-transform plot has never been useful...
+% figure; % Pre-transform comparison
+% plot_boundaries_with_transform(ds1, 'b', 2, alignment_cell_inds(:,1));
+% hold on;
+% plot_boundaries_with_transform(ds2, 'r', 1, alignment_cell_inds(:,2));
+% hold off;
+% title('Pre-transform: Dataset1 (blue) vs. Dataset2 (red)');
 
 figure; % Post-transform comparison
-plot_boundaries_with_transform(ds1, 'b', 2, alignment_cell_inds(:,1));
+plot_boundaries(ds1, 'color', 'b', 'linewidth', 2, 'fill', alignment_cell_inds(:,1));
 hold on;
-plot_boundaries_with_transform(ds2, 'r', 1, alignment_cell_inds(:,2), tform);
+plot_boundaries(ds2, 'color', 'r', 'linewidth', 1, 'fill', alignment_cell_inds(:,2), 'tform', tform);
 hold off;
 title('Post-transform: Dataset1 (blue) vs. Dataset2 (red)');
 
