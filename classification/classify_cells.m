@@ -90,12 +90,21 @@ while (cell_idx <= num_candidates)
             % Classication options
             %------------------------------------------------------------
             case 'c' % Cell
-                [~, state] = view_cell_interactively(ds, cell_idx, M, fps, state);
-                resp2 = input(sprintf('  Confirm classification ("%s") >> ', resp), 's');
-                resp2 = lower(strtrim(resp2));
-                if (strcmp(resp, resp2)) % Confirmed
-                    set_label(cell_idx, resp2);
-                    go_to_next_unlabeled_cell();
+                [resp2, state] = view_cell_interactively(ds, cell_idx, M, fps, state);
+                switch resp2
+                    % For these "exit codes", label the candidate and move on
+                    case {'c', 'n'}
+                        set_label(cell_idx, resp2);
+                        go_to_next_unlabeled_cell();
+
+                    % "Classic" behavior
+                    otherwise
+                        resp2 = input(sprintf('  Confirm classification ("%s") >> ', resp), 's');
+                        resp2 = lower(strtrim(resp2));
+                        if (strcmp(resp, resp2)) % Confirmed
+                            set_label(cell_idx, resp2);
+                            go_to_next_unlabeled_cell();
+                        end
                 end
 
             case {'c!', 'n'} % Classify without viewing trace
