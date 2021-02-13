@@ -142,6 +142,9 @@ setup_traces();
 % Interaction loop:
 %   Display the user-specified active period
 %------------------------------------------------------------
+
+display_active_period(1);
+
 prompt = 'Cell viewer >> ';
 resp = lower(strtrim(input(prompt, 's')));
 val = str2double(resp);
