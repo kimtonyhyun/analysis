@@ -150,7 +150,7 @@ resp = lower(strtrim(input(prompt, 's')));
 val = str2double(resp);
 
 % State of interaction loop (will not carry over to other cells)
-temp_state.last_val = [];
+temp_state.last_val = 1;
 temp_state.zoomed = true;
 
 while (1)
