@@ -7,7 +7,7 @@ function [rec_savename, timestamp] = save_rec(info, filters, traces) %#ok<INUSL,
 %
 % TODO: Sanity checks on rec file structure!
 
-filters = single(filters); %#ok<*NASGU>
+filters = single(full(filters)); %#ok<*NASGU>
 traces = single(traces);
 
 % Save to file
