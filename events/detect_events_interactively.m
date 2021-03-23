@@ -42,7 +42,7 @@ trace_orig = ds.get_trace(cell_idx);
 
 events = struct('info', [], 'data', []);
 events.info = struct('method', 'detect_events_interactively',...
-                     'cutoff_freq', 4,... % Hz. As in Wagner et al. 2019
+                     'cutoff_freq', 4/30 * fps,... % Hz. As in Wagner et al. 2019
                      'baseline', [],...
                      'sigma', [],...
                      'threshold', [],...
@@ -366,7 +366,7 @@ end % Main interaction loop
         gui.local_dots = plot(trace, 'k.', 'HitTest', 'off');
         trial_starts = ds.trial_indices(:,1);
         gui.local_trials = plot(trial_starts, trace(trial_starts), 'ko', 'HitTest', 'off');
-        text_y = trace_display_range(1) + 0.05*diff(trace_display_range);
+        text_y = double(trace_display_range(1) + 0.05*diff(trace_display_range));
         gui.local_trials_text = cell(ds.num_trials,1);
         for k = 1:ds.num_trials
             trial_start_k = double(trial_starts(k));
