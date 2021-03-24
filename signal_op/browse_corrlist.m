@@ -27,7 +27,10 @@ while (1)
             idx = idx + 1;
             idx = min(num_pairs, idx);
         else
-            switch resp(1)                
+            switch resp(1)
+                case 's' % Save image
+                    print(sprintf('cell%d.png', idx), '-dpng');
+
                 case 'p' % Previous
                     idx = idx - 1;
                     idx = max(1, idx);
