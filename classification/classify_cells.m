@@ -89,12 +89,16 @@ while (cell_idx <= num_candidates)
         switch (resp)
             % Classication options
             %------------------------------------------------------------
-            case 'c' % Cell
+            case {'c', '+'} % Cell
                 [resp2, state] = view_cell_interactively(ds, cell_idx, M, fps, state);
                 switch resp2
                     % For these "exit codes", label the candidate and move on
-                    case {'c', 'n'}
-                        set_label(cell_idx, resp2);
+                    case {'c', '+'}
+                        set_label(cell_idx, 'c');
+                        go_to_next_unlabeled_cell();
+
+                    case {'n', '-'}
+                        set_label(cell_idx, 'n');
                         go_to_next_unlabeled_cell();
 
                     % "Classic" behavior
@@ -107,8 +111,12 @@ while (cell_idx <= num_candidates)
                         end
                 end
 
-            case {'c!', 'n'} % Classify without viewing trace
-                set_label(cell_idx, resp(1));
+            case 'c!' % Classify without viewing trace
+                set_label(cell_idx, 'c');
+                go_to_next_unlabeled_cell();
+                
+            case {'n', '-'} % Classify without viewing trace
+                set_label(cell_idx, 'n');
                 go_to_next_unlabeled_cell();
                 
             % Application options

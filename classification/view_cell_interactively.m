@@ -163,7 +163,7 @@ while (1)
         end
     else % Not a number
         switch (resp)
-            case {'', 'c', 'n'} % These commands will break the interaction loop
+            case {'', 'c', 'n', '+', '-'} % These commands will break the interaction loop
                 % Unset the handler on fig handle, which persists!
                 set(state.fig_handle, 'WindowScrollWheelFcn', '');
                 break;
