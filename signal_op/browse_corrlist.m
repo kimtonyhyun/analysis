@@ -29,7 +29,9 @@ while (1)
         else
             switch resp(1)
                 case 's' % Save image
-                    print(sprintf('cell%d.png', idx), '-dpng');
+                    image_filename = sprintf('cell%d.png', idx);
+                    print(image_filename, '-dpng');
+                    fprintf('  Imaged saved to "%s"\n', image_filename);
 
                 case 'p' % Previous
                     idx = idx - 1;

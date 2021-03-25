@@ -79,7 +79,7 @@ xlabel('Frames');
 ylim(y_lims);
 set(gca, 'TickLength', [0 0]);
 title(sprintf('%s cell=%d\n%s cell=%d\ncorr=%.4f',...
-      ds_labels{1}, idx1, ds_labels{2}, idx2, corr_val));
+      ds_labels{1}, idx1, ds_labels{2}, idx2, corr_val), 'Interpreter', 'none');
 
 % Show cell maps
 %------------------------------------------------------------
@@ -87,11 +87,11 @@ switch display_mode
     case 'standard'
         subplot(3,3,[4 7]); % Cellmap for ds1
         plot_boundaries(ds1, 'Color', color1, 'LineWidth', 1, 'Fill', idx1);
-        title(ds_labels{1});
+        title(ds_labels{1}, 'Interpreter', 'none');
         
         subplot(3,3,[5 8]); % Cellmap for ds2
         plot_boundaries(ds2, 'Color', color2, 'LineWidth', 1, 'Fill', idx2);
-        title(ds_labels{2});
+        title(ds_labels{2}, 'Interpreter', 'none');
         
     	corr_sp = subplot(3,3,[6 9]); % Correlation plot
         
