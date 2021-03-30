@@ -1,92 +1,108 @@
 function remove_duplicates(ds1, ds2)
 % Given cell maps in two planes, look for duplicates by considering
 % spatiotemporal alignment of cells, and then "assign" the cell to one of
-% the DaySummary's. Note that the labels are mutated _in place_.
+% the DaySummary's. Note that the labels are mutated in place.
 
 app_name = 'Remove duplicates';
+
+num_cells1 = ds1.num_classified_cells;
+num_cells2 = ds2.num_classified_cells;
 
 % Compute all temporal correlations. Results are sorted by the correlation
 % value (descending).
 corrlist = compute_corrlist(ds1, ds2);
-num_cells1 = ds1.num_classified_cells;
-num_cells2 = ds2.num_classified_cells;
-num_pairs = size(corrlist, 1);
+corrlist = sortrows(corrlist, 1, 'ascend'); % Sort by ds1 cell index
 
-% Sort corrlist by ds1 cell index. For a given ds1 cell, the corrlist rows
-% then enumerate ds2 cells in order of decreasing correlation.
-corrlist = sortrows(corrlist, 1, 'ascend');
-idx1_to_i = corrlist(1:num_cells2:end,1);
+% Next, precompute distances between cells using their center-of-mass. Note
+% that this computation is performed for all sources, not just those
+% classified to be a cell. TODO: Consider allowing for transform?
+num_all_cells1 = ds1.num_cells;
+num_all_cells2 = ds2.num_cells;
+
+coms1 = cell2mat({ds1.cells.com}); % coms1(:,k) is the COM of the k-th cell
+coms2 = cell2mat({ds2.cells.com});
+
+D = zeros(num_all_cells1, num_all_cells2);
+for i = 1:num_all_cells1
+    for j = 1:num_all_cells2
+        D(i,j) = norm(coms1(:,i)-coms2(:,j));
+    end
+end
 
 hf = figure;
 
-% Note that 'idxX' are not the actual cell indices into dsX. These are
-% counters for traversing the corrlist.
-idx1 = 1;
-idx2 = 1;
-
+i = 1; % Loops over ds1 cells
+j = 1; % Loops over ds2 cells
 while (1)
-    % i and j are the actual cell indices into ds1 and ds2
-    i = idx1_to_i(idx1);
-    
     % Block of corrlist for the i-th cell in ds1
-    rows = (1+(idx1-1)*num_cells2):(idx1*num_cells2);
+    rows = (1+(i-1)*num_cells2):(i*num_cells2);
     corrlist_i = corrlist(rows,:);
     
-    j = corrlist_i(idx2,2);
-    c = corrlist_i(idx2,3);
-    show_corr(ds1, i, ds2, j, c, 'zsc', 'overlay', [], 'zoom_target', 1);
+    ds1_cell_idx = corrlist_i(j,1);
+    ds2_cell_idx = corrlist_i(j,2);
+    corr_val = corrlist_i(j,3);
+    
+    show_corr(ds1, ds1_cell_idx, ds2, ds2_cell_idx, corr_val,...
+        'zsc', 'overlay', [], 'zoom_target', 1);
     
     prompt = sprintf('%s (ds1 idx1=%d of %d; ds2 idx2=%d of %d) >> ',...
                       app_name,...
-                      idx1, num_cells1,...
-                      idx2, num_cells2);
+                      i, num_cells1,...
+                      j, num_cells2);
     resp = strtrim(input(prompt, 's'));
     
-    val = str2double(resp);
-    if (~isnan(val)) % Is a number
-        if (1 <= val) && (val <= num_pairs)
-            set_idx1(val);
-        end
-    else
-        resp = lower(resp);
-        if isempty(resp)
+    resp = lower(resp);
+    if isempty(resp)
             % Increment ds2 cell index
-            idx2 = idx2 + 1;
-            idx2 = min(idx2, num_cells2);
+            j = j + 1;
+            j = min(j, num_cells2);
+    else
+        val = str2double(resp);
+        if (~isnan(val)) % Is a number
+            if (val == 0)
+                % Find the nearest cell
+                [~, ds2_cell_idx] = min(D(ds1_cell_idx,:));
+                j = find(corrlist_i(:,2)==ds2_cell_idx,1);
+            elseif (1 <= val) && (val <= num_cells2)
+                j = val;
+            end
         else
-            switch resp(1)
-                case 'c' % Jump to a cell in ds1 using its cell index
-                    val = str2double(resp(2:end));
-                    new_idx1 = find(idx1_to_i == val, 1, 'first');
-                    if ~isempty(new_idx1)
-                        set_idx1(new_idx1);
-                    end
-                    
-                case 'a' % "Assign"
+            switch resp(1)                  
+                case {'a', 'c'} % "Assign"
                     val = str2double(resp(2:end));
                     switch val
                         case 1 % Assign to ds1
-                            ds2.cells(j).label = 'not a cell';
+                            ds2.cells(ds2_cell_idx).label = 'not a cell';
                             fprintf('  Assigned to ds1!\n');
-                            increment_i;
+                            
+                            i = i + 1;
+                            i = min(num_cells1, i);
+                            j = 1;
                             
                         case 2 % Assign to ds2
-                            ds1.cells(i).label = 'not a cell';
+                            ds1.cells(ds1_cell_idx).label = 'not a cell';
                             fprintf('  Assigned to ds2!\n');
-                            increment_i;
+                            
+                            i = i + 1;
+                            i = min(num_cells1, i);
+                            j = 1;
                             
                         otherwise
                             cprintf('red', '  Error: Valid inputs are "a1" or "a2"\n');
                     end
 
                 case 'm' % Cell map
-                    display_map(i);
+                    display_map(ds1_cell_idx);
 
                 case 'n' % Next
-                    increment_i;
+                    i = i + 1;
+                    i = min(num_cells1, i);
+                    j = 1;
                     
                 case 'p' % Previous
-                    decrement_i;
+                    i = i - 1;
+                    i = max(1, i);
+                    j = 1;
 
                 case 'q' % Exit
                     close(hf);
@@ -109,28 +125,6 @@ end
         fprintf('  Showing cell map (press any key to return)\n');
         pause;
         datacursormode off;
-    end
-
-    % Convenience functions
-    %------------------------------------------------------------
-    function set_idx1(new_idx)
-        idx1 = new_idx;
-        idx2 = 1;
-    end
-
-    function increment_i
-        idx1 = idx1 + 1;
-        if idx1 > num_cells1
-            cprintf('blue', '  Already at last ds1 cell!\n');
-            idx1 = num_cells1;
-        end
-        idx2 = 1;
-    end
-
-    function decrement_i
-        idx1 = idx1 - 1;
-        idx1 = max(1, idx1);
-        idx2 = 1;
     end
 
 end
