@@ -18,6 +18,10 @@ zoom_target = 2;
 color1 = [0 0.4470 0.7410];
 color2 = [0.85 0.325 0.098];
 
+% We use a custom "subplot" command that leaves less unusued space between
+% panels
+sp = @(m,n,p) subtightplot(m, n, p, 0.05, 0.05, 0.05); % Gap, Margin-X, Margin-Y
+
 for k = 1:length(varargin)
     if ischar(varargin{k})
         switch lower(varargin{k})
@@ -62,7 +66,8 @@ switch trace_norm_method
         y_lims = y_lims + 1/10*diff(y_lims)*[-1 1];
 end
 
-subplot(311);
+
+sp(3,1,1);
 plot(tr1, 'Color', color1);
 hold on;
 plot(tr2, 'Color', color2);
@@ -78,25 +83,25 @@ xlim([1 length(tr1)]);
 xlabel('Frames');
 ylim(y_lims);
 set(gca, 'TickLength', [0 0]);
-title(sprintf('%s cell=%d\n%s cell=%d\ncorr=%.4f',...
+title(sprintf('%s cell=%d; %s cell=%d; corr=%.4f',...
       ds_labels{1}, idx1, ds_labels{2}, idx2, corr_val), 'Interpreter', 'none');
 
 % Show cell maps
 %------------------------------------------------------------
 switch display_mode
     case 'standard'
-        subplot(3,3,[4 7]); % Cellmap for ds1
+        sp(3,3,[4 7]); % Cellmap for ds1
         plot_boundaries(ds1, 'Color', color1, 'LineWidth', 1, 'Fill', idx1);
         title(ds_labels{1}, 'Interpreter', 'none');
         
-        subplot(3,3,[5 8]); % Cellmap for ds2
+        sp(3,3,[5 8]); % Cellmap for ds2
         plot_boundaries(ds2, 'Color', color2, 'LineWidth', 1, 'Fill', idx2);
         title(ds_labels{2}, 'Interpreter', 'none');
         
-    	corr_sp = subplot(3,3,[6 9]); % Correlation plot
+    	corr_sp = sp(3,3,[6 9]); % Correlation plot
         
     case 'overlay'
-        subplot(3,2,[3 5]); % Cellmap overlay
+        sp(3,2,[3 5]); % Cellmap overlay
         
         switch zoom_target
             case 1
@@ -118,7 +123,7 @@ switch display_mode
         xlim(zoom_com(1) + [-50 50]);
         ylim(zoom_com(2) + [-50 50]);
         
-        corr_sp = subplot(3,2,[4 6]); % Correlation plot
+        corr_sp = sp(3,2,[4 6]); % Correlation plot
 end
 
 % Show trace correlation
