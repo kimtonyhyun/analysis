@@ -78,7 +78,7 @@ for m = 1:length(frames) % Extra vertical markers
     xline(frames(m), 'b:');
 end
 hold off;
-legend(ds_labels, 'Location', 'NorthWest');
+legend(ds_labels, 'Location', 'NorthWest', 'Interpreter', 'None');
 xlim([1 length(tr1)]);
 xlabel('Frames');
 ylim(y_lims);
