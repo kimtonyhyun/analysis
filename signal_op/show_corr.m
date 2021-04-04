@@ -153,7 +153,7 @@ end
 
 grid on;
 axis equal tight;
-xlabel(sprintf('%s (%s)', ds_labels{2}, trace_norm_method));
-ylabel(sprintf('%s (%s)', ds_labels{1}, trace_norm_method));
+xlabel(sprintf('%s (%s)', ds_labels{2}, trace_norm_method), 'Interpreter', 'none');
+ylabel(sprintf('%s (%s)', ds_labels{1}, trace_norm_method), 'Interpreter', 'none');
 
 end % show_corr
