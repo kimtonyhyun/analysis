@@ -123,7 +123,7 @@ while (cell_idx <= num_candidates)
             %------------------------------------------------------------
             case ''  % Go to next unlabeled cell candidate, loop at end
                 go_to_next_unlabeled_cell();
-            case '-' % Jump to previously viewed cell
+            case 'p' % Jump to previously viewed cell
                 temp_idx = cell_idx;
                 cell_idx = prev_cell_idx;
                 prev_cell_idx = temp_idx;
