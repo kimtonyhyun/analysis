@@ -128,27 +128,34 @@ end
 
 % Show trace correlation
 %------------------------------------------------------------
-plot(tr2, tr1, '.k');
 switch trace_norm_method
     case 'norm'
+        plot(tr2, tr1, '.k');
+        
         ticks = 0:0.1:1;
         set(corr_sp, 'XTick', ticks);
         set(corr_sp, 'YTick', ticks);
         
     case 'zsc'
+        % In zsc mode, fit the two traces
+        [slope, info] = fit_1p2p_slope(tr2, tr1);
+        mask = info.fit.mask;
+        plot(tr2(mask), tr1(mask), '.k');
+        hold on;
+        plot(tr2(~mask), tr1(~mask), '.', 'Color', 0.75*[1 1 1]);
+        
         set(corr_sp, 'XTick', 0:5:max(tr2));
         set(corr_sp, 'YTick', 0:5:max(tr1));
         
-        % In zsc mode, fit a scaling factor between the two traces
-        [slope, info] = fit_1p2p_slope(tr2, tr1);
         if isempty(slope)
             cprintf('red', 'Unable to perform 1P:2P SNR fit!\n');
         else
-            hold on;
             plot(info.fit.x, info.fit.y, 'r');
-            hold off;
-            title(sprintf('Slope=%.3f', slope));
+            title(sprintf('Slope = %.3f\nVariance explained = %.1f%%',...
+                slope, 100*info.fit.fve));
         end
+        
+        hold off;
 end
 
 grid on;
