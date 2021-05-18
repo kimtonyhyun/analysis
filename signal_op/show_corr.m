@@ -137,33 +137,10 @@ switch trace_norm_method
         set(corr_sp, 'YTick', ticks);
         
     case 'zsc'
-        % TODO: This should be a separate toggle, independent of
-        % 'trace_norm_method', that performs 1P:2P analysis
-        [slope, info] = fit_1p2p(tr1, tr2);
-        mask = info.fit.mask;
-        % Black dots indicate points that are used for fitting. Gray dots
-        % are ignored.
-        plot(tr2(mask), tr1(mask), '.k');
-        hold on;
-        plot(tr2(~mask), tr1(~mask), '.', 'Color', 0.75*[1 1 1]);
+        plot(tr2, tr1, '.k');
         
         set(corr_sp, 'XTick', 0:5:max(tr2));
         set(corr_sp, 'YTick', 0:5:max(tr1));
-        
-        if isempty(slope)
-            cprintf('red', 'Unable to perform 1P:2P SNR fit!\n');
-        else
-            c = rgb('DarkGreen');
-            fit_thresh = info.params.fit_thresh;
-            plot(info.fit.x, info.fit.y, 'Color', c);
-            plot(info.fit.x, info.fit.y + fit_thresh, '--', 'Color', c);
-            plot(info.fit.x, info.fit.y - fit_thresh, '--', 'Color', c);
-            title(sprintf('Num fitted frames = %d\nSlope = %.3f\nVariance explained = %.1f%%\nFraction of frames with good fit = %.1f%%',...
-                info.fit.num_fit_frames,...
-                slope,...
-                100*info.metric.fraction_variance_explained,...
-                100*info.metric.fraction_good_fit));
-        end
         
         hold off;
 end
