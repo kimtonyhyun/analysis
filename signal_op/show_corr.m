@@ -82,6 +82,7 @@ legend(ds_labels, 'Location', 'NorthWest', 'Interpreter', 'None');
 xlim([1 length(tr1)]);
 xlabel('Frames');
 ylim(y_lims);
+ylabel(sprintf('Trace (%s)', trace_norm_method));
 set(gca, 'TickLength', [0 0]);
 title(sprintf('%s cell=%d; %s cell=%d; corr=%.4f',...
       ds_labels{1}, idx1, ds_labels{2}, idx2, corr_val), 'Interpreter', 'none');
@@ -93,10 +94,14 @@ switch display_mode
         sp(3,3,[4 7]); % Cellmap for ds1
         plot_boundaries(ds1, 'Color', color1, 'LineWidth', 1, 'Fill', idx1);
         title(ds_labels{1}, 'Interpreter', 'none');
+        xlabel('x (px)');
+        ylabel('y (px)');
         
         sp(3,3,[5 8]); % Cellmap for ds2
         plot_boundaries(ds2, 'Color', color2, 'LineWidth', 1, 'Fill', idx2);
         title(ds_labels{2}, 'Interpreter', 'none');
+        xlabel('x (px)');
+        ylabel('y (px)');
         
     	corr_sp = sp(3,3,[6 9]); % Correlation plot
         
@@ -122,6 +127,8 @@ switch display_mode
         
         xlim(zoom_com(1) + [-50 50]);
         ylim(zoom_com(2) + [-50 50]);
+        xlabel('x (px)');
+        ylabel('y (px)');
         
         corr_sp = sp(3,2,[4 6]); % Correlation plot
 end
