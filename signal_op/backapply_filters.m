@@ -108,7 +108,7 @@ end
 % Post-process traces
 %------------------------------------------------------------
 if ~isempty(fix_baseline_method)
-    fprintf('%s: Applying baseline correction (%s) to DFF traces... ', datestr(now), fix_baseline_method);
+    fprintf('%s: Applying baseline correction (%s) to traces... ', datestr(now), fix_baseline_method);
     tic;
     for k = 1:num_filters
         traces(k,:) = fix_baseline(traces(k,:), fix_baseline_method);
