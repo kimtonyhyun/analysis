@@ -67,35 +67,35 @@ end
         raster_scale = get(gca, 'CLim'); % Scale that applies to all trials
         title('All trials');
         colormap jet; freezeColors;
-        
-        % Divide rasters by correctness
-        subplot(3,4,3);
-        ds.plot_cell_raster(cell_idx, 'correct');
-        set(gca, 'CLim', raster_scale);
-        title('Correct');
-        subplot(3,4,4);
-        ds.plot_cell_raster(cell_idx, 'incorrect');
-        set(gca, 'CLim', raster_scale);
-        title('Incorrect');
-        
+              
         % Divide rasters by start location
-        subplot(3,4,7);
-        ds.plot_cell_raster(cell_idx, 'start', 'west', 'draw_correct');
-        set(gca, 'CLim', raster_scale);
-        title('West start'); 
-        subplot(3,4,8);
+        subplot(3,4,3);
         ds.plot_cell_raster(cell_idx, 'start', 'east', 'draw_correct');
         set(gca, 'CLim', raster_scale);
-        title('East start');
+        title('East start'); 
+        subplot(3,4,4);
+        ds.plot_cell_raster(cell_idx, 'start', 'west', 'draw_correct');
+        set(gca, 'CLim', raster_scale);
+        title('West start');
         
         % Divide rasters by end location
-        subplot(3,4,11);
+        subplot(3,4,7);
+        ds.plot_cell_raster(cell_idx, 'end', 'north', 'draw_correct');
+        set(gca, 'CLim', raster_scale);
+        title('North end');
+        subplot(3,4,8);
         ds.plot_cell_raster(cell_idx, 'end', 'south', 'draw_correct');
         set(gca, 'CLim', raster_scale);
         title('South end');
-        subplot(3,4,12);
-        ds.plot_cell_raster(cell_idx, 'end', 'north', 'draw_correct');
+        
+        % Divide rasters by correctness
+        subplot(3,4,11);
+        ds.plot_cell_raster(cell_idx, 'correct');
         set(gca, 'CLim', raster_scale);
-        title('North end'); 
+        title('Correct');
+        subplot(3,4,12);
+        ds.plot_cell_raster(cell_idx, 'incorrect');
+        set(gca, 'CLim', raster_scale);
+        title('Incorrect');
     end % draw_rasters
 end % view_cell_rasters

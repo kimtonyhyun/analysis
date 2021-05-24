@@ -15,6 +15,9 @@ state.points_of_interest = [];
 state.movie_clim = [];
 state.fig_handle = [];
 
+% Custom "subplot" command that leaves less unusued space between panels
+sp = @(m,n,p) subtightplot(m, n, p, 0.05, 0.05, 0.05); % Gap, Margin-X, Margin-Y
+
 for i = 1:length(varargin)
     vararg = varargin{i};
     if ischar(vararg)
@@ -172,20 +175,20 @@ end
     %------------------------------------------------------------
     function display_candidate_rasters(cell_idx)
         clf;
-        subplot(3,2,[1 2]);
+        sp(3,2,[1 2]);
         ds.plot_trace(cell_idx);
         title(sprintf('Source %d of %d', cell_idx, num_candidates));
         
-        subplot(3,2,[3 5]);
+        sp(3,2,[3 5]);
         ds.plot_superposed_trials(cell_idx);
 
-        subplot(3,2,[4 6]);
+        sp(3,2,[4 6]);
         ds.plot_cell_raster(cell_idx, 'draw_correct');
     end % display_candidate_rasters
 
     function display_candidate(cell_idx)
         clf;
-        subplot(3,1,1);
+        sp(3,1,1);
         ds.plot_trace(cell_idx);
         title(sprintf('Source %d of %d', cell_idx, num_candidates));
         
@@ -193,7 +196,7 @@ end
         % are initially compute against the COM of the filter under review
         COM = ds.cells(cell_idx).com;
 
-        subplot(3,1,[2 3]);
+        sp(3,1,[2 3]);
 %         %         C = compute_corr_image(M,COM);
 %         h_corr = imagesc(C,[0 0.7]);
 %         set(h_corr, 'ButtonDownFcn', @redraw_corr_image);
