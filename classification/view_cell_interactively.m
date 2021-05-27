@@ -1,6 +1,17 @@
 function [resp, state] = view_cell_interactively(ds, cell_idx, movie, fps, state)
-% Visually inspect the active portions of a trace side-by-side with
-%   the provided miniscope movie.
+% Visually inspect the active portions of a trace side-by-side with the
+% calcium movie. See also 'classify_cells.m'.
+%
+% Expected parameters of 'state':
+%   state.show_map = true;
+%   state.show_neighbors = false;
+%   state.baseline_removed = false;
+%   state.threshold_scale = 0.5;
+%   state.points_of_interest = [];
+%
+%   state.movie_clim = [];
+%   state.fig_handle = [];
+% TODO: These defaults should be set within this function.
 
 filter = ds.cells(cell_idx).im;
 

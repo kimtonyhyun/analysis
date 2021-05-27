@@ -32,21 +32,31 @@ for i = 1:length(varargin)
     end
 end
 
+num_frames = size(M,3);
+
 % Initial processing of movie
-max_proj = max(M,[],3);
-state.movie_clim = compute_movie_scale(M);
-fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
-    datestr(now), state.movie_clim(1), state.movie_clim(2));
-fprintf('  %s: FPS is %.1f...\n', datestr(now), fps);
+if num_frames > 1
+    if ~(num_frames == ds.full_num_frames)
+        cprintf('blue',...
+           'Number of frames in movie (%d) does not match trace length (%d) in DaySummary!\n',...
+           size(M,3), ds.full_num_frames);
+    end
+    
+    movie_projection = max(M,[],3);
+    state.movie_clim = compute_movie_scale(M);
+    fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
+        datestr(now), state.movie_clim(1), state.movie_clim(2));
+    fprintf('  %s: FPS is %.1f...\n', datestr(now), fps);
+else
+    % Single image
+    cprintf('blue', 'Classifying filters with respect to an image!\n');
+    movie_projection = M;
+end
 
 % Load filter/trace pairs to be classified
 num_candidates = ds.num_cells;
 
-if ~(size(M,3) == ds.full_num_frames)
-    cprintf('blue',...
-       'Number of frames in movie (%d) does not match trace length (%d) in DaySummary!\n',...
-       size(M,3), ds.full_num_frames);
-end
+
 
 % Begin classification
 %------------------------------------------------------------
@@ -93,25 +103,30 @@ while (cell_idx <= num_candidates)
             % Classication options
             %------------------------------------------------------------
             case {'c', '+'} % Cell
-                [resp2, state] = view_cell_interactively(ds, cell_idx, M, fps, state);
-                switch resp2
-                    % For these "exit codes", label the candidate and move on
-                    case {'c', '+'}
-                        set_label(cell_idx, 'c');
-                        go_to_next_unlabeled_cell();
-
-                    case {'n', '-'}
-                        set_label(cell_idx, 'n');
-                        go_to_next_unlabeled_cell();
-
-                    % "Classic" behavior
-                    otherwise
-                        resp2 = input(sprintf('  Confirm classification ("%s") >> ', resp), 's');
-                        resp2 = lower(strtrim(resp2));
-                        if (strcmp(resp, resp2)) % Confirmed
-                            set_label(cell_idx, resp2);
+                if num_frames > 1 % Actual movie
+                    [resp2, state] = view_cell_interactively(ds, cell_idx, M, fps, state);
+                    switch resp2
+                        % For these "exit codes", label the candidate and move on
+                        case {'c', '+'}
+                            set_label(cell_idx, 'c');
                             go_to_next_unlabeled_cell();
-                        end
+
+                        case {'n', '-'}
+                            set_label(cell_idx, 'n');
+                            go_to_next_unlabeled_cell();
+
+                        % "Classic" behavior
+                        otherwise
+                            resp2 = input(sprintf('  Confirm classification ("%s") >> ', resp), 's');
+                            resp2 = lower(strtrim(resp2));
+                            if (strcmp(resp, resp2)) % Confirmed
+                                set_label(cell_idx, resp2);
+                                go_to_next_unlabeled_cell();
+                            end
+                    end
+                else % Single image
+                    set_label(cell_idx, 'c');
+                    go_to_next_unlabeled_cell();
                 end
 
             case 'c!' % Classify without viewing trace
@@ -204,7 +219,8 @@ end
 %         set(h_corr, 'ButtonDownFcn', @redraw_corr_image);
 %         colormap parula;
 %         colorbar;
-        imagesc(max_proj);
+        imagesc(movie_projection);
+%         title('Max projection of movie');
         colormap gray;
         axis image;
         hold on;
