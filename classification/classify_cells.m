@@ -133,8 +133,26 @@ while (cell_idx <= num_candidates)
             case 'm' % View cell map
                 display_map();
             case 'q' % Exit
-                close(state.fig_handle);
+                % Save results
+                ds.save_class(output_name);
+                poi = state.points_of_interest;
+                if ~isempty(poi)
+                    num_points = size(poi,1);
+                    poi_savename = sprintf('poi_%s.mat', timestamp);
+                    save(poi_savename, 'poi');
+                    if (num_points == 1)
+                        pt_str = 'point';
+                    else
+                        pt_str = 'points';
+                    end
+                    fprintf('  Saved %d %s of interest to "%s"\n',...
+                        num_points, pt_str, poi_savename);
+                end
                 
+                close(state.fig_handle);
+                break;
+            case 'q!' % Exit without saving
+                close(state.fig_handle);
                 break;
             case 's' % Save classification
                 ds.save_class(output_name);
@@ -153,22 +171,6 @@ while (cell_idx <= num_candidates)
                 fprintf('  Could not parse "%s"\n', resp);
         end
     end
-end
-
-% Save at end!
-ds.save_class(output_name);
-poi = state.points_of_interest;
-if ~isempty(poi)
-    num_points = size(poi,1);
-    poi_savename = sprintf('poi_%s.mat', timestamp);
-    save(poi_savename, 'poi');
-    if (num_points == 1)
-        pt_str = 'point';
-    else
-        pt_str = 'points';
-    end
-    fprintf('  Saved %d %s of interest to "%s"\n',...
-        num_points, pt_str, poi_savename);
 end
 
     % Auxiliary functions
@@ -274,6 +276,11 @@ end
         
         if isempty(next_idx)
             cprintf([0 0.5 0], '  All cells have been classified!\n');
+            prev_cell_idx = cell_idx;
+            cell_idx = cell_idx + 1;
+            if cell_idx > ds.num_cells
+                cell_idx = 1;
+            end
         else
             prev_cell_idx = cell_idx;
             cell_idx = next_idx;
