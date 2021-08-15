@@ -96,6 +96,41 @@ for i = 1:num_chunks
     movie_chunk = get_frames(frame_inds);
     movie_chunk = reshape(movie_chunk, num_pixels, num_frames_in_chunk);
     
+    %------------------------------------------------------------
+    % Comments regarding trace scaling (2021 Aug 15):
+    %
+    %   Given the probability-like normalization of filter (sum to 1)
+    %   above, "simple projection" is effectively taking a weighted average
+    %   across pixels of the movie. Thus, the projection trace will have
+    %   units and numerical scaling that is directly comparable to the
+    %   movie itself.
+    %
+    %   Note, however, that when filters are normalized as probabilities,
+    %   the typical values in each pixel will be << 1, since usually many
+    %   pixels will be nonzero in the filter, and the sum must equal 1.
+    %
+    %   This filter normalization causes numerical values in the least
+    %   squares trace to be a lot larger than the analogous simple
+    %   projection trace. This is because the least squares fit is trying
+    %   to reconstruct the movie frame using the provided filter whose
+    %   values are << 1. Thus the trace values need to "compensate" the
+    %   small numerical values in the filter.
+    %
+    %   To _roughly_ re-scale the least square trace to the scaling of the
+    %   input movie, a procedure like the following is needed. Let:
+    %       f: 2D spatial filter of k-th cell, linearized as a vector
+    %       t: least-squares trace
+    %   then,
+    %       fm = max(f(:));
+    %       t2 = mean(f(f>0.3*fm))) * t;
+    %   Here, t2 will have scaling comparable to the input movie.
+    %
+    %   The basic idea is that, for least-squares to produce trace values
+    %   comparable to the original movie, we need to normalize the
+    %   _average_ value of the "active" pixels in the filter to be 1,
+    %   rather than the sum of the filter pixels. The threshold f > 0.3*fm
+    %   is a heuristic for selecting the "active" pixels in the filter.
+    %------------------------------------------------------------
     if use_ls
         fprintf('with least squares...\n');
         traces(:,frame_inds) = filters \ movie_chunk;
