@@ -114,10 +114,10 @@ for i = 1:num_chunks
     %   projection trace. This is because the least squares fit is trying
     %   to reconstruct the movie frame using the provided filter whose
     %   values are << 1. Thus the trace values need to "compensate" the
-    %   small numerical values in the filter.
+    %   small numerical values of the spatial filter.
     %
     %   To _roughly_ re-scale the least square trace to the scaling of the
-    %   input movie, a procedure like the following is needed. Let:
+    %   input movie, a procedure like the following can be used. Let:
     %       f: 2D spatial filter of k-th cell, linearized as a vector
     %       t: least-squares trace
     %   then,
