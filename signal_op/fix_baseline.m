@@ -1,4 +1,8 @@
 function [trace_out, info] = fix_baseline(trace_in, method_name, varargin)
+% Note: Baseline is subtracted off the trace. Thus, one should _not_ run
+%   fix_baseline when accurate DFF values are desired.
+%
+% TODO: Deprecate Hakan's method
 
 if ~exist('method_name', 'var')
     method_name = 'hakan'; % Legacy
@@ -32,6 +36,7 @@ switch (method_name)
         trace_out = trace_in - baseline;
         
         method.name = 'percentile';
+        method.baseline = baseline;
         method.p = p;
         method.moving_window_num_frames = moving_window_num_frames;
 end
