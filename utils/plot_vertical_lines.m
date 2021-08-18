@@ -1,4 +1,4 @@
-function plot_vertical_lines(xs, y_lims, linespec)
+function hp = plot_vertical_lines(xs, y_lims, varargin)
     % Built-in 'xline' seems to be extremely slow to render
     xs = xs(:)'; % Force row vector
     y_lims = y_lims(:)';
@@ -7,5 +7,5 @@ function plot_vertical_lines(xs, y_lims, linespec)
     X = kron(xs, [1 1 NaN]);
     Y = repmat([y_lims NaN], 1, num_x);
     
-    plot(X,Y,linespec);
+    hp = plot(X,Y,varargin{:});
 end
