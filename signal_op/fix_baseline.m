@@ -6,6 +6,7 @@ if ~exist('method_name', 'var')
     method_name = 'percentile';
 end
 
+trace_shape = size(trace_in);
 trace_in = trace_in(:);
 
 switch (method_name)       
@@ -34,6 +35,6 @@ switch (method_name)
 end
  
 info.method = method;
-info.baseline = baseline;
+info.baseline = reshape(baseline, trace_shape);
 
 end % fix_baseline
