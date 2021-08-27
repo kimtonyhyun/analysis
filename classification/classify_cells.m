@@ -13,6 +13,7 @@ state.points_of_interest = [];
 
 % Will be set below
 state.movie_clim = [];
+state.proj_clim = [];
 state.fig_handle = [];
 
 % Custom "subplot" command that leaves less unusued space between panels
@@ -43,20 +44,20 @@ if num_frames > 1
     end
     
     movie_projection = max(M,[],3);
+    
     state.movie_clim = compute_movie_scale(M);
     fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
-        datestr(now), state.movie_clim(1), state.movie_clim(2));
+        datestr(now), state.movie_clim(1), state.movie_clim(2));    
     fprintf('  %s: FPS is %.1f...\n', datestr(now), fps);
 else
     % Single image
     cprintf('blue', 'Classifying filters with respect to an image!\n');
-    movie_projection = M;
+    movie_projection = M; % The provided image itself
 end
+state.proj_clim = compute_movie_scale(movie_projection);
 
 % Load filter/trace pairs to be classified
 num_candidates = ds.num_cells;
-
-
 
 % Begin classification
 %------------------------------------------------------------
@@ -90,12 +91,14 @@ while (cell_idx <= num_candidates)
         end
     else
 
-        % Apply syntactic sugar
+        % Some syntactic sugar
         switch (resp)
             case 'C'
                 resp = 'c!';
             case 'N'
                 resp = 'n';
+            case 'Q'
+                resp = 'q!';
         end
 
         resp = lower(resp);
@@ -182,8 +185,11 @@ while (cell_idx <= num_candidates)
                 screenshot_name = sprintf('cell%03d.png', cell_idx);
                 print('-dpng', screenshot_name);
                 fprintf('  Plot saved to %s\n', screenshot_name);
+            case 'f'
+                
             otherwise
                 fprintf('  Could not parse "%s"\n', resp);
+                
         end
     end
 end
@@ -219,7 +225,7 @@ end
 %         set(h_corr, 'ButtonDownFcn', @redraw_corr_image);
 %         colormap parula;
 %         colorbar;
-        imagesc(movie_projection);
+        imagesc(movie_projection, state.proj_clim);
 %         title('Max projection of movie');
         colormap gray;
         axis image;

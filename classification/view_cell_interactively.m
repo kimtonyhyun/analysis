@@ -1,6 +1,6 @@
 function [resp, state] = view_cell_interactively(ds, cell_idx, movie, fps, state)
 % Visually inspect the active portions of a trace side-by-side with the
-% calcium movie. See also 'classify_cells.m'.
+% calcium movie. Works in conjunction with 'classify_cells.m'.
 %
 % Expected parameters of 'state':
 %   state.show_map = true;
