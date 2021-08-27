@@ -1,4 +1,4 @@
-function inspect_dff_traces(ds_proj, ds_ls, idx, fps, varargin)
+function [tr2_dff, info] = inspect_dff_traces(ds_proj, ds_ls, idx, fps, varargin)
 % DFF traces are most straightforward to compute when using simple
 % projection to the motion-corrected imaging data (with minimal additional
 % processing). However, least-squares projection provides better safeguards
@@ -8,6 +8,9 @@ function inspect_dff_traces(ds_proj, ds_ls, idx, fps, varargin)
 % projection vs. least-squares, as a sanity check that the DFF scaling of
 % the two methods are comparable. In addition, the baseline (F0) estimate
 % is shown for both projection and least squares traces.
+%
+% Returns: Results of 'compute_dff_trace' for the least squares trace
+%
 
 % Default colors
 c1 = [0 0.447 0.741];
@@ -29,7 +32,7 @@ t = 1/fps*(0:num_frames-1);
 ax1 = sp(3,1,1);
 plot(t, tr1, 'Color', c1);
 hold on;
-plot(t, b1, 'k-');
+plot(t, b1, 'k-', 'LineWidth', 2);
 hold off;
 ylabel('Simple projection');
 title(sprintf('Cell %d: FPS=%.1f Hz', idx, fps));
@@ -39,7 +42,7 @@ set(ax1, 'TickLength', [0 0]);
 ax2 = sp(3,1,2);
 plot(t, tr2, 'Color', c2);
 hold on;
-plot(t, b2, 'k-');
+plot(t, b2, 'k-', 'LineWidth', 2);
 hold off;
 ylabel('Least squares');
 grid on;
@@ -49,6 +52,7 @@ ax3 = sp(3,1,3);
 plot(t, tr1_dff, 'Color', c1);
 hold on;
 plot(t, tr2_dff, '--', 'Color', c2);
+plot(t([1 end]), [0 0], 'k-', 'LineWidth', 2);
 hold off;
 ylabel('DFF');
 grid on;
