@@ -78,7 +78,10 @@ traces = cell2mat(dff_traces)';
 info.type = 'get_dff_traces';
 info.num_pairs = num_cells;
 
+% Note that 'dff_infos' must remain a (Matlab) cell, since the contents of 
+% the struct may be different across different cells in the DaySummary.
 info.dff_infos = dff_infos;
+info.fps = fps;
 
 [rec_savename, timestamp] = save_rec(info, filters, traces);
 class_savename = generate_class_file(num_cells, 'timestamp', timestamp);
