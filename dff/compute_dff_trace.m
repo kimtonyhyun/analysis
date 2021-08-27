@@ -37,6 +37,10 @@ else
     baseline = F0 * ones(size(tr), 'single');
 end
 
+if any(baseline < 0)
+    cprintf('blue', '  Warning: Baseline (F0) is negative\n');
+end
+
 % Prep output
 tr_dff = (tr - baseline)./baseline;
 
