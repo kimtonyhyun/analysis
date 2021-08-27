@@ -1,6 +1,5 @@
 function [rec_savename, class_savename] = backapply_filters(filters_in, movie_in, varargin)
 % Compute traces by back applying filters to the specified movie.
-% Originally based on 'get_dff_traces'.
 %
 % Inputs:
 %   - 'filters_in': Can be a DaySummary instance, or a 3D matrix of filters

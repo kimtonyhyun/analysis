@@ -1,4 +1,6 @@
 function [trace_out, info] = fix_baseline(trace_in, method_name, varargin)
+% Perhaps would be better named as "fix_wandering_baseline".
+%
 % Note: Baseline is subtracted off the trace. Thus, one should _not_ run
 %   fix_baseline when accurate DFF values are desired.
 %
@@ -11,7 +13,7 @@ trace_in = trace_in(:);
 
 switch (method_name)       
     case {'percentile', 'prctile'}
-        % Default parameters
+        % Default parameters. As used in Wagner et al. Cell (2019).
         p = 10; % 10-th percentile
         moving_window_num_frames = 1000; % At 30 fps, this is ~33.3 s
         

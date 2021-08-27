@@ -1,4 +1,4 @@
-function compare_traces(ds_proj, ds_ls, idx, fps)
+function inspect_dff_traces(ds_proj, ds_ls, idx, fps, varargin)
 % DFF traces are most straightforward to compute when using simple
 % projection to the motion-corrected imaging data (with minimal additional
 % processing). However, least-squares projection provides better safeguards
@@ -6,35 +6,37 @@ function compare_traces(ds_proj, ds_ls, idx, fps)
 %
 % This basic visualization function compares DFF traces obtained by simple
 % projection vs. least-squares, as a sanity check that the DFF scaling of
-% the two methods are comparable.
+% the two methods are comparable. In addition, the baseline (F0) estimate
+% is shown for both projection and least squares traces.
 
+% Default colors
 c1 = [0 0.447 0.741];
 c2 = [0.85 0.325 0.098];
 
-percentile_window = 3e3;
+% Custom "subplot" command that leaves less unusued space between panels
+sp = @(m,n,p) subtightplot(m, n, p, 0.05, 0.05, 0.05); % Gap, Margin-X, Margin-Y
 
 tr1 = ds_proj.get_trace(idx);
-[tr1_dff, info] = compute_dff_trace(tr1, 'window', percentile_window);
+[tr1_dff, info] = compute_dff_trace(tr1, varargin{:});
 b1 = info.baseline;
 tr2 = ds_ls.get_trace(idx);
-[tr2_dff, info] = compute_dff_trace(tr2, 'window', percentile_window);
+[tr2_dff, info] = compute_dff_trace(tr2, varargin{:});
 b2 = info.baseline;
 
 num_frames = length(tr1);
 t = 1/fps*(0:num_frames-1);
 
-ax1 = subplot(311);
+ax1 = sp(3,1,1);
 plot(t, tr1, 'Color', c1);
 hold on;
 plot(t, b1, 'k-');
 hold off;
-ylabel('Projection');
-title(sprintf('Cell %d: FPS=%.1f Hz, Baseline window=%d frames (%.1f s)',...
-              idx, fps, percentile_window, percentile_window/fps));
+ylabel('Simple projection');
+title(sprintf('Cell %d: FPS=%.1f Hz', idx, fps));
 grid on;
 set(ax1, 'TickLength', [0 0]);
 
-ax2 = subplot(312);
+ax2 = sp(3,1,2);
 plot(t, tr2, 'Color', c2);
 hold on;
 plot(t, b2, 'k-');
@@ -43,7 +45,7 @@ ylabel('Least squares');
 grid on;
 set(ax2, 'TickLength', [0 0]);
 
-ax3 = subplot(313);
+ax3 = sp(3,1,3);
 plot(t, tr1_dff, 'Color', c1);
 hold on;
 plot(t, tr2_dff, '--', 'Color', c2);
