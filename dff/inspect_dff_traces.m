@@ -22,9 +22,12 @@ sp = @(m,n,p) subtightplot(m, n, p, 0.05, 0.05, 0.05); % Gap, Margin-X, Margin-Y
 tr1 = ds_proj.get_trace(idx);
 [tr1_dff, info] = compute_dff_trace(tr1, varargin{:});
 b1 = info.baseline;
+nu1 = calculate_noise_level_nu(tr1_dff, fps);
+
 tr2 = ds_ls.get_trace(idx);
 [tr2_dff, info] = compute_dff_trace(tr2, varargin{:});
 b2 = info.baseline;
+nu2 = calculate_noise_level_nu(tr2_dff, fps);
 
 num_frames = length(tr1);
 t = 1/fps*(0:num_frames-1);
@@ -57,6 +60,7 @@ hold off;
 ylabel('DFF');
 grid on;
 set(ax3, 'TickLength', [0 0]);
+title(sprintf('Noise levels \\nu = %.1f (proj), %.1f (ls)', nu1, nu2));
 
 linkaxes([ax1 ax2 ax3], 'x');
 xlim(t([1 end]));

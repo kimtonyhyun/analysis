@@ -47,7 +47,7 @@ while (cell_idx <= num_cells)
                 go_to_next_cell();
             case ''
                 go_to_next_cell();
-            case 'b' % Toggle wandering baseline
+            case {'b', 'f'} % Toggle wandering baseline
                 state.fix_wandering_baseline = ~state.fix_wandering_baseline;
                 if (state.fix_wandering_baseline)
                     fprintf('  Computing DFF trace with respect to a WANDERING baseline\n');
