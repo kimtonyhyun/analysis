@@ -60,10 +60,11 @@ hold off;
 ylabel('DFF');
 grid on;
 set(ax3, 'TickLength', [0 0]);
-title(sprintf('Noise levels \\nu = %.1f (proj), %.1f (ls)', nu1, nu2));
+title(sprintf('Noise level \\nu = %.1f %%/Hz^{0.5} (LS)', nu2));
 
 linkaxes([ax1 ax2 ax3], 'x');
 xlim(t([1 end]));
 xlabel('Time (s)');
+zoom xon;
 
 end
