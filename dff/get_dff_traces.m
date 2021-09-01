@@ -7,7 +7,7 @@ num_cells = ds_ls.num_cells;
 num_frames = ds_ls.full_num_frames;
 
 state.fig_handle = figure;
-state.fix_wandering_baseline = true;
+state.baseline_method = 2;
 state.running_percentile_window = 100 * fps; % Frames
 
 % Populate the following variables
@@ -25,17 +25,18 @@ keep_dff = cell(num_cells, 1);
 cell_idx = 1;
 prev_cell_idx = 1;
 while (cell_idx <= num_cells)
-    if state.fix_wandering_baseline
-        % Note: 'inspect_dff_traces' returns the DFF trace as computed from
-        %   the least squares trace.
-        [dff_trace, dff_info] = inspect_dff_traces(ds_proj, ds_ls, cell_idx, fps,...
-            'percentile', 'window', state.running_percentile_window);
-    else
-        [dff_trace, dff_info] = inspect_dff_traces(ds_proj, ds_ls, cell_idx, fps, 'mode');
+    switch state.baseline_method
+        case 0 % Mode
+            [dff_trace, dff_info] = inspect_dff_traces(ds_proj, ds_ls, cell_idx, fps, 'mode');
+        case 1 % Linear
+            [dff_trace, dff_info] = inspect_dff_traces(ds_proj, ds_ls, cell_idx, fps, 'linear');
+        case 2 % Running percentile
+            [dff_trace, dff_info] = inspect_dff_traces(ds_proj, ds_ls, cell_idx, fps,...
+                'percentile', 'window', state.running_percentile_window);
     end
     
     % Ask the user to classify the cell candidate
-    prompt = sprintf('Get DFF traces (%d/%d) >> ', cell_idx, num_cells);
+    prompt = sprintf('Get DFF traces (%d/%d; bmode=%d) >> ', cell_idx, num_cells, state.baseline_method);
     resp = strtrim(input(prompt, 's'));
     
     val = str2double(resp);
@@ -48,13 +49,12 @@ while (cell_idx <= num_cells)
         end
     else
         resp = lower(resp);
-        switch (resp)
+        switch (resp(1))
             case 'c' % Accept DFF result
                 dff_traces(:,cell_idx) = dff_trace;
                 dff_infos{cell_idx} = dff_info;
                 keep_dff{cell_idx} = true;
                 
-                state.fix_wandering_baseline = true;
                 go_to_next_cell();
                 
             case 'n' % Reject DFF
@@ -65,12 +65,19 @@ while (cell_idx <= num_cells)
             case ''
                 go_to_next_cell();
                 
-            case {'b', 'f'} % Toggle wandering baseline
-                state.fix_wandering_baseline = ~state.fix_wandering_baseline;
-                if (state.fix_wandering_baseline)
-                    fprintf('  Computing DFF trace with respect to a WANDERING baseline\n');
-                else
-                    fprintf('  Computing DFF trace with respect to a FIXED baseline\n');
+            case 'b' % Select baseline correction mode
+                switch resp
+                    case 'b0'
+                        state.baseline_method = 0;
+                        fprintf('  Baseline is computed by the trace mode\n');
+                    case 'b1'
+                        state.baseline_method = 1;
+                        fprintf('  Baseline is computed via a linear fit\n');
+                    case 'b2'
+                        state.baseline_method = 2;
+                        fprintf('  Baseline is computed as a running percentile\n');
+                    otherwise
+                        cprintf('red', '  Invalid baseline command\n');
                 end
 
             case 'p' % Jump to previously viewed cell
@@ -136,6 +143,8 @@ fprintf('%s: %d filter-trace pairs saved to "%s"\n', datestr(now), num_exported_
             prev_cell_idx = cell_idx;
             cell_idx = next_idx;
         end
+        
+        state.baseline_method = 2;
     end % go_to_next_cell
     
 end % get_dff_traces

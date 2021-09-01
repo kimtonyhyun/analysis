@@ -1,4 +1,4 @@
-function [tr2_dff, info] = inspect_dff_traces(ds_proj, ds_ls, idx, fps, varargin)
+function [tr2_dff, info2] = inspect_dff_traces(ds_proj, ds_ls, idx, fps, varargin)
 % DFF traces are most straightforward to compute when using simple
 % projection to the motion-corrected imaging data (with minimal additional
 % processing). However, least-squares projection provides better safeguards
@@ -22,12 +22,12 @@ c2 = [0.85 0.325 0.098];
 sp = @(m,n,p) subtightplot(m, n, p, 0.05, 0.05, 0.05); % Gap, Margin-X, Margin-Y
 
 tr1 = ds_proj.get_trace(idx);
-[tr1_dff, info] = compute_dff_trace(tr1, varargin{:});
-b1 = info.baseline;
+[tr1_dff, info1] = compute_dff_trace(tr1, varargin{:});
+b1 = info1.baseline;
 
 tr2 = ds_ls.get_trace(idx);
-[tr2_dff, info] = compute_dff_trace(tr2, varargin{:});
-b2 = info.baseline;
+[tr2_dff, info2] = compute_dff_trace(tr2, varargin{:});
+b2 = info2.baseline;
 nu2 = calculate_noise_level_nu(tr2_dff, fps);
 
 num_frames = length(tr1);
