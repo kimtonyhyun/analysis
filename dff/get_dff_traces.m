@@ -29,9 +29,9 @@ while (cell_idx <= num_cells)
         % Note: 'inspect_dff_traces' returns the DFF trace as computed from
         %   the least squares trace.
         [dff_trace, dff_info] = inspect_dff_traces(ds_proj, ds_ls, cell_idx, fps,...
-            'fix_baseline', state.running_percentile_window);
+            'percentile', 'window', state.running_percentile_window);
     else
-        [dff_trace, dff_info] = inspect_dff_traces(ds_proj, ds_ls, cell_idx, fps);
+        [dff_trace, dff_info] = inspect_dff_traces(ds_proj, ds_ls, cell_idx, fps, 'mode');
     end
     
     % Ask the user to classify the cell candidate

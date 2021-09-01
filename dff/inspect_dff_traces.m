@@ -7,7 +7,9 @@ function [tr2_dff, info] = inspect_dff_traces(ds_proj, ds_ls, idx, fps, varargin
 % This basic visualization function compares DFF traces obtained by simple
 % projection vs. least-squares, as a sanity check that the DFF scaling of
 % the two methods are comparable. In addition, the baseline (F0) estimate
-% is shown for both projection and least squares traces.
+% is shown for both projection and least squares traces. The 'varargin'
+% parameters are passed to 'compute_dff_traces', which in turn passes those
+% to 'fix_baseline'.
 %
 % Returns: Results of 'compute_dff_trace' for the least squares trace
 %
@@ -22,7 +24,6 @@ sp = @(m,n,p) subtightplot(m, n, p, 0.05, 0.05, 0.05); % Gap, Margin-X, Margin-Y
 tr1 = ds_proj.get_trace(idx);
 [tr1_dff, info] = compute_dff_trace(tr1, varargin{:});
 b1 = info.baseline;
-nu1 = calculate_noise_level_nu(tr1_dff, fps);
 
 tr2 = ds_ls.get_trace(idx);
 [tr2_dff, info] = compute_dff_trace(tr2, varargin{:});
