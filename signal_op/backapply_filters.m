@@ -4,12 +4,13 @@ function [rec_savename, class_savename] = backapply_filters(filters_in, movie_in
 % Inputs:
 %   - 'filters_in': Can be a DaySummary instance, or a 3D matrix of filters
 %       where filters_in(:,:,k) is the image of the k-th filter.
-%   - 'movie_in': Can be the name of a HDF5 file (string) or a 3D movie
-%       matrix.
+%   - 'movie_in': Can be the name of a HDF5 file (string) or a 3D matrix.
+%
 
 use_ls = false;
+use_fix_baseline = false;
+
 generate_class = false;
-fix_baseline_method = [];
 class_savename = [];
 
 for k = 1:length(varargin)
@@ -19,7 +20,7 @@ for k = 1:length(varargin)
             case {'ls', 'leastsquares'}
                 use_ls = true;
             case {'fix', 'fix_baseline'}
-                fix_baseline_method = varargin{k+1};
+                use_fix_baseline = true;
             case {'class', 'generate_class'}
                 generate_class = true;
         end
@@ -139,24 +140,21 @@ for i = 1:num_chunks
     end
 end
 
-% Post-process traces
-%------------------------------------------------------------
-if ~isempty(fix_baseline_method)
-    fprintf('%s: Applying baseline correction (%s) to traces... ', datestr(now), fix_baseline_method);
-    tic;
-    for k = 1:num_filters
-        traces(k,:) = fix_baseline(traces(k,:), fix_baseline_method);
-    end
-    t = toc;
-    fprintf('(%.1f s)\n', t);
-end
-
-% Save as Rec file
-%------------------------------------------------------------
-
 % Reshape to standard form
 filters = reshape(filters, height, width, num_filters);
 traces = traces'; % [num_frames x num_filters]
+
+% Post-process traces
+%------------------------------------------------------------
+if use_fix_baseline
+    fprintf('%s: Applying trace baseline (running percentile) correction... ', datestr(now));
+    tic;
+    for k = 1:num_filters
+        traces(:,k) = fix_baseline(traces(:,k));
+    end
+    t = toc;
+    fprintf('Done (%.1f s)\n', t);
+end
 
 % Save as Rec file
 %------------------------------------------------------------
@@ -168,8 +166,8 @@ end
 info.num_pairs = num_filters;
 
 % Note the parameters used in DFF recomputation
-info.options.fix_baseline = fix_baseline_method;
 info.options.use_ls = use_ls;
+info.options.use_fix_baseline = use_fix_baseline;
 
 tic;
 [rec_savename, timestamp] = save_rec(info, filters, traces);

@@ -5,7 +5,6 @@ function [resp, state] = view_cell_interactively(ds, cell_idx, movie, fps, state
 % Expected parameters of 'state':
 %   state.show_map = true;
 %   state.show_neighbors = false;
-%   state.baseline_removed = false;
 %   state.threshold_scale = 0.5;
 %   state.points_of_interest = [];
 %
@@ -13,10 +12,15 @@ function [resp, state] = view_cell_interactively(ds, cell_idx, movie, fps, state
 %   state.fig_handle = [];
 % TODO: These defaults should be set within this function.
 
+% Misc state that do not carry over to other cells
+temp_state.last_val = 1;
+temp_state.zoomed = true;
+temp_state.baseline_removed = false;
+
 filter = ds.cells(cell_idx).im;
 
 [trace_orig, frames_to_movie] = ds.get_trace(cell_idx);
-trace_fixed = fix_baseline(trace_orig, 'percentile');
+trace_fixed = fix_baseline(trace_orig); % Subtract running percentile
 time = 1/fps*((1:length(trace_orig))-1);
 
 % Some parameters
@@ -142,7 +146,7 @@ ylim(COM(2)+zoom_half_width*[-1 1]);
 
 % Compute the active portions of the trace and display
 %------------------------------------------------------------
-if state.baseline_removed
+if temp_state.baseline_removed
     trace = trace_fixed;
 else
     trace = trace_orig;
@@ -163,10 +167,6 @@ display_active_period(1);
 prompt = 'Cell viewer >> ';
 resp = lower(strtrim(input(prompt, 's')));
 val = str2double(resp);
-
-% State of interaction loop (will not carry over to other cells)
-temp_state.last_val = 1;
-temp_state.zoomed = true;
 
 while (1)
     if (~isnan(val)) % Is a number
@@ -210,8 +210,8 @@ while (1)
                 temp_state.last_val = []; % Last displayed segment no longer valid
                 
             case 'b' % Fix "baseline"
-                state.baseline_removed = ~state.baseline_removed; % Toggle
-                if (state.baseline_removed)
+                temp_state.baseline_removed = ~temp_state.baseline_removed; % Toggle
+                if (temp_state.baseline_removed)
                     trace = trace_fixed;
                     fprintf('  Showing trace with baseline correction\n');
                 else
@@ -310,7 +310,7 @@ end
         t_g = plot(time(1)*[1 1], y_range, 'k', 'ButtonDownFcn', @start_drag); % Time indicator
         xlabel('Time [s]');
         ylabel('Signal [a.u.]');
-        if state.baseline_removed            
+        if temp_state.baseline_removed            
             title(sprintf('Source %d of %d (baseline removed)', cell_idx, ds.num_cells));
         else
             title(sprintf('Source %d of %d', cell_idx, ds.num_cells));
