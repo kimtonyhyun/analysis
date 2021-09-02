@@ -19,10 +19,15 @@ switch (method_name)
         
         method.name = 'mode';
     
-    case {'linear', 'lin'}
+    case 'nonactive_polyfit'
         % Default parameters
+        
+        % For identifying non-active portions of the trace
         thresh = 0.5;
         padding = 100; % In frames
+        
+        % For polyfit
+        order = 1;
         
         for k = 1:length(varargin)
             if ischar(varargin{k})
@@ -31,18 +36,21 @@ switch (method_name)
                         thresh = varargin{k+1};
                     case 'padding'
                         padding = varargin{k+1};
+                    case 'order'
+                        order = varargin{k+1};
                 end
             end
         end
         
-        [baseline, x, y, coeffs] = fit_nonactive_frames(trace_in, thresh, padding, 1);
-        baseline = correct_offset(trace_in, baseline);
+        [baseline, tr_thresh, nonactive_frames] = fit_nonactive_frames(trace_in, thresh, padding, order);
         trace_out = trace_in - baseline;
         
-        method.name = 'linear';
-        method.x = x;
-        method.y = y;
-        method.coeffs = coeffs;
+        method.name = 'nonactive_polyfit';
+        method.thresh = thresh;
+        method.padding = padding;
+        method.order = order;
+        method.tr_thresh = tr_thresh;
+        method.nonactive_frames = nonactive_frames;
         
     case 'percentile'
         % Default parameters. As used in Wagner et al. Cell (2019).
@@ -84,7 +92,7 @@ function baseline2 = correct_offset(trace, baseline)
     baseline2 = baseline + stats.mode;
 end
 
-function [baseline, x, y, coeffs] = fit_nonactive_frames(trace, thresh, padding, order)
+function [baseline, tr_thresh, nonactive_frames] = fit_nonactive_frames(trace, thresh, padding, order)
 
     num_frames = length(trace);
     t = linspace(0, 1, num_frames)';
@@ -95,8 +103,16 @@ function [baseline, x, y, coeffs] = fit_nonactive_frames(trace, thresh, padding,
 
     active_frames = parse_active_frames(trace > tr_thresh, padding);
     active_frames = frame_segments_to_list(active_frames);
-    nonactive_frames = setdiff(1:num_frames, active_frames);
+    
+    nonactive_frames = true(num_frames, 1);
+    nonactive_frames(active_frames) = false;
 
+    if (sum(nonactive_frames) < order)
+        cprintf('red',  '  Insufficient number of nonactive frames for baseline fitting!\n');
+        tr_thresh = tr_max;
+        nonactive_frames = true(num_frames, 1);
+    end
+    
     x = t(nonactive_frames);
     y = trace(nonactive_frames);
 

@@ -1,5 +1,10 @@
 function frame_segments = frame_list_to_segments(frame_list)
 
+if isempty(frame_list)
+    frame_segments = [];
+    return;
+end
+
 df_inds = find(diff(frame_list)>1); % "Discontinuous frame" indices
 num_segments = 1 + length(df_inds);
 
