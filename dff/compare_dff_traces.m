@@ -1,4 +1,4 @@
-function [tr2_dff, info2] = compare_dff_traces(ds_proj, ds_ls, idx, fps, varargin)
+function compare_dff_traces(ds_proj, ds_ls, idx, fps, varargin)
 % DFF traces are most straightforward to compute when using simple
 % projection to the motion-corrected imaging data (with minimal additional
 % processing). However, least-squares projection provides better safeguards

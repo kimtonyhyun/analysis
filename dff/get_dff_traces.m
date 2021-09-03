@@ -6,19 +6,20 @@ function [rec_savename, class_savename] = get_dff_traces(ds, fps)
 color = [0 0.447 0.741];
 
 % Custom "subplot" command that leaves less unusued space between panels
-sp = @(m,n,p) subtightplot(m, n, p, 0.05, 0.05, 0.05); % Gap, Margin-X, Margin-Y
+sp = @(m,n,p) subtightplot(m, n, p, 0.025, [0.1 0.05], [0.05 0.01]); % Gap, Margin-X, Margin-Y
 
 gui.fig_handle = figure;
 gui.h_orig = sp(2,1,1); % Original trace
 gui.h_dff = sp(2,1,2);  % DFF trace
 linkaxes([gui.h_orig, gui.h_dff], 'x');
 set(gui.h_orig, 'TickLength', [0 0]);
+set(gui.h_orig, 'XTickLabels', []);
 set(gui.h_dff, 'TickLength', [0 0]);
 grid(gui.h_orig, 'on');
 grid(gui.h_dff, 'on');
 
 default_params = struct('threshold', [],...
-                        'padding', 10 * fps,...
+                        'padding', 4*fps,...
                         'order', 1);
 params = default_params;
 
@@ -72,8 +73,8 @@ while (cell_idx <= num_cells)
     hold off;
     ylim(compute_ylims(trace));
     ylabel('Orig. fluorescence');
-    title(sprintf('Cell %d: FPS=%.1f Hz, threshold=%.1f, padding=%d, order=%d',...
-        cell_idx, fps, params.threshold, params.padding, params.order));
+    title(sprintf('Cell %d: threshold=%.1f, padding=%d, order=%d',...
+        cell_idx, params.threshold, params.padding, params.order));
     
     subplot(gui.h_dff);
     cla; hold on;
@@ -81,7 +82,7 @@ while (cell_idx <= num_cells)
     plot(t_lims, [0 0], 'k-', 'LineWidth', 2);
     hold off;
     xlim(t_lims)
-    xlabel('Time (s)');
+    xlabel(sprintf('Time (s); FPS = %.1f Hz', fps));
     ylim(compute_ylims(dff_trace));
     ylabel('\DeltaF/F');
     
@@ -89,7 +90,7 @@ while (cell_idx <= num_cells)
     
     % Ask the user to classify the cell candidate
     %------------------------------------------------------------
-    prompt = sprintf('Compute DFF traces (%d/%d; order=%d) >> ',...
+    prompt = sprintf('Get DFF traces (%d/%d; order=%d) >> ',...
         cell_idx, num_cells, params.order);
     resp = strtrim(input(prompt, 's'));
     
@@ -97,6 +98,7 @@ while (cell_idx <= num_cells)
     if (~isnan(val)) % Is a number. Check if it is a valid index and jump to it
         if ((1 <= val) && (val <= num_cells))
             cell_idx = val;
+            params = default_params;
         else
             fprintf('  Sorry, %d is not a valid cell index\n', val);
         end
@@ -131,9 +133,21 @@ while (cell_idx <= num_cells)
                     catch
                         fprintf('  Could not parse order command!\n');
                     end
+                    
+                case 'p' % Set padding
+                    try
+                        val = str2double(resp(2:end));
+                        if (~isnan(val)) % Is a number
+                            if (val > 0)
+                                params.padding = val;
+                            end
+                        end
+                    catch
+                        fprintf('  Could not parse order command!\n');
+                    end
 
                 case 't' % Set threshold
-                    fprintf('  Plese select a new threshold on the LS trace\n');
+                    fprintf('  Plese select a new threshold on the ORIG trace\n');
                     while (1)
                         [~, params.threshold] = ginput(1);
                         if (gca == gui.h_orig)
