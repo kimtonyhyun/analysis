@@ -68,7 +68,7 @@ xlim(t([1 end]));
 xlabel('Time (s)');
 zoom xon;
 
-end % inspect_dff_traces
+end % compare_dff_traces
 
 function y_range = compute_y_range(tr)
     m = min(tr);

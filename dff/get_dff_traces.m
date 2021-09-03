@@ -1,25 +1,40 @@
-function [rec_savename, class_savename] = get_dff_traces(ds_proj, ds_ls, fps)
+function [rec_savename, class_savename] = get_dff_traces(ds, fps)
 % TODO:
-%   - Build out a save/load mechanism
+%   - A save/load mechanism?
 %
 
-num_cells = ds_ls.num_cells;
-num_frames = ds_ls.full_num_frames;
+color = [0 0.447 0.741];
 
-state.fig_handle = figure;
+% Custom "subplot" command that leaves less unusued space between panels
+sp = @(m,n,p) subtightplot(m, n, p, 0.05, 0.05, 0.05); % Gap, Margin-X, Margin-Y
 
-state.nonactive_thresh = 0.5;
-state.nonactive_padding = 10 * fps;
-state.polyfit_order = 1;
+gui.fig_handle = figure;
+gui.h_orig = sp(2,1,1); % Original trace
+gui.h_dff = sp(2,1,2);  % DFF trace
+linkaxes([gui.h_orig, gui.h_dff], 'x');
+set(gui.h_orig, 'TickLength', [0 0]);
+set(gui.h_dff, 'TickLength', [0 0]);
+grid(gui.h_orig, 'on');
+grid(gui.h_dff, 'on');
 
-% Populate the following variables
+default_params = struct('threshold', [],...
+                        'padding', 10 * fps,...
+                        'order', 1);
+params = default_params;
+
+num_cells = ds.num_cells;
+num_frames = ds.full_num_frames;
+t = 1/fps*(0:num_frames-1);
+t_lims = t([1 end]);
+
+% We will populate the following variables
 dff_traces = zeros(num_frames, num_cells, 'single');
-dff_infos = cell(num_cells, 1);
+baseline_fit_infos = cell(num_cells, 1);
 
 % Flag where:
 %   - keep_dff{k} == true;  % Keep the k-th cell in export
 %   - keep_dff{k} == false; % Omit the k-th cell in export
-%   - keep_dff{k} == [];    % K-th cell not yet classified
+%   - keep_dff{k} == [];    % k-th cell not yet classified
 keep_dff = cell(num_cells, 1);
 
 % Application loop
@@ -27,13 +42,55 @@ keep_dff = cell(num_cells, 1);
 cell_idx = 1;
 while (cell_idx <= num_cells)
 
-    [dff_trace, dff_info, ax2] = inspect_dff_traces(ds_proj, ds_ls, cell_idx, fps,...
-        'nonactive_polyfit', 'order', state.polyfit_order,...
-        'thresh', state.nonactive_thresh,...
-        'padding', state.nonactive_padding);
+    trace = ds.get_trace(cell_idx);
+    [baseline, info] = polyfit_nonactive_frames(trace,...
+        params.threshold, params.padding, params.order);
+    params.threshold = info.threshold;
+    dff_trace = (trace - baseline)./baseline;
+    
+    % Draw results
+    %------------------------------------------------------------
+    subplot(gui.h_orig);
+    cla; hold on;
+    nf = info.nonactive_frames;
+    af = ~nf; % active_frames
+    
+    nf_segs = frame_list_to_segments(find(nf));
+    for k = 1:size(nf_segs,1)
+        frames = nf_segs(k,1):nf_segs(k,2);
+        plot(t(frames), trace(frames), 'Color', color);
+    end
+    
+    af_segs = frame_list_to_segments(find(af));
+    for k = 1:size(af_segs,1)
+        frames = af_segs(k,1):af_segs(k,2);
+        plot(t(frames), trace(frames), 'r');
+    end
+    
+    plot(t_lims, info.threshold*[1 1], 'k--');
+    plot(t, baseline, 'k-', 'LineWidth', 2);
+    hold off;
+    ylim(compute_ylims(trace));
+    ylabel('Orig. fluorescence');
+    title(sprintf('Cell %d: FPS=%.1f Hz, threshold=%.1f, padding=%d, order=%d',...
+        cell_idx, fps, params.threshold, params.padding, params.order));
+    
+    subplot(gui.h_dff);
+    cla; hold on;
+    plot(t, dff_trace, 'Color', color);
+    plot(t_lims, [0 0], 'k-', 'LineWidth', 2);
+    hold off;
+    xlim(t_lims)
+    xlabel('Time (s)');
+    ylim(compute_ylims(dff_trace));
+    ylabel('\DeltaF/F');
+    
+    zoom xon;
     
     % Ask the user to classify the cell candidate
-    prompt = sprintf('Get DFF traces (%d/%d; order=%d) >> ', cell_idx, num_cells, state.polyfit_order);
+    %------------------------------------------------------------
+    prompt = sprintf('Compute DFF traces (%d/%d; order=%d) >> ',...
+        cell_idx, num_cells, params.order);
     resp = strtrim(input(prompt, 's'));
     
     val = str2double(resp);
@@ -51,7 +108,7 @@ while (cell_idx <= num_cells)
             switch (resp(1))
                 case 'c' % Accept DFF result
                     dff_traces(:,cell_idx) = dff_trace;
-                    dff_infos{cell_idx} = dff_info;
+                    baseline_fit_infos{cell_idx} = info;
                     keep_dff{cell_idx} = true;
 
                     go_to_next_cell();
@@ -62,37 +119,34 @@ while (cell_idx <= num_cells)
                     go_to_next_cell();
 
                 % Set baseline fitting parameters
-                %------------------------------------------------------------                               
+                %------------------------------------------------------------
                 case 'o' % Set order
                     try
                         val = str2double(resp(2:end));
                         if (~isnan(val)) % Is a number
                             if (val > 0)
-                                state.polyfit_order = val;
+                                params.order = val;
                             end
                         end
                     catch
-                        cprintf('red', '  Could not parse order command!\n');
+                        fprintf('  Could not parse order command!\n');
                     end
 
                 case 't' % Set threshold
                     fprintf('  Plese select a new threshold on the LS trace\n');
                     while (1)
-                        [~, thresh] = ginput(1);
-                        if (gca == ax2)
+                        [~, params.threshold] = ginput(1);
+                        if (gca == gui.h_orig)
                             break;
                         else
-                            fprintf('  Error! New threshold must be defined on the LS trace\n');
+                            fprintf('  Error! New threshold must be defined on the ORIG trace\n');
                         end
                     end
 
-                    tr = ds_ls.get_trace(cell_idx);
-                    state.nonactive_thresh = (thresh - min(tr))/(max(tr) - min(tr));
-                    fprintf('  New activity threshold is %.1f%% of max\n', state.nonactive_thresh * 100);
-
                 case 'q' % Exit
-                    close(state.fig_handle);
+                    close(gui.fig_handle);
                     break;
+
             end % switch(resp)
         end % isempty(resp)
     end
@@ -102,10 +156,10 @@ end
 %------------------------------------------------------------
 
 % First, collect ALL spatial filters and traces
-[height, width] = size(ds_ls.cell_map_ref_img);
+[height, width] = size(ds.cell_map_ref_img);
 filters = zeros(height, width, num_cells, 'single');
 for k = 1:num_cells
-    filters(:,:,k) = ds_ls.cells(k).im;
+    filters(:,:,k) = ds.cells(k).im;
 end
 
 % Unlabeled entries in 'keep_dff' will NOT be exported
@@ -123,9 +177,7 @@ traces = dff_traces(:,keep_dff);
 info.type = 'get_dff_traces';
 info.num_pairs = num_exported_cells;
 
-% Note that 'dff_infos' must remain a (Matlab) cell, since the contents of 
-% the struct may be different across different cells in the DaySummary.
-info.dff_infos = dff_infos(keep_dff);
+info.baseline_infos = baseline_fit_infos(keep_dff);
 info.fps = fps;
 
 [rec_savename, timestamp] = save_rec(info, filters, traces);
@@ -133,7 +185,7 @@ class_savename = generate_class_file(num_exported_cells, 'timestamp', timestamp)
 fprintf('%s: %d filter-trace pairs saved to "%s"\n', datestr(now), num_exported_cells, rec_savename);
 
     % Auxiliary functions
-    %------------------------------------------------------------
+    %------------------------------------------------------------    
     function go_to_next_cell()
         unprocessed = cellfun(@isempty, keep_dff);
         next_idx = find_next_cell_to_process(cell_idx, unprocessed);
@@ -149,9 +201,13 @@ fprintf('%s: %d filter-trace pairs saved to "%s"\n', datestr(now), num_exported_
         end
         
         % Reset default fitting method on advance
-        state.baseline_method = 'polyfit';
-        state.nonactive_thresh = 0.5;
-        state.polyfit_order = 1;
+        params = default_params;
     end % go_to_next_cell
     
 end % get_dff_traces
+
+function y_lims = compute_ylims(tr)
+    m = min(tr);
+    M = max(tr);
+    y_lims = [m M] + 0.1*(M-m)*[-1 1];
+end
