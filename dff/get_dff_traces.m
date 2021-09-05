@@ -1,9 +1,27 @@
-function [rec_savename, class_savename] = get_dff_traces(ds, fps)
+function [rec_savename, class_savename] = get_dff_traces(ds, fps, F)
+% Compute DFF traces from the DaySummary 'ds'. The baseline is estimated by
+% performing a polynomial fit to "nonactive" periods of the trace, which is
+% interactively identified by user (via 'polyfit_nonactive_frames').
+%
+% The optional input 'F' is the full-field fluorescence of the movie. If
+% provided, each DFF trace will be decorrelated with respect to 'F'. The
+% user can then choose between the decorrelated and non-decorrelated
+% traces. Note: In the future, we could perform multi-variate decorrelation
+% with respect to other signals as well.
+%
 % TODO:
 %   - A save/load mechanism?
 %
 
+if exist('F', 'var')
+    F = F - mean(F);
+    F = F(:)'; % ds.get_trace returns traces as a row vector. Need to match
+else
+    F = [];
+end
+
 color = [0 0.447 0.741];
+color2 = [0.85 0.325 0.098];
 
 % Custom "subplot" command that leaves less unusued space between panels
 sp = @(m,n,p) subtightplot(m, n, p, 0.025, [0.1 0.05], [0.05 0.01]); % Gap, Margin-X, Margin-Y
@@ -48,6 +66,9 @@ while (cell_idx <= num_cells)
         params.threshold, params.padding, params.order);
     params.threshold = info.threshold;
     dff_trace = (trace - baseline)./baseline;
+    if ~isempty(F)
+        dff_trace2 = decorrelate_trace(dff_trace, F, info.nonactive_frames);
+    end
     
     % Draw results
     %------------------------------------------------------------
@@ -79,7 +100,11 @@ while (cell_idx <= num_cells)
     subplot(gui.h_dff);
     cla; hold on;
     plot(t, dff_trace, 'Color', color);
-    plot(t_lims, [0 0], 'k-', 'LineWidth', 2);
+    if ~isempty(F)
+        plot(t, dff_trace2, '--', 'Color', color2);
+        legend('DFF', 'Decorrelated DFF', 'Location', 'NorthWest');
+    end
+%     plot(t_lims, [0 0], 'k-', 'LineWidth', 2);
     hold off;
     xlim(t_lims)
     xlabel(sprintf('Time (s); FPS = %.1f Hz', fps));
@@ -110,6 +135,18 @@ while (cell_idx <= num_cells)
             switch (resp(1))
                 case 'c' % Accept DFF result
                     dff_traces(:,cell_idx) = dff_trace;
+                    baseline_fit_infos{cell_idx} = info;
+                    keep_dff{cell_idx} = true;
+
+                    go_to_next_cell();
+                    
+                case 'd' % Accept decorrelated DFF result
+                    if ~isempty(F)
+                        fprintf('  Using decorrelated DFF trace for Cell %d\n', cell_idx);
+                        dff_traces(:,cell_idx) = dff_trace2;
+                    else
+                        dff_traces(:,cell_idx) = dff_trace;
+                    end
                     baseline_fit_infos{cell_idx} = info;
                     keep_dff{cell_idx} = true;
 
@@ -224,4 +261,11 @@ function y_lims = compute_ylims(tr)
     m = min(tr);
     M = max(tr);
     y_lims = [m M] + 0.1*(M-m)*[-1 1];
-end
+end % compute_ylims
+
+function tr_dc = decorrelate_trace(tr, mu, frames_for_corr)
+    tr2 = tr(frames_for_corr);
+    mu2 = mu(frames_for_corr);
+    p = polyfit(mu2, tr2, 1); % Linear fit
+    tr_dc = tr - polyval(p, mu);
+end % decorrelate_trace
