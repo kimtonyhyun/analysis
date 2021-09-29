@@ -1,4 +1,4 @@
-function [rec_savename, class_savename] = get_dff_traces(ds, fps, F)
+function [rec_savename, class_savename] = get_dff_traces(ds, fps, varargin)
 % Compute DFF traces from the DaySummary 'ds'. The baseline is estimated by
 % performing a polynomial fit to "nonactive" periods of the trace, which is
 % interactively identified by user (via 'polyfit_nonactive_frames').
@@ -13,15 +13,27 @@ function [rec_savename, class_savename] = get_dff_traces(ds, fps, F)
 %   - A save/load mechanism?
 %
 
-if exist('F', 'var')
-    F = F - mean(F);
-    F = F(:)'; % ds.get_trace returns traces as a row vector. Need to match
-else
-    F = [];
-end
-
 color = [0 0.447 0.741];
 color2 = [0.85 0.325 0.098];
+
+F = []; % Full-field fluorescence for decorrelation 
+
+compute_zsc = false;
+
+for k = 1:length(varargin)
+    if ischar(varargin{k})
+        switch lower(varargin{k})
+            case 'f'
+                fprintf('Full-field fluorescence provided\n');
+                F = varargin{k+1};
+                F = F - mean(F);
+                F = F(:)'; % ds.get_trace returns traces as a row vector. Need to match
+            case 'zsc'
+                fprintf('Output traces will be z-scored\n');
+                compute_zsc = true;
+        end
+    end
+end
 
 % Custom "subplot" command that leaves less unusued space between panels
 sp = @(m,n,p) subtightplot(m, n, p, 0.025, [0.1 0.05], [0.05 0.01]); % Gap, Margin-X, Margin-Y
@@ -37,7 +49,7 @@ grid(gui.h_orig, 'on');
 grid(gui.h_dff, 'on');
 
 default_params = struct('threshold', [],...
-                        'padding', 4*fps,...
+                        'padding', floor(4*fps),...
                         'order', 1);
 params = default_params;
 
@@ -68,6 +80,16 @@ while (cell_idx <= num_cells)
     dff_trace = (trace - baseline)./baseline;
     if ~isempty(F)
         dff_trace2 = decorrelate_trace(dff_trace, F, info.nonactive_frames);
+    end
+    
+    if compute_zsc
+        sigma = std(dff_trace(info.nonactive_frames));
+        dff_trace = dff_trace/sigma;
+        
+        if ~isempty(F)
+            sigma2 = std(dff_trace2(info.nonactive_frames));
+            dff_trace2 = dff_trace2/sigma;
+        end
     end
     
     % Draw results
@@ -102,14 +124,22 @@ while (cell_idx <= num_cells)
     plot(t, dff_trace, 'Color', color);
     if ~isempty(F)
         plot(t, dff_trace2, '--', 'Color', color2);
-        legend('DFF', 'Decorrelated DFF', 'Location', 'NorthWest');
+        if ~compute_zsc
+            legend('DFF', 'Decorrelated DFF', 'Location', 'NorthWest');
+        else
+            legend('zsc', 'Decorrelated zsc', 'Location', 'NorthWest');
+        end
     end
 %     plot(t_lims, [0 0], 'k-', 'LineWidth', 2);
     hold off;
     xlim(t_lims)
     xlabel(sprintf('Time (s); FPS = %.1f Hz', fps));
     ylim(compute_ylims(dff_trace));
-    ylabel('\DeltaF/F');
+    if ~compute_zsc
+        ylabel('\DeltaF/F');
+    else
+        ylabel('z-score');
+    end
     
     zoom xon;
     
@@ -133,14 +163,14 @@ while (cell_idx <= num_cells)
             go_to_next_cell();
         else
             switch (resp(1))
-                case 'c' % Accept DFF result
-                    dff_traces(:,cell_idx) = dff_trace;
-                    baseline_fit_infos{cell_idx} = info;
-                    keep_dff{cell_idx} = true;
-
-                    go_to_next_cell();
+%                 case 'c' % Accept DFF result
+%                     dff_traces(:,cell_idx) = dff_trace;
+%                     baseline_fit_infos{cell_idx} = info;
+%                     keep_dff{cell_idx} = true;
+% 
+%                     go_to_next_cell();
                     
-                case 'd' % Accept decorrelated DFF result
+                case {'c', 'd'} % Accept decorrelated DFF result
                     if ~isempty(F)
                         fprintf('  Using decorrelated DFF trace for Cell %d\n', cell_idx);
                         dff_traces(:,cell_idx) = dff_trace2;
