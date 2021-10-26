@@ -88,6 +88,8 @@ while (1)
 end
 
     function draw_cell(common_cell_idx)
+        sp = @(m,n,p) subtightplot(m, n, p, 0.05, 0.05, 0.05); % Gap, Margin-X, Margin-Y
+        
         traces = cell(1, md.num_days);
         for k = 1:md.num_days
             day = md.valid_days(k);
@@ -95,7 +97,7 @@ end
             ds = md.day(day); % Just a shorthand
             
             % Draw image of cell on each day
-            subplot(4, md.num_days, k);
+            sp(4, md.num_days, k);
             cell_image_k = ds.cells(cell_idx_k).im;
             cell_com_k = ds.cells(cell_idx_k).com;
             zoom_half_width = min(size(cell_image_k))/10;
@@ -113,7 +115,7 @@ end
             end
 
             % Draw raster
-            subplot(4, md.num_days, [md.num_days+k 2*md.num_days+k]);
+            sp(4, md.num_days, [md.num_days+k 2*md.num_days+k]);
             ds.plot_cell_raster(cell_idx_k, 'draw_correct');
             
             % Get trace
@@ -128,7 +130,7 @@ end
         trace_offsets = cumsum(trace_offsets);
         
         colors = 'rbk';
-        subplot(4, md.num_days, (3*md.num_days+1):(4*md.num_days));
+        sp(4, md.num_days, (3*md.num_days+1):(4*md.num_days));
         for k = 1:md.num_days
             color = colors(1+mod(k,length(colors)));
             plot(trace_offsets(k):(trace_offsets(k+1)-1),...
