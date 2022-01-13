@@ -38,6 +38,7 @@ ref_idx = 1; % By default, movie is registered against the first frame
 im_ref = h5read(movie_in, movie_dataset, [1 1 ref_idx], [height width 1]);
 
 select_roi = true;
+mask = [];
 filter_type = 'mosaic'; % Default filter option
 
 for k = 1:length(varargin)
@@ -45,6 +46,10 @@ for k = 1:length(varargin)
     if ischar(vararg)
         vararg = lower(vararg);
         switch vararg
+            case 'mask' % Externally provided binary mask
+                fprintf('register_movie: Using externally provided mask\n');
+                select_roi = false;
+                mask = varargin{k+1};
             case {'nomask', 'noroi'}
                 select_roi = false;
             case 'ref' % Externally provided reference image
@@ -83,13 +88,13 @@ if select_roi
     h_poly = impoly;
     mask_xy = getPosition(h_poly);
     input('register_movie: Please enter to proceed >> ');
-else % Use the full image
-    mask_xy = [1 1;
-               height 1;
-               height width
-               1 width];
+    mask = single(poly2mask(mask_xy(:,1), mask_xy(:,2), height, width));
 end
-mask_ref = single(poly2mask(mask_xy(:,1), mask_xy(:,2), height, width));
+
+if isempty(mask)
+    % Use the full image
+    mask = ones(height, width, 'single');
+end
 
 % Turboreg options
 options.rotation_enable = false;
@@ -105,8 +110,8 @@ h5create(movie_out, movie_dataset,...
      
 copy_hdf5_params(movie_in, movie_out);     
      
-h5create(movie_out, '/MotCorr/MaskXY', size(mask_xy), 'Datatype', 'double');
-h5write(movie_out, '/MotCorr/MaskXY', mask_xy);
+h5create(movie_out, '/MotCorr/Mask', size(mask), 'Datatype', 'single');
+h5write(movie_out, '/MotCorr/Mask', mask);
 
 h5create(movie_out, '/MotCorr/RefImg', size(im_ref), 'Datatype', 'single');
 h5write(movie_out, '/MotCorr/RefImg', im_ref);
@@ -138,7 +143,7 @@ for i = 1:num_chunks
         im_reg = transform(im_coreg);
         
         movie_chunk_reg(:,:,frame_idx) = ...
-            turbocoreg(im_ref, mask_ref, im_reg, im_coreg, options);
+            turbocoreg(im_ref, mask, im_reg, im_coreg, options);
     end
     
     h5write(movie_out, movie_dataset,...
