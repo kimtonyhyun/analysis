@@ -74,20 +74,20 @@ cell_idx = 1;
 while (cell_idx <= num_cells)
 
     trace = ds.get_trace(cell_idx);
-    [baseline, info] = polyfit_nonactive_frames(trace,...
+    [baseline, b_info] = polyfit_nonactive_frames(trace,...
         params.threshold, params.padding, params.order);
-    params.threshold = info.threshold;
+    params.threshold = b_info.threshold;
     dff_trace = (trace - baseline)./baseline;
     if ~isempty(F)
-        dff_trace2 = decorrelate_trace(dff_trace, F, info.nonactive_frames);
+        dff_trace2 = decorrelate_trace(dff_trace, F, b_info.nonactive_frames);
     end
     
     if compute_zsc
-        sigma = std(dff_trace(info.nonactive_frames));
+        sigma = std(dff_trace(b_info.nonactive_frames));
         dff_trace = dff_trace/sigma;
         
         if ~isempty(F)
-            sigma2 = std(dff_trace2(info.nonactive_frames));
+            sigma2 = std(dff_trace2(b_info.nonactive_frames));
             dff_trace2 = dff_trace2/sigma;
         end
     end
@@ -96,7 +96,7 @@ while (cell_idx <= num_cells)
     %------------------------------------------------------------
     subplot(gui.h_orig);
     cla; hold on;
-    nf = info.nonactive_frames;
+    nf = b_info.nonactive_frames;
     af = ~nf; % active_frames
     
     nf_segs = frame_list_to_segments(find(nf));
@@ -111,7 +111,7 @@ while (cell_idx <= num_cells)
         plot(t(frames), trace(frames), 'r');
     end
     
-    plot(t_lims, info.threshold*[1 1], 'k--');
+    plot(t_lims, b_info.threshold*[1 1], 'k--');
     plot(t, baseline, 'k-', 'LineWidth', 2);
     hold off;
     ylim(compute_ylims(trace));
@@ -177,7 +177,7 @@ while (cell_idx <= num_cells)
                     else
                         dff_traces(:,cell_idx) = dff_trace;
                     end
-                    baseline_fit_infos{cell_idx} = info;
+                    baseline_fit_infos{cell_idx} = b_info;
                     keep_dff{cell_idx} = true;
 
                     go_to_next_cell();
