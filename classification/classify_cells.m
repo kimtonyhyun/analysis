@@ -109,7 +109,7 @@ while (cell_idx <= num_candidates)
         switch (resp)
             % Classication options
             %------------------------------------------------------------
-            case {'c', '+'} % Cell
+            case 'c' % Cell
                 if num_frames > 1 % Actual movie
                     [resp2, state] = view_cell_interactively(ds, cell_idx, M, fps, state);
                     switch resp2
@@ -140,7 +140,7 @@ while (cell_idx <= num_candidates)
                 set_label(cell_idx, 'c');
                 go_to_next_unlabeled_cell();
                 
-            case {'n', '-'} % Classify without viewing trace
+            case 'n' % Classify without viewing trace
                 set_label(cell_idx, 'n');
                 go_to_next_unlabeled_cell();
                 
@@ -155,7 +155,7 @@ while (cell_idx <= num_candidates)
 
             case ''  % Go to next unlabeled cell candidate, loop at end
                 go_to_next_unlabeled_cell();
-            case 'p' % Jump to previously viewed cell
+            case {'p', '-'} % Jump to previously viewed cell
                 temp_idx = cell_idx;
                 cell_idx = prev_cell_idx;
                 prev_cell_idx = temp_idx;

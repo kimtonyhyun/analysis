@@ -47,8 +47,8 @@ h = imagesc(rescale_filter_to_clim(filter, movie_clim), movie_clim);
 set(h, 'ButtonDownFcn', @add_point_of_interest);
 colormap gray;
 axis image;
-xlabel('x [px]');
-ylabel('y [px]');
+% xlabel('x [px]');
+% ylabel('y [px]');
 hold on;
 
 % Show boundary of current filter
@@ -334,8 +334,8 @@ end
                     'MarkerFaceColor', 'r',...
                     'MarkerSize', 12,...
                     'HitTest', 'off'); % Dot
-        xlabel('Time [s]');
-        ylabel('Signal [a.u.]');
+%         xlabel('Time [s]');
+%         ylabel('Signal [a.u.]');
         axis square;
         hold off;
         
