@@ -38,9 +38,9 @@ set(state.fig_handle, 'WindowButtonUpFcn', @end_drag);
 % Custom "subplot" command that leaves less unusued space between panels
 sp = @(m,n,p) subtightplot(m, n, p, 0.05, 0.05, 0.05); % Gap, Margin-X, Margin-Y
 
-global_trace = sp(3,3,[1 2 3]);
-running_trace = sp(3,3,[6 9]);
-movie_subplot = sp(3,3,[4 5 7 8]);
+global_trace = sp(3,1,1);
+running_trace = sp(3,2,[4 6]);
+movie_subplot = sp(3,2,[3 5]);
 
 movie_clim = state.movie_clim;
 h = imagesc(rescale_filter_to_clim(filter, movie_clim), movie_clim);
@@ -336,6 +336,7 @@ end
                     'HitTest', 'off'); % Dot
         xlabel('Time [s]');
         ylabel('Signal [a.u.]');
+        axis square;
         hold off;
         
         render_frame(1);

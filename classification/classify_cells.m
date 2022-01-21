@@ -1,8 +1,7 @@
 function poi = classify_cells(ds, M, varargin)
 % Perform manual classification of candidate filter/trace pairs
 
-show_raster = (ds.num_trials > 1);
-fps = 10;
+fps = 10; % Not super critical
 
 % Default parameters for "view_cell_interactively"
 state.show_map = true;
@@ -11,8 +10,8 @@ state.threshold_scale = 0.5;
 state.points_of_interest = [];
 
 % Will be set below
-state.movie_clim = [];
-state.proj_clim = [];
+state.movie_clim = []; % Used within view_cell_interactively
+state.ref_image_clim = [];
 state.fig_handle = [];
 
 % Custom "subplot" command that leaves less unusued space between panels
@@ -24,8 +23,6 @@ for i = 1:length(varargin)
         switch lower(vararg)
             case 'fps'
                 fps = varargin{i+1};
-            case 'noraster' % Use with non-PlusMaze datasets
-                show_raster = false;
             case 'poi' % Existing points of interest
                 state.points_of_interest = varargin{i+1};
         end
@@ -42,7 +39,8 @@ if num_frames > 1
            size(M,3), ds.full_num_frames);
     end
     
-    movie_projection = max(M,[],3);
+    ref_image = max(M,[],3);
+    ref_image_title = 'Movie max projection';
     
     state.movie_clim = compute_movie_scale(M);
     fprintf('  %s: Movie will be displayed with fixed CLim = [%.3f %.3f]...\n',...
@@ -51,9 +49,10 @@ if num_frames > 1
 else
     % Single image
     cprintf('blue', 'Classifying filters with respect to an image!\n');
-    movie_projection = M; % The provided image itself
+    ref_image = M; % The provided image itself
+    ref_image_title = 'Reference image';
 end
-state.proj_clim = compute_movie_scale(movie_projection);
+state.ref_image_clim = compute_movie_scale(ref_image);
 
 % Load filter/trace pairs to be classified
 num_candidates = ds.num_cells;
@@ -69,10 +68,16 @@ cell_idx = 1;
 prev_cell_idx = 1;
 
 while (cell_idx <= num_candidates)
-    if show_raster
-        display_candidate_rasters(cell_idx);
+    if num_frames > 1
+        % Classify cells with respect to calcium movie
+        if ds.num_trials > 1
+            display_candidate_rasters(cell_idx);
+        else
+            display_candidate(cell_idx, false);
+        end
     else
-        display_candidate(cell_idx);
+        % Classify cells with respect to a provided image
+        display_candidate(cell_idx, true);
     end
     
     % Ask the user to classify the cell candidate
@@ -141,6 +146,13 @@ while (cell_idx <= num_candidates)
                 
             % Application options
             %------------------------------------------------------------
+            case 'h' % Higher contrast
+                c_range = diff(state.ref_image_clim);
+                state.ref_image_clim = state.ref_image_clim + c_range*[0.1 -0.1];
+            case 'l' % Lower contrast
+                c_range = diff(state.ref_image_clim);
+                state.ref_image_clim = state.ref_image_clim + c_range*[-0.1 0.1];
+
             case ''  % Go to next unlabeled cell candidate, loop at end
                 go_to_next_unlabeled_cell();
             case 'p' % Jump to previously viewed cell
@@ -208,24 +220,17 @@ end
         ds.plot_cell_raster(cell_idx, 'draw_correct');
     end % display_candidate_rasters
 
-    function display_candidate(cell_idx)
+    function display_candidate(cell_idx, use_ref_image)
         clf;
         sp(3,1,1);
         ds.plot_trace(cell_idx);
         title(sprintf('Source %d of %d', cell_idx, num_candidates));
         
-        % Plot cell filter on top of correlation image. The correlations
-        % are initially compute against the COM of the filter under review
         COM = ds.cells(cell_idx).com;
 
-        sp(3,1,[2 3]);
-%         %         C = compute_corr_image(M,COM);
-%         h_corr = imagesc(C,[0 0.7]);
-%         set(h_corr, 'ButtonDownFcn', @redraw_corr_image);
-%         colormap parula;
-%         colorbar;
-        imagesc(movie_projection, state.proj_clim);
-%         title('Max projection of movie');
+        sp(3,2,[3 5]);
+        imagesc(ref_image, state.ref_image_clim);
+        title(ref_image_title);
         colormap gray;
         axis image;
         hold on;
@@ -275,10 +280,21 @@ end
         xlim(x_range);
         ylim(y_range);
         
-        function redraw_corr_image(~,e)
-            coord = round(e.IntersectionPoint([1 2]));
-            set(h_corr, 'CData', compute_corr_image(M, coord));
+        sp(3,2,[4 6]);
+        if use_ref_image
+            C = imfuse(ref_image, ds.cells(cell_idx).im,...
+                    'falsecolor', 'ColorChannels', [1 2 0]);
+            image(C);
+            title('Spatial filter (green); Ref image (red)');
+        else
+            imagesc(ds.cells(cell_idx).im);
+            title('Spatial filter');
+            colormap gray;
         end
+        axis image;
+        xlim(x_range);
+        ylim(y_range);
+        set(gca, 'YTick', []);
     end
 
     function display_map()
