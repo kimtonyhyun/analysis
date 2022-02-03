@@ -99,7 +99,7 @@ while (cell_idx <= num_candidates)
                 display_map();
             case 'q' % Exit
                 % Save results
-                ds.save_class(output_name);
+                save_tdt(ds, output_name);
                 
                 close(state.fig_handle);
                 break;
@@ -113,7 +113,15 @@ while (cell_idx <= num_candidates)
                 [file, path] = uigetfile('tdt_*.mat', 'Select existing classification');
                 if (file)
                     full_file = fullfile(path, file);
-                    load_tdt(ds, full_file);
+                    tdt = load_tdt(full_file);
+                    
+                    ds.reset_labels;
+                    for k = tdt.pos
+                        ds.cells(k).label = 'positive';
+                    end
+                    for k = tdt.neg
+                        ds.cells(k).label = 'negative';
+                    end
                 end
 
             case 't' % "Take" screenshot
@@ -167,6 +175,8 @@ end
                         color = [0.85 0.325 0.098]; % Orange
                     case 'negative'
                         color = [0 0.4470 0.7410]; % Blue
+                    otherwise
+                        color = 'w';
                 end
             end
             plot(oc.boundary(:,1), oc.boundary(:,2), 'Color', color, 'HitTest', 'off');
