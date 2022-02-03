@@ -7,7 +7,7 @@ function [trace_out, info] = fix_baseline(trace_in, varargin)
 
 % Default parameters. As used in Wagner et al. 2019.
 p = 10; % 10-th percentile
-window = 1000; % In frames. At 30 fps, this is ~33.3 s
+window = min(length(trace_in), 1000); % In frames. At 30 fps, this is ~33.3 s
 compute_dff = false;
 
 for k = 1:length(varargin)
