@@ -8,17 +8,25 @@ state.fig_handle = [];
 % Custom "subplot" command that leaves less unusued space between panels
 sp = @(m,n,p) subtightplot(m, n, p, 0.05, 0.05, 0.05); % Gap, Margin-X, Margin-Y
 
-% for i = 1:length(varargin)
-%     vararg = varargin{i};
-%     if ischar(vararg)
-%         switch lower(vararg)
-%             case 'fps'
-%                 fps = varargin{i+1};
-%             case 'poi' % Existing points of interest
-%                 state.points_of_interest = varargin{i+1};
-%         end
-%     end
-% end
+% Scan if the DaySummary has cell classification labels loaded
+cell_labels_detected = false;
+for k = 1:ds.num_cells
+    label = ds.cells(k).label;
+    if ~isempty(label)
+        switch label
+            case 'cell'
+                cell_labels_detected = true;
+                break;
+            case 'not a cell'
+                cell_labels_detected = true;
+                break;
+        end
+    end
+end
+if cell_labels_detected
+    cprintf('blue', 'Warning: DaySummary contains cell classification labels. Reset for tdTomato classification...\n');
+    ds.reset_labels;
+end
 
 
 % Initial processing of movie
