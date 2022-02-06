@@ -146,12 +146,12 @@ while (cell_idx <= num_candidates)
                 
             % Application options
             %------------------------------------------------------------
-            case 'h' % Higher contrast
-                c_range = diff(state.ref_image_clim);
-                state.ref_image_clim = state.ref_image_clim + c_range*[0.1 -0.1];
-            case 'l' % Lower contrast
-                c_range = diff(state.ref_image_clim);
-                state.ref_image_clim = state.ref_image_clim + c_range*[-0.1 0.1];
+%             case 'h' % Higher contrast
+%                 c_range = diff(state.ref_image_clim);
+%                 state.ref_image_clim = state.ref_image_clim + c_range*[0.1 -0.1];
+%             case 'l' % Lower contrast
+%                 c_range = diff(state.ref_image_clim);
+%                 state.ref_image_clim = state.ref_image_clim + c_range*[-0.1 0.1];
 
             case ''  % Go to next unlabeled cell candidate, loop at end
                 go_to_next_unlabeled_cell();
