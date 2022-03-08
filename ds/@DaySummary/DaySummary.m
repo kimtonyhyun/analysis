@@ -50,6 +50,7 @@ classdef DaySummary < handle
         function obj = DaySummary(ds_source, rec_dir, varargin)
             % Defaults
             boundary_threshold = 0.3;
+            use_cascade = false;
             
             % Handle optional input
             exclude_probe_trials = 0;
@@ -60,6 +61,8 @@ classdef DaySummary < handle
                             exclude_probe_trials = 1;
                         case 'boundary'
                             boundary_threshold = varargin{k+1};
+                        case 'cascade'
+                            use_cascade = true;
                     end
                 end
             end
@@ -71,7 +74,13 @@ classdef DaySummary < handle
             obj.num_cells = data.info.num_pairs;
             fprintf('%s: Loaded %d filters and traces (%s) from %s\n',...
                     datestr(now), obj.num_cells, data.info.type, data_source);
-                
+            if use_cascade
+                cascade_source = get_most_recent_file(rec_dir, 'cascade_*.mat');
+                cascade_data = load(cascade_source);
+                data.traces = cascade_data.spike_probs;
+                fprintf('%s: Using CASCADE spike probability traces from %s\n',...
+                    datestr(now), cascade_source);
+            end
             trace_num_frames = size(data.traces, 1);
             
             % Check if DaySummary session data is provided as a struct

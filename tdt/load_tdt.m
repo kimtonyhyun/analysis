@@ -7,12 +7,11 @@ if isempty(ext)
     
     if isempty(filename)
         cprintf('blue', 'No tdt classification exists at "%s"\n', source);
-        tdt.pos = [];
-        tdt.neg = [];
+        tdt = [];
     else
         tdt = load(filename);
     end
 else
-    % Assume full specification of the MAT file
+    % Assume full specification of the MAT file in 'source'
     tdt = load(source);
 end
