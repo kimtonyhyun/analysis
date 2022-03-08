@@ -29,6 +29,7 @@ num_cells = length(cell_indices);
 cells_per_page = [2 4];
 num_cells_per_page = prod(cells_per_page);
 num_pages = ceil(num_cells / num_cells_per_page);
+sp = @(m,n,p) subtightplot(m, n, p, [0.08 0.05], 0.05, 0.05); % Gap, Margin-X, Margin-Y
 
 h = figure;
 
@@ -90,7 +91,7 @@ end
         
         cells_on_page = get_cells_on_page(page_idx);
         for i = 1:length(cells_on_page)
-            subplot(cells_per_page(1), cells_per_page(2), i);
+            sp(cells_per_page(1), cells_per_page(2), i);
         
             cell_idx = cells_on_page(i);
             R = ds.plot_cell_raster(cell_idx);

@@ -63,7 +63,10 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
     end
     
     imagesc(info.aligned_time, 1:num_trials, raster, 'HitTest', 'off');
-    set(gca, 'CLim', obj.trace_range(cell_idx,:));
+    % If the line below is uncommented, the raster will be scaled according
+    % to the maximum trace value observed in the session, _even if_ the
+    % maximum value was observed during a period not shown in the raster.
+%     set(gca, 'CLim', obj.trace_range(cell_idx,:));
     hold on;
     colormap parula; freezeColors;
     xlim(info.aligned_time([1 end]));
