@@ -5,12 +5,20 @@ function [A_pos, A_neg] = plot_tdt_cellmap(ds, tdt)
 A_pos = zeros(size(ds.cell_map_ref_img), 'single');
 A_neg = A_pos;
 
+num_pos_cells = 0;
 for k = tdt.pos
-    A_pos = A_pos + ds.cells(k).im;
+    if ds.is_cell(k)
+        num_pos_cells = num_pos_cells + 1;
+        A_pos = A_pos + ds.cells(k).im;
+    end
 end
 
+num_neg_cells = 0;
 for k = tdt.neg
-    A_neg = A_neg + ds.cells(k).im;
+    if ds.is_cell(k)
+        num_neg_cells = num_neg_cells + 1;
+        A_neg = A_neg + ds.cells(k).im;
+    end
 end
 
 C = A_pos - A_neg;
@@ -20,4 +28,5 @@ imagesc(C, clims);
 axis image;
 colormap redblue;
 set(gca, 'TickLength', [0 0]);
-% title('tdTomato-positive (red) vs. -negative (blue)');
+title(sprintf('tdT-pos (%d cells; red) vs. -neg (%d cells; blue)',...
+              num_pos_cells, num_neg_cells));

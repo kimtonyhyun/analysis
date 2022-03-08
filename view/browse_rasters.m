@@ -93,8 +93,10 @@ end
             subplot(cells_per_page(1), cells_per_page(2), i);
         
             cell_idx = cells_on_page(i);
-            ds.plot_cell_raster(cell_idx);
-            title(sprintf('Cell %d', cell_idx));
+            R = ds.plot_cell_raster(cell_idx);
+            d1 = compute_trial_raster_dimensionality(R, 'dim');
+            d2 = compute_trial_raster_dimensionality(R, 'erank');
+            title(sprintf('Cell %d\ndim=%.3f; erank=%.1f%%', cell_idx, d1, 100*d2));
         end
         
         function cells_on_page = get_cells_on_page(page_idx)

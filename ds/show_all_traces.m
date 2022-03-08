@@ -18,6 +18,7 @@ for k = 1:length(varargin)
                 amp = varargin{k+1};
             case 'cells'
                 cells_to_show = varargin{k+1};
+                num_cells = length(cells_to_show);
         end
     end
 end
