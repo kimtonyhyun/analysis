@@ -1,4 +1,4 @@
-function overwrite_frame_indices(plusmaze_source, new_frame_indices)
+function overwrite_frame_indices(plusmaze_source, new_frame_indices, output_name)
 % Generate a new PlusMaze text file (appends "_new" to the filename)
 %   with a new set of frame indices
 %
@@ -16,9 +16,11 @@ function overwrite_frame_indices(plusmaze_source, new_frame_indices)
 num_trials = length(time);
 
 % Generate a new PlusMaze output
-[path_to, name, ~] = fileparts(plusmaze_source);
-output_name = sprintf('%s_new.txt', name);
-output_name = fullfile(path_to, output_name);
+if ~exist('output_name', 'var')
+    [path_to, name, ~] = fileparts(plusmaze_source);
+    output_name = sprintf('%s_new.txt', name);
+    output_name = fullfile(path_to, output_name);
+end
 
 fid = fopen(output_name, 'w');
 for i = 1:num_trials
