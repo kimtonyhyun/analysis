@@ -77,7 +77,11 @@ classdef DaySummary < handle
             if use_cascade
                 cascade_source = get_most_recent_file(rec_dir, 'cascade_*.mat');
                 cascade_data = load(cascade_source);
-                data.traces = cascade_data.spike_probs;
+                % CASCADE fills 32 samples at beginning and end of each
+                % trace with NaNs. Replace with 0's.
+                sp = cascade_data.spike_probs;
+                sp(isnan(sp)) = 0;
+                data.traces = sp;
                 fprintf('%s: Using CASCADE spike probability traces from %s\n',...
                     datestr(now), cascade_source);
             end
