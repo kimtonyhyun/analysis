@@ -25,7 +25,7 @@ function [match_1to2, match_2to1, info] = run_alignment(ds1, ds2, varargin)
 %       regarding the alignment run.
 %
 % Example usage:
-%   [m1to2, m2to1] = run_alignment(m1d12, m1d13, 'fast')
+%   [m1to2, m2to1] = run_alignment(m1d12, m1d13)
 %
 
 % Default alignment options
