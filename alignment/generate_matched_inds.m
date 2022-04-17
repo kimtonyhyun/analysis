@@ -9,9 +9,9 @@ matched_inds = zeros(num_max_matches, 2);
 
 idx = 0;
 for k = 1:num_max_matches
-    if ~isempty(m_1to2{idx})
+    if ~isempty(m_1to2{k})
         idx = idx + 1;
-        matched_inds(idx,:) = [idx m_1to2{idx}(1)];
+        matched_inds(idx,:) = [k m_1to2{k}(1)];
     end
 end
 matched_inds = matched_inds(1:idx,:);
