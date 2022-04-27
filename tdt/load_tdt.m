@@ -6,7 +6,7 @@ if isempty(ext)
     filename = get_most_recent_file(source, 'tdt_*.mat');
     
     if isempty(filename)
-        cprintf('blue', 'No tdt classification exists at "%s"\n', source);
+        fprintf('No tdt classification exists at "%s"\n', source);
         tdt = [];
     else
         tdt = load(filename);
