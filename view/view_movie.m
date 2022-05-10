@@ -63,11 +63,7 @@ end
 
 if use_outline
     hold on;
-    cell_indices = find(ds.is_cell);
-    for cell_idx = cell_indices
-        boundary = ds.cells(cell_idx).boundary;
-        plot(boundary(:,1), boundary(:,2), 'g');
-    end
+    plot_boundaries(ds, 'Color', 'g');
     hold off;
 end
 
