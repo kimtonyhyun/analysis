@@ -47,6 +47,7 @@ switch nd
         get_frame = @(k) M(:,:,:,k);
         h = image(get_frame(1));
 end
+ht = get(gca, 'Title');
 num_frames = size(M,nd);
 
 axis image;
@@ -78,7 +79,7 @@ while (num_playbacks <= num_repeats)
     for k = 1:num_frames
         try
             set(h, 'CData', get_frame(k));
-            title(sprintf('Frame %d of %d', k, num_frames));
+            ht.String = sprintf('Frame %d of %d', k, num_frames);
         catch
             cprintf('blue', 'view_movie terminated by user\n');
             return;
