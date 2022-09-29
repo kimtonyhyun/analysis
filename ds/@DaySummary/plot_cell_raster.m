@@ -13,7 +13,8 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
     draw_events = false;
     draw_correct = false;
     
-    align_idx = 3; % By default, align to closing of gate   
+%     align_idx = 3; % Default for PREFRONTAL expt: Align to closing of gate
+    align_idx = 2; % Default for CTXSTR expt: Align to motion onset
     kept_trials = true(1, obj.num_trials);
     
     if ~isempty(varargin)
@@ -55,7 +56,7 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
         case 1
             align_str = 'Frames relative to trial start';
         case 2
-            align_str = 'Frames relative to CS';
+            align_str = 'Frames relative to MO';
         case 3
             align_str = 'Frames relative to US';
         case 4
