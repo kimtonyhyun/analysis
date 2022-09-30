@@ -79,10 +79,13 @@ classdef DaySummary < handle
                 cascade_data = load(cascade_source);
                 % CASCADE fills 32 samples at beginning and end of each
                 % trace with NaNs. Replace with 0's.
-                sp = cascade_data.spike_probs;
+                sp = cascade_data.spike_probs; % [num_frames x num_cells]
                 sp(isnan(sp)) = 0;
+                for k = 1:size(sp,2) % Normalize CASCADE amplitudes
+                    sp(:,k) = sp(:,k) / max(sp(:,k));
+                end
                 data.traces = sp;
-                fprintf('%s: Using CASCADE spike probability traces from %s\n',...
+                fprintf('%s: Using normalized CASCADE traces from %s\n',...
                     datestr(now), cascade_source);
             end
             trace_num_frames = size(data.traces, 1);
