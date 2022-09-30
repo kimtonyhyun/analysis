@@ -102,7 +102,7 @@ end
 %             d1 = compute_trial_raster_dimensionality(R, 'dim');
 %             d2 = compute_trial_raster_dimensionality(R, 'erank');
 %             title(sprintf('Cell %d\ndim=%.3f; erank=%.1f%%', cell_idx, d1, 100*d2));
-%             title(sprintf('Cell %d', cell_idx));
+            title(sprintf('Cell %d', cell_idx));
         end
         
         function cells_on_page = get_cells_on_page(page_idx)
