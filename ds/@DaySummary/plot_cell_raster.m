@@ -13,8 +13,7 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
     draw_events = false;
     draw_correct = false;
     
-%     align_idx = 3; % Default for PREFRONTAL expt: Align to closing of gate
-    align_idx = 2; % Default for CTXSTR expt: Align to motion onset
+    align_idx = 3; % Default for PREFRONTAL expt: Align to closing of gate
     kept_trials = true(1, obj.num_trials);
     
     if ~isempty(varargin)
