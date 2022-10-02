@@ -1,4 +1,8 @@
-function draw_md_cell(md, common_cell_idx)
+function draw_md_cell(md, common_cell_idx, raster_fn)
+
+if ~exist('raster_fn', 'var')
+    raster_fn = @(ds,k) plot_cell_raster(ds, k, 'draw_correct');
+end
 
 sp = @(m,n,p) subtightplot(m, n, p, 0.05, 0.05, 0.05); % Gap, Margin-X, Margin-Y
 
@@ -28,9 +32,7 @@ for k = 1:md.num_days
 
     % Draw raster
     sp(4, md.num_days, [md.num_days+k 2*md.num_days+k]);
-    % Programmatically specify the raster visualization function
-    ctxstr.vis.plot_raster_from_ds(ds, cell_idx_k, 2);
-%             ds.plot_cell_raster(cell_idx_k, 'draw_correct');
+    raster_fn(ds, cell_idx_k);
 
     % Get trace
     traces{k} = ds.get_trace(cell_idx_k);

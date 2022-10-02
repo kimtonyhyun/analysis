@@ -56,9 +56,9 @@ function [raster, info] = plot_cell_raster(obj, cell_idx, varargin)
         case 1
             align_str = 'Frames relative to trial start';
         case 2
-            align_str = 'Frames relative to MO';
+            align_str = 'Frames relative to gate open';
         case 3
-            align_str = 'Frames relative to US';
+            align_str = 'Frames relative to gate close';
         case 4
             align_str = 'Frames relative to trial end';
     end
