@@ -1,6 +1,7 @@
 classdef MultiDay < handle
     properties (SetAccess = private)
         valid_days % List of days in the MultiDay object
+        valid_day_names
         num_days
         num_cells % Number of aligned cells through all days
         
@@ -54,8 +55,20 @@ classdef MultiDay < handle
             obj.valid_days = cell2mat(ds_list(:,1))';
             obj.num_days = length(obj.valid_days);
             
+            % Manually provided description of each "day"
+            obj.valid_day_names = cell(1, obj.num_days);
+            if size(ds_list, 2) >= 3 % ds_list has at least 3 columns
+                for k = 1:obj.num_days
+                    obj.valid_day_names{k} = ds_list{k,3};
+                end
+            else
+                for k = 1:obj.num_days
+                    obj.valid_day_names{k} = sprintf('Day %d', obj.valid_days(k));
+                end
+            end
+            
             max_day = max(obj.valid_days);
-
+            
             obj.full_to_sparse = zeros(1, max_day);
             obj.ds = cell(max_day, 1);
             for k = 1:size(ds_list,1)

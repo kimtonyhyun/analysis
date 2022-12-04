@@ -27,6 +27,7 @@ sp = @(m,n,p) subtightplot(m, n, p, 0.05, 0.05, 0.05); % Gap, Margin-X, Margin-Y
 traces = cell(1, md.num_days);
 for k = 1:md.num_days
     day = md.valid_days(k);
+    day_name = md.valid_day_names{k};
     cell_idx_k = md.get_cell_idx(common_cell_idx, day);
     ds = md.day(day); % Just a shorthand
 
@@ -41,7 +42,7 @@ for k = 1:md.num_days
     xlim(cell_com_k(1)+zoom_half_width*[-1 1]);
     ylim(cell_com_k(2)+zoom_half_width*[-1 1]);
 
-    title_str = sprintf('Day %d -- Cell %d', day, cell_idx_k);
+    title_str = sprintf('%s\nCell %d', day_name, cell_idx_k);
     if (day == md.sort_day)
         title(title_str, 'FontWeight', 'bold', 'FontSize', 12);
     else
