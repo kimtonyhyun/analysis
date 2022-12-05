@@ -36,3 +36,7 @@ for k = 1:num_groups
 end
 
 boxplot(d, g, varargin{:});
+
+% Cosmetic
+h = findobj('LineStyle', '--'); set(h, 'LineStyle', '-');
+h = findobj('Marker', '+'); set(h, 'Marker', '.'); %set(h, 'MarkerEdgeColor', 'k');
