@@ -35,7 +35,13 @@ for k = 1:num_groups
     idx = idx + num_data_per_group(k);
 end
 
-boxplot(d, g, varargin{:});
+if iscell(group_names)
+    boxplot(d, g, varargin{:});
+else
+    % If 'group_names' is numeric, then position the boxes quantitatively
+    % along the x-axis. TODO: Maybe we don't want this all the time?
+    boxplot(d, g, 'Positions', group_names, varargin{:});
+end
 
 % Cosmetic
 h = findobj('LineStyle', '--'); set(h, 'LineStyle', '-');
