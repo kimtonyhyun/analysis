@@ -51,6 +51,7 @@ classdef DaySummary < handle
             % Defaults
             boundary_threshold = 0.3;
             use_cascade = false;
+            binarization_threshold = [];
             
             % Handle optional input
             exclude_probe_trials = 0;
@@ -63,6 +64,9 @@ classdef DaySummary < handle
                             boundary_threshold = varargin{k+1};
                         case 'cascade'
                             use_cascade = true;
+                        case 'cascade-bin'
+                            use_cascade = true;
+                            binarization_threshold = varargin{k+1};
                     end
                 end
             end
@@ -77,16 +81,23 @@ classdef DaySummary < handle
             if use_cascade
                 cascade_source = get_most_recent_file(rec_dir, 'cascade_*.mat');
                 cascade_data = load(cascade_source);
-                % CASCADE fills 32 samples at beginning and end of each
-                % trace with NaNs. Replace with 0's.
+
+                % NOTE: CASCADE fills 32 samples at beginning and end of
+                % each trace with NaNs. Replace with 0's.
                 sp = cascade_data.spike_probs; % [num_frames x num_cells]
                 sp(isnan(sp)) = 0;
                 for k = 1:size(sp,2) % Normalize CASCADE amplitudes
                     sp(:,k) = sp(:,k) / max(sp(:,k));
                 end
+
+                if isempty(binarization_threshold)
+                    fprintf('%s: CASCADE -- Using per-cell normalized traces\n', datetime);
+                else
+                    sp = double(sp > binarization_threshold);
+                    fprintf('%s: CASCADE -- Loaded binarized traces (threshold=%.2f)\n',...
+                        datetime, binarization_threshold);                    
+                end
                 data.traces = sp;
-                fprintf('%s: Using normalized CASCADE traces from %s\n',...
-                    datestr(now), cascade_source);
             end
             trace_num_frames = size(data.traces, 1);
             
