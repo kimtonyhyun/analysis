@@ -1,5 +1,6 @@
 function [rec_savename, class_savename] = backapply_filters(filters_in, movie_in, varargin)
-% Compute traces by back applying filters to the specified movie.
+% Compute traces by back applying filters to the specified movie. Note that
+% output filters are normalized such that the sum of all pixels equals 1.
 %
 % Inputs:
 %   - 'filters_in': Can be a DaySummary instance, or a 3D matrix of filters
@@ -13,6 +14,13 @@ use_fix_baseline = false;
 generate_class = false;
 class_savename = [];
 
+% 'merge_list' allows multiple filters in 'filters_in' to be combined into
+% a single filter, and should be formatted as:
+%   merge_list = {[a b c], [d e], [f g h]}
+% which specifies input filter #'s a/b/c should be combined into one 
+% output filter, d/e into one output filter, etc.
+merge_list = {};
+
 for k = 1:length(varargin)
     vararg = varargin{k};
     if ischar(vararg)
@@ -23,6 +31,8 @@ for k = 1:length(varargin)
                 use_fix_baseline = true;
             case {'class', 'generate_class'}
                 generate_class = true;
+            case 'merge'
+                merge_list = varargin{k+1};
         end
     end
 end
@@ -54,12 +64,18 @@ else
     cell_indices = 1:size(filters_in,3);
     get_filter = @(x) filters_in(:,:,x);
 end
-max_num_filters = length(cell_indices);
-filters = zeros(num_pixels, max_num_filters, 'single'); % Preallocate
+
+% Filters to be merged will be handled separately
+num_merged_filters = length(merge_list);
+filters_to_be_merged = cell2mat(merge_list);
+cell_indices = setdiff(cell_indices, filters_to_be_merged);
+
+num_filters = length(cell_indices); % Number of filters, excluding those to be merged
+filters = zeros(num_pixels, num_filters + num_merged_filters, 'single'); % Preallocate
 
 idx = 0;
 num_skipped = 0;
-for k = 1:max_num_filters
+for k = 1:num_filters
     cell_idx = cell_indices(k);
     filter = get_filter(cell_idx);
 
@@ -73,9 +89,31 @@ for k = 1:max_num_filters
         num_skipped = num_skipped + 1;
     end
 end
+
+% Generate merged filters
+for k = 1:num_merged_filters
+    merge_inds = merge_list{k};
+    merge_inds3 = permute(merge_inds, [1 3 2]); % Inds stacked along 3rd dim of array
+    fs = arrayfun(get_filter, merge_inds3, 'UniformOutput', false);
+    fs = cell2mat(fs); % Filters are stacked along 3rd dim of 'fs'
+    
+    filter = sum(fs,3);
+    filter_sum = sum(filter(:));
+    if (filter_sum > 0)
+        idx = idx + 1;
+        filter = filter / filter_sum;
+        filters(:,idx) = reshape(filter, num_pixels, 1);
+        fprintf('  Merged filters [%s] into one ouput filter\n', num2str(merge_inds));
+    else
+        fprintf('  Warning: Merge of filters [%s] is entirely zero -- skipping!\n', num2str(merge_inds));
+        num_skipped = num_skipped + 1;
+    end
+end
+
 if (num_skipped > 0)
     fprintf('  Total number of skipped filters: %d\n', num_skipped);
 end
+
 filters(:,(idx+1):end) = [];
 num_filters = idx;
 
