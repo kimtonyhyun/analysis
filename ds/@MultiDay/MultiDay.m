@@ -11,31 +11,18 @@ classdef MultiDay < handle
     end
     
     properties (Access = private)
-        full_to_sparse
         ds
         match
+
+        full_to_sparse
+        source_id_offsets
+        num_all_sources
     end
     
     methods
         function obj = MultiDay(ds_list, match_list, varargin)
-            % FIXME: This is a hack to automatically convert the DS
-            % identifiers in 'ds_list' and 'match_list' into numeric
-            for k = 1:size(ds_list,1)
-                if ischar(ds_list{k,1})
-                    ds_list{k,1} = str2double(ds_list{k,1});
-                end
-            end
-            for k = 1:size(match_list,1)
-                if ischar(match_list{k,1})
-                    match_list{k,1} = str2double(match_list{k,1});
-                    match_list{k,2} = str2double(match_list{k,2});
-                end
-            end
-            
-            % By default, MultiDay keeps only the cells that show up on
-            % ALL days (DaySummary)
+            % By default, MD keeps only cells that show up on ALL days
             keepall = false;
-            check_for_consistency = true;
             for k = 1:length(varargin)
                 if ischar(varargin{k})
                     switch varargin{k}
@@ -44,7 +31,7 @@ classdef MultiDay < handle
                         % DaySummary. USE WITH CAUTION!
                         case 'keepall'
                             keepall = true;
-                            check_for_consistency = false;
+                            
                     end
                 end
             end
@@ -107,15 +94,28 @@ classdef MultiDay < handle
                 end
             end
             
-            % Compute matches
-            M = obj.compute_all_matches();
-            if check_for_consistency
+            % Compute matches. Basic idea is that each cell from each day
+            % will be given a unique identifier (see 'day_to_linear_id'), 
+            % and all pairwise match data will be incorporated into a
+            % graph. We then look for connected components of the graph.
+            %------------------------------------------------------------
+            num_sources_per_day = zeros(1, obj.num_days);
+            for k = 1:obj.num_days
+                day = obj.valid_days(k);
+                num_sources_per_day(k) = obj.ds{day}.num_cells; % Includes all sources, including non-cells
+            end
+            obj.num_all_sources = sum(num_sources_per_day);
+            obj.source_id_offsets = cumsum([0 num_sources_per_day(1:end-1)]);
+
+            A = obj.compute_adjacency_matrix;
+
+            M = obj.compute_all_matches(A);
+            if ~keepall
+                M = obj.filter_matches(M); % Cell must be matched on every day
                 M = obj.verify_match_list_consistency(M);
             end
             
-            % Filter out rows of M with unmatched indices (i.e. zeros) and
-            % store result
-            obj.matched_indices = obj.filter_matches(M, keepall);
+            obj.matched_indices = M;
             obj.sort_matches_by_day(obj.valid_days(1));
             obj.num_cells = size(obj.matched_indices, 1);
             fprintf('%s: Found %d matching classified cells across all days\n',...
@@ -308,83 +308,10 @@ classdef MultiDay < handle
             trial_map = trial_map(1:b,:);
         end
 
-        % Display functions
+        % Functions for computing matches
         %------------------------------------------------------------
-        function summary(obj)
-            % summary stats
-            fprintf('\n<strong>Multi-Day Summary</strong>\n\n')
-            
-            for d = obj.valid_days
-                summary(obj.day(d),d)
-                fprintf('\n')
-            end
-        end % summary
-
-        function plot_summary(md)
-            trial_map = filter_trials(md, 'start', {'east','west'});
-            meta = export_metadata(md, trial_map);
-            ndays = length(md.valid_days);
-
-            ei = strcmp(meta.start,'east');
-            wi = strcmp(meta.start,'west');
-
-            for di = 1:ndays
-                d = md.valid_days(di);
-
-                subplot(ndays,2,2*(di-1)+1)
-                plot_panel(meta, ei & (meta.day==d));
-                title(sprintf('day %i, east starts',d))
-
-                subplot(ndays,2,2*(di-1)+2)
-                plot_panel(meta, wi & (meta.day==d));
-                title(sprintf('day %i, west starts',d))
-            end
-
-            function plot_panel(meta,idx)
-                N = sum(idx);
-                x = 1:N;
-                y = strcmp('right',meta.turn(idx));
-                c = repmat([0 0 0], N, 1);
-                s = 15*ones(N,1);
-
-                strat = meta.strategy(idx);
-                a = strcmp(strat,'allo-north') | strcmp(strat,'allo-south');
-                e = strcmp(strat,'ego-left') | strcmp(strat,'ego-right');
-
-                s(a|e) = 30;
-                if sum(a) > 0
-                    c(a,:) = repmat([1 0 0],sum(a),1);
-                end
-                if sum(e) > 0
-                    c(e,:) = repmat([0 0 1],sum(e),1);
-                end
-
-                hold on
-                plot(meta.turn_prob(idx))
-                scatter(x,y,s,c,'filled')
-                ylim([-0.1,1.1])
-                ylabel('p(turn right)')
-            end
-        end % plot_summary
-
-    end % Public methods
-
-    % Private methods
-    %------------------------------------------------------------
-    methods (Access=private)
-        function [M, assignments] = compute_all_matches(obj)
-            % Cells of all days will be arranged linearly for the graph
-            % computation.
-            num_cells_per_day = zeros(1, obj.num_days);
-            for k = 1:obj.num_days
-                day = obj.valid_days(k);
-                num_cells_per_day(k) = obj.ds{day}.num_cells;
-            end
-            num_all_cells = sum(num_cells_per_day);
-            offsets = cumsum([0 num_cells_per_day(1:(end-1))]);
-
-            % Adjacency matrix with all cells arranged linearly
-            A = zeros(num_all_cells, num_all_cells);
+        function A = compute_adjacency_matrix(obj)
+            A = false(obj.num_all_sources, obj.num_all_sources);
             for day_i = obj.valid_days
                 for day_j = setdiff(obj.valid_days, day_i)
                     m_itoj = obj.match{day_i, day_j};
@@ -393,62 +320,55 @@ classdef MultiDay < handle
                             m = m_itoj{cell_i};
                             if ~isempty(m)
                                 cell_j = m(1);
-                                I = day_to_linear(day_i, cell_i);
-                                J = day_to_linear(day_j, cell_j);
-                                A(I,J) = 1;
+                                I = obj.day_to_linear_id(day_i, cell_i);
+                                J = obj.day_to_linear_id(day_j, cell_j);
+                                A(I,J) = true;
                             end
                         end
                     end
                 end % day_j
             end % day_i
-            
-            A = sparse(A); % Required by graphconncomp
-            [num_components, assignments] = graphconncomp(A, 'Directed', 'false');
-            
-            % Set up the match matrix; zero indicates unmatched (or not
-            % classified to be a cell)
-            M = zeros(num_components, obj.num_days);
-            for I = 1:length(assignments)
-                assignment = assignments(I);
-                [k, cell_idx] = linear_to_day(I);
-                day = obj.valid_days(k);
-                if obj.ds{day}.is_cell(cell_idx) % Keep only classified cells
-                    if (M(assignment, k) ~= 0) % There is an existing assignment!
-                        fprintf('  Warning! Cells %d and %d from Day %d match to the same cross-day set!\n',...
-                            M(assignment, k), cell_idx, obj.valid_days(k));
+
+            if ~issymmetric(A)
+                cprintf('Warning: Adjacency matrix is not symmetric!\n');
+            end
+        end
+
+        function M = compute_all_matches(obj, A)
+            G = graph(A); % Generate graph object from adjacency matrix
+            ccs = conncomp(G, 'OutputForm', 'cell');
+            num_ccs = length(ccs);
+
+            % Set up the matrix of matched indices. Note: zero indicates
+            % unmatched (or not classified to be a cell)
+            M = zeros(num_ccs, obj.num_days);
+            for i = 1:num_ccs
+                cc = ccs{i}; % i-th connected component
+                for linear_id = cc % linear id within cc
+                    [k, cell_idx] = obj.linear_to_day_id(linear_id);
+                    day = obj.valid_days(k);
+                    if obj.ds{day}.is_cell(cell_idx)
+                        if (M(i,k) ~= 0) % There is an existing assignment!
+                            fprintf('  Warning! Cells %d and %d from Day %d match to the same cross-day set!\n',...
+                                M(i,k), cell_idx, day);
+                        end
+                        M(i,k) = cell_idx;
                     end
-                    M(assignment, k) = cell_idx;
                 end
             end
-            
-            % Helper indexing functions
-            function linear_idx = day_to_linear(day_idx, cell_idx)
-                day_idx_sparse = obj.full_to_sparse(day_idx);
-                linear_idx = offsets(day_idx_sparse) + cell_idx;
-            end % day_to_linear
-            
-            function [k, cell_idx] = linear_to_day(linear_idx)
-                k = find((linear_idx-offsets)>0, 1, 'last');
-                cell_idx = linear_idx - offsets(k);
-            end % linear_to_day
-
         end % compute_all_matches
-        
-        function Mf = filter_matches(~, M, keepall)
+
+        function Mf = filter_matches(~, M)
             % Filter out rows of the match matrix M that has zeros
             % (indicating non-matched cells)
-            if keepall
-                unmatched = all(M==0, 2);
-            else
-                unmatched = any(M==0, 2);
-            end
-
+            unmatched = any(M==0, 2);
             Mf = M(~unmatched,:);
-        end % filter_matches
-        
+        end
+
         function Mf = verify_match_list_consistency(obj, M)
-            % For each cross-day match set, make sure that for every pair
-            % is consistent with the provided match_list
+            % For each row of the match matrix M, explicitly check that the
+            % result is consistent with every pairwise match data that was
+            % originally provided.
             num_matches = size(M,1);
             is_valid = true(num_matches, 1);
             
@@ -482,8 +402,17 @@ classdef MultiDay < handle
             if num_invalid_matches > 0
                 cprintf('red', '  Removed %d matches inconsistent with provided match_list\n', num_invalid_matches);
             end
-            
         end % verify_match_consistency
 
-    end
+        function linear_id = day_to_linear_id(obj, day_idx, cell_idx)
+            day_idx_sparse = obj.full_to_sparse(day_idx);
+            linear_id = obj.source_id_offsets(day_idx_sparse) + cell_idx;
+        end
+
+        function [k, cell_idx] = linear_to_day_id(obj, linear_idx)
+            k = find((linear_idx-obj.source_id_offsets)>0, 1, 'last');
+            cell_idx = linear_idx - obj.source_id_offsets(k);
+        end
+
+    end % Public methods
 end

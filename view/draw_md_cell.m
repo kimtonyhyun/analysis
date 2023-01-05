@@ -24,40 +24,44 @@ end
 
 sp = @(m,n,p) subtightplot(m, n, p, 0.05, 0.05, 0.05); % Gap, Margin-X, Margin-Y
 
+clf;
+
 traces = cell(1, md.num_days);
 for k = 1:md.num_days
     day = md.valid_days(k);
     day_name = md.valid_day_names{k};
     cell_idx_k = md.get_cell_idx(common_cell_idx, day);
-    ds = md.day(day); % Just a shorthand
-
-    % Draw image of cell on each day
-    sp(sp_num_rows, md.num_days, k);
-    cell_image_k = ds.cells(cell_idx_k).im;
-    cell_com_k = ds.cells(cell_idx_k).com;
-    zoom_half_width = min(size(cell_image_k))/10;
-
-    imagesc(cell_image_k);
-    axis image;
-    xlim(cell_com_k(1)+zoom_half_width*[-1 1]);
-    ylim(cell_com_k(2)+zoom_half_width*[-1 1]);
-
-    title_str = sprintf('%s\nCell %d', day_name, cell_idx_k);
-    if (day == md.sort_day)
-        title(title_str, 'FontWeight', 'bold', 'FontSize', 12);
-    else
-        title(title_str, 'FontWeight', 'normal');
+    if cell_idx_k ~= 0
+        ds = md.day(day); % Just a shorthand
+    
+        % Draw image of cell on each day
+        sp(sp_num_rows, md.num_days, k);
+        cell_image_k = ds.cells(cell_idx_k).im;
+        cell_com_k = ds.cells(cell_idx_k).com;
+        zoom_half_width = min(size(cell_image_k))/10;
+    
+        imagesc(cell_image_k);
+        axis image;
+        xlim(cell_com_k(1)+zoom_half_width*[-1 1]);
+        ylim(cell_com_k(2)+zoom_half_width*[-1 1]);
+    
+        title_str = sprintf('%s\nCell %d', day_name, cell_idx_k);
+        if (day == md.sort_day)
+            title(title_str, 'FontWeight', 'bold', 'FontSize', 12);
+        else
+            title(title_str, 'FontWeight', 'normal');
+        end
+    
+        % Draw raster
+        for r = 1:num_rasters
+            sp(sp_num_rows, md.num_days,...
+                [(1+2*(r-1))*md.num_days+k (2+2*(r-1))*md.num_days+k]);
+            raster_fn{r}(ds, cell_idx_k);
+        end
+    
+        % Get trace
+        traces{k} = ds.get_trace(cell_idx_k);
     end
-
-    % Draw raster
-    for r = 1:num_rasters
-        sp(sp_num_rows, md.num_days,...
-            [(1+2*(r-1))*md.num_days+k (2+2*(r-1))*md.num_days+k]);
-        raster_fn{r}(ds, cell_idx_k);
-    end
-
-    % Get trace
-    traces{k} = ds.get_trace(cell_idx_k);
 end
 
 % If we're plotting only 1 raster per cell, then plot cross-day traces as a
