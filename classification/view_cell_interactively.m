@@ -341,6 +341,13 @@ end
         
         render_frame(1);
         
+        % "Popup" toolbar implementation in Matlab 2018b+ is broken
+        if ~verLessThan('matlab', '9.5')
+            set(global_trace.Toolbar, 'Visible', 'off');
+            set(running_trace.Toolbar, 'Visible', 'off');
+            set(movie_subplot.Toolbar, 'Visible', 'off');
+        end
+
         % Event handlers for trace windows
         set(global_trace, 'ButtonDownFcn', @go_to_selected_frame);
         set(running_trace, 'ButtonDownFcn', @go_to_selected_frame);
