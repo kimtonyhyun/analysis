@@ -23,14 +23,20 @@ decomp.u{1} = decomp.u{1} .* repmat(decomp.lambda', size(decomp.u{1}, 1), 1);
 decomp.lambda = ones(size(decomp.lambda));
 
 switch neuron_sort_method
-case 'sort once'
-    [~, n_idx] = sort(sum(abs(decomp.u{1}), 2), 'descend');
-    decomp.u{1} = decomp.u{1}(n_idx, :);
-case 'sort each'
-    for r = 1:size(decomp.u{1}, 2)
-       [~, n_idx] = sort(abs(decomp.u{1}(:,r)), 'descend');
-       decomp.u{1}(:,r) = decomp.u{1}(n_idx, r);
-    end
+    case 'sort once'
+        [~, n_idx] = sort(sum(abs(decomp.u{1}), 2), 'descend');
+        decomp.u{1} = decomp.u{1}(n_idx, :);
+        
+    case 'sort each'
+        for r = 1:size(decomp.u{1}, 2)
+           [~, n_idx] = sort(abs(decomp.u{1}(:,r)), 'descend');
+           decomp.u{1}(:,r) = decomp.u{1}(n_idx, r);
+        end
+        
+    case 'soft cluster'
+        [~, n_idx] = soft_cluster_neurons(decomp.u{1});
+        decomp.u{1} = decomp.u{1}(n_idx, :);
+        
 otherwise
     error('Sorting option for neurons not recognized.')
 end
