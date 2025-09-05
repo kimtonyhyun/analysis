@@ -356,6 +356,18 @@ classdef MultiDay < handle
                     end
                 end
             end
+
+            % When using MultiDay for transferring filters across days
+            % (e.g. see ctxstr.union.ctxstr_generate_imported_recs), we
+            % sometimes find a row of all zeros in M, which conveys no 
+            % information about cell matches and causes errors in code that
+            % use MultiDay (e.g. resolve_merged_recs). So, we explicitly
+            % filter out rows of all zeros in M.
+            %
+            % TODO: Figure out how 'compute_all_matches' can result in a
+            % row of zeros in M
+            row_of_zeros = all(M==0, 2);
+            M = M(~row_of_zeros,:);
         end % compute_all_matches
 
         function Mf = filter_matches(~, M)
