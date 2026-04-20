@@ -7,6 +7,7 @@ function [resp, state] = view_cell_interactively(ds, cell_idx, movie, fps, state
 %   state.show_neighbors = false;
 %   state.threshold_scale = 0.5;
 %   state.points_of_interest = [];
+%   state.zoom_half_width = 50;
 %
 %   state.movie_clim = [];
 %   state.fig_handle = [];
@@ -140,9 +141,8 @@ hold off;
 
 % Start off zoomed
 [height, width, ~] = size(movie);
-zoom_half_width = 50;
-xlim(COM(1)+zoom_half_width*[-1 1]);
-ylim(COM(2)+zoom_half_width*[-1 1]);
+xlim(COM(1)+state.zoom_half_width*[-1 1]);
+ylim(COM(2)+state.zoom_half_width*[-1 1]);
 
 % Compute the active portions of the trace and display
 %------------------------------------------------------------
@@ -238,8 +238,8 @@ while (1)
                     ylim([1 height]);
                     temp_state.zoomed = false;
                 else
-                    xlim(COM(1)+zoom_half_width*[-1 1]);
-                    ylim(COM(2)+zoom_half_width*[-1 1]);
+                    xlim(COM(1)+state.zoom_half_width*[-1 1]);
+                    ylim(COM(2)+state.zoom_half_width*[-1 1]);
                     temp_state.zoomed = true;
                 end
                     
@@ -291,6 +291,7 @@ end
         % Prepare global trace
         subplot(global_trace)
         plot(time, trace, 'b', 'HitTest', 'off');
+        set(gca, 'TickLength', [0 0]);
         hold on;
         plot(x_range, thresh*[1 1], 'r--', 'HitTest', 'off');
         for period_idx = 1:num_active_periods

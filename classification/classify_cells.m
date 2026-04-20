@@ -8,6 +8,7 @@ state.show_map = true;
 state.show_neighbors = false;
 state.threshold_scale = 0.5;
 state.points_of_interest = [];
+state.zoom_half_width = 50; 
 
 % Will be set below
 state.movie_clim = []; % Used within view_cell_interactively
@@ -25,6 +26,8 @@ for i = 1:length(varargin)
                 fps = varargin{i+1};
             case 'poi' % Existing points of interest
                 state.points_of_interest = varargin{i+1};
+            case 'zoom'
+                state.zoom_half_width = varargin{i+1};
         end
     end
 end
@@ -274,9 +277,8 @@ end
         end
         hold off;
         
-        zoom_half_width = 50;
-        x_range = COM(1)+zoom_half_width*[-1 1];
-        y_range = COM(2)+zoom_half_width*[-1 1];
+        x_range = COM(1)+state.zoom_half_width*[-1 1];
+        y_range = COM(2)+state.zoom_half_width*[-1 1];
         xlim(x_range);
         ylim(y_range);
         
