@@ -28,6 +28,19 @@ save(icaw_savename, 'info', 'ica_W'); % Save weights
 
 fprintf('%s: Computing ICA pairs (filters, traces) from weights...\n', datestr(now));
 [filters, traces] = compute_ica_pairs(pca_source, icaw_savename);
+
+% Process ICA filters
+% TODO: Additional image operations, e.g.
+%   - Separate disjoint filters into multiple ICs
+%------------------------------------------------------------
+info.ic_medfilt_halfwidth = 1;
+info.ic_threshold = 0.1;
+for k = 1:num_ICs
+    filters_k = filters(:,:,k);
+    filters_k = medfilt2(filters_k, (1+2*info.ic_medfilt_halfwidth)*[1 1]);
+    filters(:,:,k) = threshold_ic_filter(filters_k, info.ic_threshold);
+end
+
 save_rec(info, filters, traces);
 
 fprintf('%s: All done!\n', datestr(now));

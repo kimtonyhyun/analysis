@@ -31,7 +31,7 @@ min_num_PCs = 300;
 
 if ~isempty(varargin)
     for k = 1:length(varargin)
-        switch varargin{k}
+        switch lower(varargin{k})
             case 'trim'
                 do_trim = 1;
             case 'medfilt'
@@ -42,16 +42,12 @@ if ~isempty(varargin)
                         medfilt_halfwidth = dum;
                     end
                 end
-            case 'num_PCs'
+            case 'num_pcs'
                 num_PCs = varargin{k+1};
-                if ~isinteger(num_PCs)
-                    error('num_PCs must be an integer.');
-                end
                 autoset_num_PCs = 0;
         end
     end
 end
-
 
 fprintf('%s: Loading %s...\n', datestr(now), movie_source);
 M = load_movie(movie_source);
