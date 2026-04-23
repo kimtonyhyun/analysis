@@ -8,6 +8,7 @@ fill_all = false;
 filled_cells = [];
 tform = [];
 z = [];
+offset_vec = [0 0];
 
 % If 'show_all_cells' is false, we will show a limited number of boundaries
 % sorted by their distance to 'center'. This is for performance reasons,
@@ -34,6 +35,8 @@ for k = 1:length(varargin)
                 center = center(:); % Force column vector
             case 'z' % Plot the boundaries at a specified z depth
                 z = varargin{k+1};
+            case 'offset'
+                offset_vec = varargin{k+1};
         end
     end
 end
@@ -57,6 +60,7 @@ for k = cell_inds
     if ~isempty(tform) % Optional spatial transform
         boundary = transformPointsForward(tform, boundary);
     end
+    boundary = boundary + offset_vec;
     
     if isempty(z)
         zvec = zeros(size(boundary,1),1);
